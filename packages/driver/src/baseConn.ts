@@ -24,7 +24,7 @@ import type { CodecsRegistry } from "./codecs/registry";
 import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
 import { versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
-import { resolveErrorCode } from "./errors/resolve";
+import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
 import type {
   QueryOptions,
   ProtocolVersion,
@@ -102,6 +102,7 @@ export type ParseResult = [
   capabilities: number,
   inCodecBuffer: Uint8Array | null,
   outCodecBuffer: Uint8Array | null,
+  warnings: errors.EdgeDBError[],
 ];
 
 export type connConstructor = new (
@@ -193,6 +194,17 @@ export class BaseRawConnection {
     }
   }
 
+  protected _readHeaders(): Record<string, string> {
+    const numFields = this.buffer.readInt16();
+    const headers: Record<string, string> = {};
+    for (let i = 0; i < numFields; i++) {
+      const key = this.buffer.readString();
+      const value = this.buffer.readString();
+      headers[key] = value;
+    }
+    return headers;
+  }
+
   protected _abortWaiters(err: Error): void {
     if (!this.connWaiter.done) {
       this.connWaiter.setError(err);
@@ -213,15 +225,19 @@ export class BaseRawConnection {
     return ret;
   }
 
-  private _parseDescribeTypeMessage(): [
+  private _parseDescribeTypeMessage(
+    query: string,
+  ): [
     Cardinality,
     ICodec,
     ICodec,
     number,
     Uint8Array,
     Uint8Array,
+    errors.EdgeDBError[],
   ] {
     let capabilities = -1;
+    let warnings: errors.EdgeDBError[] = [];
     if (this.isLegacyProtocol) {
       const headers = this._parseHeaders();
       if (headers.has(LegacyHeaderCodes.capabilities)) {
@@ -233,7 +249,14 @@ export class BaseRawConnection {
         );
       }
     } else {
-      this._ignoreHeaders();
+      const headers = this._readHeaders();
+      if (headers["warnings"] != null) {
+        warnings = JSON.parse(headers.warnings).map((warning: any) => {
+          const err = errorFromJSON(warning);
+          (err as any)._query = query;
+          return err;
+        });
+      }
       capabilities = Number(this.buffer.readBigInt64());
     }
 
@@ -270,6 +293,7 @@ export class BaseRawConnection {
       capabilities,
       inTypeData,
       outTypeData,
+      warnings,
     ];
   }
 
@@ -591,7 +615,7 @@ export class BaseRawConnection {
                 capabilities,
                 inCodecData,
                 outCodecData,
-              ] = this._parseDescribeTypeMessage();
+              ] = this._parseDescribeTypeMessage(query);
             } catch (e: any) {
               error = e;
             }
@@ -815,7 +839,7 @@ export class BaseRawConnection {
         case chars.$T: {
           try {
             [newCard, inCodec, outCodec, capabilities] =
-              this._parseDescribeTypeMessage();
+              this._parseDescribeTypeMessage(query);
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
@@ -944,6 +968,7 @@ export class BaseRawConnection {
     let outCodec: ICodec | null = null;
     let inCodecBuf: Uint8Array | null = null;
     let outCodecBuf: Uint8Array | null = null;
+    let warnings: errors.EdgeDBError[] = [];
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -962,7 +987,8 @@ export class BaseRawConnection {
               capabilities,
               inCodecBuf,
               outCodecBuf,
-            ] = this._parseDescribeTypeMessage();
+              warnings,
+            ] = this._parseDescribeTypeMessage(query);
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
@@ -1023,6 +1049,7 @@ export class BaseRawConnection {
       capabilities,
       inCodecBuf,
       outCodecBuf,
+      warnings,
     ];
   }
 
@@ -1037,7 +1064,7 @@ export class BaseRawConnection {
     result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
-  ): Promise<void> {
+  ): Promise<errors.EdgeDBError[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
     wb.writeUInt16(0); // no headers
@@ -1068,6 +1095,7 @@ export class BaseRawConnection {
 
     let error: Error | null = null;
     let parsing = true;
+    let warnings: errors.EdgeDBError[] = [];
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -1104,8 +1132,15 @@ export class BaseRawConnection {
 
         case chars.$T: {
           try {
-            const [newCard, newInCodec, newOutCodec, capabilities] =
-              this._parseDescribeTypeMessage();
+            const [
+              newCard,
+              newInCodec,
+              newOutCodec,
+              capabilities,
+              _,
+              __,
+              _warnings,
+            ] = this._parseDescribeTypeMessage(query);
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
@@ -1118,6 +1153,7 @@ export class BaseRawConnection {
               capabilities,
             ]);
             outCodec = newOutCodec;
+            warnings = _warnings;
           } catch (e: any) {
             error = e;
           }
@@ -1157,6 +1193,8 @@ export class BaseRawConnection {
       }
       throw error;
     }
+
+    return warnings;
   }
 
   private _getQueryCacheKey(
@@ -1194,7 +1232,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     state: Session,
     privilegedMode = false,
-  ): Promise<any> {
+  ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
         throw new errors.InterfaceError(
@@ -1202,7 +1240,8 @@ export class BaseRawConnection {
             `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`,
         );
       }
-      return this.legacyExecute(query, privilegedMode);
+      await this.legacyExecute(query, privilegedMode);
+      return { result: null, warnings: [] };
     }
 
     this._checkState();
@@ -1218,6 +1257,9 @@ export class BaseRawConnection {
       expectedCardinality,
     );
     const ret: any[] = [];
+    // @ts-ignore
+    let _;
+    let warnings: errors.EdgeDBError[] = [];
 
     if (!this.isLegacyProtocol) {
       let [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
@@ -1230,7 +1272,7 @@ export class BaseRawConnection {
         (!inCodec && args !== null) ||
         (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
       ) {
-        [card, inCodec, outCodec] = await this._parse(
+        [card, inCodec, outCodec, _, _, _, warnings] = await this._parse(
           query,
           outputFormat,
           expectedCardinality,
@@ -1241,7 +1283,7 @@ export class BaseRawConnection {
       }
 
       try {
-        await this._executeFlow(
+        warnings = await this._executeFlow(
           query,
           args,
           outputFormat,
@@ -1255,7 +1297,7 @@ export class BaseRawConnection {
       } catch (e) {
         if (e instanceof errors.ParameterTypeMismatchError) {
           [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
-          await this._executeFlow(
+          warnings = await this._executeFlow(
             query,
             args,
             outputFormat,
@@ -1304,26 +1346,26 @@ export class BaseRawConnection {
     }
 
     if (outputFormat === OutputFormat.NONE) {
-      return;
+      return { result: null, warnings };
     }
     if (expectOne) {
       if (requiredOne && !ret.length) {
         throw new errors.NoDataError("query returned no data");
       } else {
-        return ret[0] ?? (asJson ? "null" : null);
+        return { result: ret[0] ?? (asJson ? "null" : null), warnings };
       }
     } else {
       if (ret && ret.length) {
         if (asJson) {
-          return ret[0];
+          return { result: ret[0], warnings };
         } else {
-          return ret;
+          return { result: ret, warnings };
         }
       } else {
         if (asJson) {
-          return "[]";
+          return { result: "[]", warnings };
         } else {
-          return ret;
+          return { result: ret, warnings };
         }
       }
     }

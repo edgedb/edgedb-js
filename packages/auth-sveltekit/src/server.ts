@@ -67,12 +67,12 @@ export interface AuthRouteHandlers {
       { verificationToken?: string }
     >,
   ) => Promise<never>;
-  onMagicLinkCallback(
+  onMagicLinkCallback?: (
     params: ParamsOrError<{
       tokenData: TokenData;
       isSignUp: boolean;
     }>,
-  ): Promise<Response>;
+  ) => Promise<Response>;
   onSignout?: () => Promise<never>;
 }
 
@@ -613,7 +613,8 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      // n.b. we need to keep the verifier cookie around for the email
+      // verification flow which uses the same PKCE session
 
       return onBuiltinUICallback({
         error: null,
@@ -627,7 +628,8 @@ async function handleAuthRoutes(
     case "builtin/signup": {
       const pkceSession = await core.then((core) => core.createPKCESession());
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      const { verifier } = pkceSession;
+      setVerifierCookie(cookies, config, verifier);
 
       return redirect(
         307,

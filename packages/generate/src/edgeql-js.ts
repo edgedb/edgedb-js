@@ -36,6 +36,11 @@ export type Version = {
   minor: number;
 };
 
+export const defaultFutureFlags = {
+  polymorphismAsDiscriminatedUnions: false,
+  strictTypeNames: false,
+};
+
 export async function generateQueryBuilder(params: {
   root: string | null;
   options: CommandOptions;
@@ -187,6 +192,20 @@ export async function generateQueryBuilder(params: {
       await fs.writeFile(outputPath, newContents);
     }
   }
+
+  const future = {
+    ...defaultFutureFlags,
+    ...options.future,
+  };
+
+  const futureFilePath = path.join(syntaxOutDir, "future.ts");
+
+  const content =
+    headerComment +
+    `export const future = ${JSON.stringify(future, undefined, 2)} as const;\n`;
+
+  await fs.writeFile(futureFilePath, content);
+  written.add(futureFilePath);
 
   if (target === "ts") {
     await dir.write(

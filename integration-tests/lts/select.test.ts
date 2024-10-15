@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
-import * as $ from "../../packages/generate/src/syntax/reflection";
+import * as fc from "fast-check";
 
+import * as $ from "./dbschema/edgeql-js/reflection";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
@@ -159,19 +160,20 @@ describe("select", () => {
         },
       },
     }));
-    type deep = $.setToTsType<typeof deep>;
+    type deep = $infer<typeof deep>;
     tc.assert<
       tc.IsExact<
         deep,
         {
           id: string;
           __type__: {
-            name: string;
+            name: "default::Hero";
+
             __type__: {
               id: string;
               __type__: {
                 id: string;
-                name: string;
+                name: "schema::ObjectType";
               };
             };
           };
@@ -239,18 +241,25 @@ describe("select", () => {
     assert.deepEqual(query.__element__.__kind__, $.TypeKind.object);
     assert.equal(query.__element__.__name__, "default::Person");
 
-    type result = $.BaseTypeToTsType<(typeof query)["__element__"]>;
+    type result = $infer<typeof query>[number];
     tc.assert<
       tc.IsExact<
         result,
         {
           id: string;
           name: string;
-          nemesis: {
-            name: string;
-          } | null;
-          secret_identity: string | null;
-        }
+        } & (
+          | {
+              __typename: "default::Hero";
+              secret_identity: string | null;
+            }
+          | {
+              __typename: "default::Villain";
+              nemesis: {
+                name: string;
+              } | null;
+            }
+        )
       >
     >(true);
   });
@@ -287,17 +296,17 @@ describe("select", () => {
       }),
     }));
 
-    type q = $.setToTsType<typeof q>;
-    tc.assert<
-      tc.IsExact<
-        q,
-        {
-          id: string;
-          secret_identity: string | null;
+    type actual = $infer<typeof q>[number];
+    type expected = {
+      id: string;
+    } & (
+      | { __typename: "default::Hero"; secret_identity: string | null }
+      | {
+          __typename: "default::Villain";
           nemesis: { id: string; computable: 1234 } | null;
-        }[]
-      >
-    >(true);
+        }
+    );
+    tc.assert<tc.IsExact<actual, expected>>(true);
   });
 
   test("parent type props in polymorphic", () => {
@@ -313,11 +322,17 @@ describe("select", () => {
     tc.assert<
       tc.IsExact<
         $infer<typeof q>,
-        {
-          name: string | null;
-          secret_identity: string | null;
-          nemesis: { name: string } | null;
-        }[]
+        (
+          | {
+              __typename: "default::Hero";
+              name: string;
+              secret_identity: string | null;
+            }
+          | {
+              __typename: "default::Villain";
+              nemesis: { name: string } | null;
+            }
+        )[]
       >
     >(true);
   });
@@ -327,18 +342,23 @@ describe("select", () => {
       ...e.is(e.Hero, e.Hero["*"]),
       name: true,
     }));
+    type result = $infer<typeof q>;
 
     // 'id' is filtered out since it is not valid in a polymorphic expr
     tc.assert<
       tc.IsExact<
-        $infer<typeof q>,
-        {
-          name: string;
-          height: string | null;
-          isAdult: boolean | null;
-          number_of_movies: number | null;
-          secret_identity: string | null;
-        }[]
+        result,
+        ({ name: string } & (
+          | { __typename: "default::Villain" }
+          | {
+              __typename: "default::Hero";
+              height: string | null;
+              age: number | null;
+              isAdult: boolean | null;
+              number_of_movies: number;
+              secret_identity: string | null;
+            }
+        ))[]
       >
     >(true);
 
@@ -348,6 +368,24 @@ describe("select", () => {
   test("shape type name", () => {
     const name = e.select(e.Hero).__element__.__name__;
     tc.assert<tc.IsExact<typeof name, "default::Hero">>(true);
+  });
+
+  test("polymorphic type names", () => {
+    tc.assert<
+      tc.IsExact<
+        typeof e.LivingThing.__element__.__polyTypenames__,
+        "default::Hero" | "default::Villain"
+      >
+    >(true);
+    tc.assert<
+      tc.IsExact<
+        typeof e.Person.__element__.__polyTypenames__,
+        "default::Hero" | "default::Villain"
+      >
+    >(true);
+    tc.assert<
+      tc.IsExact<typeof e.Hero.__element__.__polyTypenames__, "default::Hero">
+    >(true);
   });
 
   test("limit/offset inference", () => {
@@ -790,18 +828,26 @@ describe("select", () => {
     tc.assert<
       tc.IsExact<
         typeof result,
-        {
+        ({
           id: string;
-          title: string | null;
-          characters:
-            | {
+        } & (
+          | {
+              __typename: Exclude<
+                typeof e.Object.__element__.__polyTypenames__,
+                "default::Movie"
+              >;
+            }
+          | {
+              __typename: "default::Movie";
+              title: string;
+              characters: {
                 name: string;
                 "@character_name": string | null;
                 char_name: string | null;
                 person_name: string;
-              }[]
-            | null;
-        }[]
+              }[];
+            }
+        ))[]
       >
     >(true);
   });
@@ -986,6 +1032,7 @@ SELECT __scope_0_defaultVillain {
           nemesis: (nemesis) => {
             const nameLen = e.len(nemesis.name);
             return {
+              t: nemesis.__type__.name,
               name: true,
               nameLen,
               nameLen2: nameLen,
@@ -1021,13 +1068,15 @@ SELECT __scope_0_defaultPerson {
             }
           ))
         SELECT __scope_2_defaultHero {
+          single t := __scope_2_defaultHero.__type__.name,
           name,
           single nameLen := __scope_2_defaultHero.__withVar_3,
           single nameLen2 := __scope_2_defaultHero.__withVar_3
         }
       )
     }
-  )
+  ),
+  __typename := .__type__.name
 }`,
     );
 
@@ -1036,27 +1085,77 @@ SELECT __scope_0_defaultPerson {
     tc.assert<
       tc.IsExact<
         typeof res,
-        {
+        ({
           id: string;
           name: string;
-          nemesis: {
-            id: string;
-          } | null;
-          secret_identity: string | null;
-          villains:
-            | {
+        } & (
+          | {
+              __typename: "default::Villain";
+              nemesis: { id: string } | null;
+            }
+          | {
+              __typename: "default::Hero";
+              secret_identity: string | null;
+              villains: {
                 id: string;
                 name: string;
                 nemesis: {
+                  t: "default::Hero";
                   name: string;
                   nameLen: number;
                   nameLen2: number;
                 } | null;
-              }[]
-            | null;
-        }[]
+              }[];
+            }
+        ))[]
       >
     >(true);
+  });
+
+  test("polymorphic with explicit __typename is not duplicated", async () => {
+    const query = e.select(e.Movie.characters, (person) => ({
+      __typename: person.__type__.name,
+      ...e.is(e.Villain, { nemesis: true }),
+    }));
+
+    assert.equal(
+      query.toEdgeQL(),
+      `WITH
+  __scope_0_defaultPerson := DETACHED default::Movie.characters
+SELECT __scope_0_defaultPerson {
+  single __typename := __scope_0_defaultPerson.__type__.name,
+  [IS default::Villain].nemesis
+}`,
+    );
+  });
+
+  test.skip("polymorphic from type intersection", async () => {
+    const query = e.select(e.Movie.characters, (person) => ({
+      heroMovieCount: person.is(e.Hero).number_of_movies,
+      heroInfo: e.select(person.is(e.Hero), (hero) => ({
+        number_of_movies: true,
+        numMovies: hero.number_of_movies,
+      })),
+    }));
+    type result = $infer<typeof query>;
+    tc.assert<
+      tc.IsExact<
+        result,
+        (
+          | {
+              __typename: "default::Villain";
+            }
+          | {
+              __typename: "default::Hero";
+              heroMovieCount: number;
+              heroInfo: {
+                number_of_movies: number;
+                numMovies: number;
+              };
+            }
+        )[]
+      >
+    >(false);
   });
 
   test("polymorphic field in nested shape", async () => {
@@ -1076,10 +1175,12 @@ SELECT __scope_0_defaultPerson {
       title: data.the_avengers.title,
       characters: [
         {
+          __typename: "default::Hero",
           name: data.cap.name,
           secret_identity: data.cap.secret_identity,
         },
         {
+          __typename: "default::Hero",
           name: data.iron_man.name,
           secret_identity: data.iron_man.secret_identity,
         },
@@ -1091,10 +1192,15 @@ SELECT __scope_0_defaultPerson {
         typeof result,
         {
           title: string;
-          characters: {
+          characters: ({
             name: string;
-            secret_identity: string | null;
-          }[];
+          } & (
+            | { __typename: "default::Villain" }
+            | {
+                __typename: "default::Hero";
+                secret_identity: string | null;
+              }
+          ))[];
         } | null
       >
     >(true);
@@ -1351,6 +1457,7 @@ SELECT __scope_0_defaultPerson {
 
   test("portable shape", async () => {
     const baseShape = e.shape(e.Movie, (movie) => ({
+      __typename: movie.__type__.name,
       title: true,
       rating: true,
       filter_single: e.op(movie.title, "=", "The Avengers"),
@@ -1374,6 +1481,7 @@ SELECT __scope_0_defaultPerson {
       tc.IsExact<
         ShapeType,
         {
+          __typename: "default::Movie";
           title: string;
           rating: number | null;
         } | null
@@ -1402,6 +1510,7 @@ SELECT __scope_0_defaultPerson {
       tc.IsExact<
         Q,
         {
+          __typename: "default::Movie";
           title: string;
           rating: number | null;
           characters: {
@@ -1513,7 +1622,17 @@ SELECT __scope_0_defaultPerson {
     tc.assert<
       tc.IsExact<
         Result,
-        { xy: { a: string | null; b: number | null } | null }[]
+        {
+          xy:
+            | ({ a: string | null } & (
+                | { __typename: "default::W" | "default::Y" }
+                | {
+                    __typename: "default::X";
+                    b: number | null;
+                  }
+              ))
+            | null;
+        }[]
       >
     >(true);
   });
@@ -1558,5 +1677,39 @@ SELECT __scope_0_defaultPerson {
         }[]
       >
     >(true);
+  });
+
+  test("select json literal", async () => {
+    const q = e.select({
+      jsonLiteral: e.json("$jsonliteral$delete Person"),
+    });
+
+    const result = await q.run(client);
+    assert.deepEqual(result, { jsonLiteral: "$jsonliteral$delete Person" });
+  });
+
+  test("select json literal: counter overflow", async () => {
+    let testString = "$jsonliteral$";
+    for (let i = 0; i < 100; i++) {
+      testString += `$jsonliteral${i}$`;
+    }
+    const q = e.select(e.json(testString));
+
+    assert.rejects(() => q.run(client), edgedb.InputDataError);
+  });
+
+  test("arbitrary json literal", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.jsonValue(), async (arbitraryJson) => {
+        const roundTripped = JSON.parse(JSON.stringify(arbitraryJson));
+        const result = await e.select(e.json(arbitraryJson)).run(client);
+        assert.deepEqual(result, roundTripped);
+      }),
+    );
+  });
+
+  test("json literal special case: -0 is 0 in JSON", async () => {
+    const result = await e.select(e.json(-0)).run(client);
+    assert.equal(result, 0);
   });
 });

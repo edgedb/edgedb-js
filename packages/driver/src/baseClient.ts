@@ -37,6 +37,7 @@ import type {
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
+  WarningHandler,
 } from "./options";
 import { Options } from "./options";
 import Event from "./primitives/event";
@@ -178,17 +179,20 @@ export class ClientConnectionHolder {
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
   ): Promise<any> {
-    let result: any;
     for (let iteration = 0; ; ++iteration) {
       const conn = await this._getConnection();
       try {
-        result = await conn.fetch(
+        const { result, warnings } = await conn.fetch(
           query,
           args,
           outputFormat,
           expectedCardinality,
           this.options.session,
         );
+        if (warnings.length) {
+          this.options.warningHandler(warnings);
+        }
+        return result;
       } catch (err) {
         if (
           err instanceof errors.EdgeDBError &&
@@ -210,12 +214,11 @@ export class ClientConnectionHolder {
         }
         throw err;
       }
-      return result;
     }
   }
 
   async execute(query: string, args?: QueryArgs): Promise<void> {
-    return this.retryingFetch(
+    await this.retryingFetch(
       query,
       args,
       OutputFormat.NONE,
@@ -574,6 +577,10 @@ export class Client implements Executor {
       this.pool,
       this.options.withSession(this.options.session.withGlobals(globals)),
     );
+  }
+
+  withWarningHandler(handler: WarningHandler): Client {
+    return new Client(this.pool, this.options.withWarningHandler(handler));
   }
 
   async ensureConnected(): Promise<this> {

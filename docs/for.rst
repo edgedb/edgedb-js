@@ -38,7 +38,8 @@ passed in as a ``json`` parameter, converted to a set of ``json`` objects with
     items: [
       { title: "Deadpool", release_year: 2016 },
       { title: "Deadpool 2", release_year: 2018 },
-      { title: "Deadpool 3", release_year: null },
+      { title: "Deadpool 3", release_year: 2024 },
+      { title: "Deadpool 4", release_year: null },
     ],
   });
 
