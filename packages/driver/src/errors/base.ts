@@ -1,5 +1,5 @@
 import { utf8Decoder } from "../primitives/buffer";
-import { tags } from "./tags";
+import type { tags } from "./tags";
 
 export class EdgeDBError extends Error {
   protected static tags: { [tag in tags]?: boolean } = {};
