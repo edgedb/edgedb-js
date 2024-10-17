@@ -1,0 +1,1 @@
+# AI SDK - EdgeDB Provider
