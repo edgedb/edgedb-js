@@ -8,7 +8,10 @@ import type {
   LanguageModelV1,
   ProviderV1,
 } from "@ai-sdk/provider";
-import { EdgeDBChatLanguageModel } from "./edgedb-chat-language-model";
+import {
+  EdgeDBChatLanguageModel,
+  type EdgeDBLanguageModel,
+} from "./edgedb-chat-language-model";
 import type {
   EdgeDBChatModelId,
   EdgeDBChatSettings,
@@ -24,7 +27,7 @@ export interface EdgeDBProvider extends ProviderV1 {
   languageModel(
     modelId: EdgeDBChatModelId,
     settings?: EdgeDBChatSettings,
-  ): LanguageModelV1;
+  ): EdgeDBLanguageModel;
 
   textEmbeddingModel: (
     modelId: EdgeDBEmbeddingModelId,

@@ -16,7 +16,11 @@ import type {
 } from "./edgedb-chat-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
 
-export class EdgeDBChatLanguageModel implements LanguageModelV1 {
+export interface EdgeDBLanguageModel extends LanguageModelV1 {
+  withSettings(settings: Partial<EdgeDBChatSettings>): EdgeDBChatLanguageModel;
+}
+
+export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
   readonly specificationVersion = "v1";
   readonly defaultObjectGenerationMode = "json";
   readonly supportsImageUrls = false;
