@@ -84,7 +84,9 @@ export const scalarToLiteralMapping: {
     extraTypes: ["number[]"],
     argTypes: ["number[]"],
   },
-  // server version >=6
+  // server version >= 6
+  // keep this order of mapping, adding firstly mapping as it is in v6 and greater
+  // then also add mappings as they are in < v6
   "std::cal::local_datetime": {
     type: "edgedb.LocalDateTime",
     literalKind: "instanceof",
@@ -148,6 +150,8 @@ export function getLiteralToScalarMapping(version: Version) {
   )) {
     if (literalKind) {
       if (literalToScalarMapping[type] && version.major > 5) {
+        // there's for example edgedb.LocalTime that maps to the std::cal::local_time
+        // if the server version > 5 continue, otherwise overwrite this mapping with cal::local_time
         continue;
       }
       literalToScalarMapping[type] = { type: scalarType, literalKind };
