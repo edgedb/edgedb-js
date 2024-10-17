@@ -3,7 +3,7 @@ import type { GeneratorParams } from "../genutil";
 import {
   getRef,
   joinFrags,
-  literalToScalarMapping,
+  getLiteralToScalarMapping,
   quote,
   scalarToLiteralMapping,
 } from "../genutil";
@@ -13,8 +13,10 @@ import { getStringRepresentation } from "./generateObjectTypes";
 const getRuntimeRef = (name: string) => getRef(name, { prefix: "" });
 
 export const generateCastMaps = (params: GeneratorParams) => {
-  const { dir, types, casts, typesByName } = params;
+  const { dir, types, casts, typesByName, edgedbVersion } = params;
   const { implicitCastMap } = casts;
+
+  const literalToScalarMapping = getLiteralToScalarMapping(edgedbVersion);
 
   const f = dir.getPath("castMaps");
   f.addImportStar("edgedb", "edgedb");
@@ -349,6 +351,7 @@ export const generateCastMaps = (params: GeneratorParams) => {
   f.writeln([
     t`  T extends edgedb.MultiRange<infer E> ? $.MultiRangeType<literalToScalarType<E>> :`,
   ]);
+  // todo probably should be ScalarType or never
   f.writeln([t`  $.BaseType;\n\n`]);
 
   f.writeln([

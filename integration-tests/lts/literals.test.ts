@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import * as edgedb from "edgedb";
 import { TypeKind } from "edgedb/dist/reflection";
 import e from "./dbschema/edgeql-js";
-import { setupTests } from "./setupTeardown";
+import { setupTests, versionGTE } from "./setupTeardown";
 
 describe("literals", () => {
   test("literals", () => {
@@ -68,26 +68,50 @@ describe("literals", () => {
       e.std.uuid(uuid).toEdgeQL(),
       `<std::uuid>"317fee4c-0da5-45aa-9980-fedac211bfb6"`,
     );
-    assert.equal(
-      e.cal.local_date(localdate).toEdgeQL(),
-      `<cal::local_date>'2021-10-31'`,
-    );
-    assert.equal(
-      e.cal.local_datetime(localdatetime).toEdgeQL(),
-      `<cal::local_datetime>'2021-10-31T21:45:30'`,
-    );
-    assert.equal(
-      e.cal.local_time(localtime).toEdgeQL(),
-      `<cal::local_time>'15:15:00'`,
-    );
-    assert.equal(
-      e.cal.relative_duration(relduration).toEdgeQL(),
-      `<cal::relative_duration>'P1Y2M21D'`,
-    );
-    assert.equal(
-      e.cal.date_duration(dateduration).toEdgeQL(),
-      `<cal::date_duration>'P1Y2M25D'`,
-    );
+
+    if (versionGTE(6)) {
+      assert.equal(
+        e.cal.local_date(localdate).toEdgeQL(),
+        `<std::cal::local_date>'2021-10-31'`,
+      );
+      assert.equal(
+        e.cal.local_datetime(localdatetime).toEdgeQL(),
+        `<std::cal::local_datetime>'2021-10-31T21:45:30'`,
+      );
+      assert.equal(
+        e.cal.local_time(localtime).toEdgeQL(),
+        `<std::cal::local_time>'15:15:00'`,
+      );
+      assert.equal(
+        e.cal.relative_duration(relduration).toEdgeQL(),
+        `<std::cal::relative_duration>'P1Y2M21D'`,
+      );
+      assert.equal(
+        e.cal.date_duration(dateduration).toEdgeQL(),
+        `<std::cal::date_duration>'P1Y2M25D'`,
+      );
+    } else {
+      assert.equal(
+        e.cal.local_date(localdate).toEdgeQL(),
+        `<cal::local_date>'2021-10-31'`,
+      );
+      assert.equal(
+        e.cal.local_datetime(localdatetime).toEdgeQL(),
+        `<cal::local_datetime>'2021-10-31T21:45:30'`,
+      );
+      assert.equal(
+        e.cal.local_time(localtime).toEdgeQL(),
+        `<cal::local_time>'15:15:00'`,
+      );
+      assert.equal(
+        e.cal.relative_duration(relduration).toEdgeQL(),
+        `<cal::relative_duration>'P1Y2M21D'`,
+      );
+      assert.equal(
+        e.cal.date_duration(dateduration).toEdgeQL(),
+        `<cal::date_duration>'P1Y2M25D'`,
+      );
+    }
   });
 
   test("collection type literals", () => {
