@@ -73,6 +73,44 @@ export const scalarToLiteralMapping: {
     literalKind: "instanceof",
     extraTypes: ["string"],
   },
+  "cfg::memory": {
+    type: "edgedb.ConfigMemory",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "ext::pgvector::vector": {
+    type: "Float32Array",
+    literalKind: "instanceof",
+    extraTypes: ["number[]"],
+    argTypes: ["number[]"],
+  },
+  // server version >=6
+  "std::cal::local_datetime": {
+    type: "edgedb.LocalDateTime",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "std::cal::local_date": {
+    type: "edgedb.LocalDate",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "std::cal::local_time": {
+    type: "edgedb.LocalTime",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "std::cal::relative_duration": {
+    type: "edgedb.RelativeDuration",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  "std::cal::date_duration": {
+    type: "edgedb.DateDuration",
+    literalKind: "instanceof",
+    extraTypes: ["string"],
+  },
+  // server version < 6
   "cal::local_datetime": {
     type: "edgedb.LocalDateTime",
     literalKind: "instanceof",
@@ -98,33 +136,24 @@ export const scalarToLiteralMapping: {
     literalKind: "instanceof",
     extraTypes: ["string"],
   },
-  "cfg::memory": {
-    type: "edgedb.ConfigMemory",
-    literalKind: "instanceof",
-    extraTypes: ["string"],
-  },
-  "ext::pgvector::vector": {
-    type: "Float32Array",
-    literalKind: "instanceof",
-    extraTypes: ["number[]"],
-    argTypes: ["number[]"],
-  },
 };
 
-export const literalToScalarMapping: {
-  [key: string]: { type: string; literalKind: "typeof" | "instanceof" };
-} = {};
-for (const [scalarType, { type, literalKind }] of Object.entries(
-  scalarToLiteralMapping,
-)) {
-  if (literalKind) {
-    if (literalToScalarMapping[type]) {
-      throw new Error(
-        `literal type '${type}' cannot be mapped to multiple scalar types`,
-      );
+export function getLiteralToScalarMapping(version: Version) {
+  const literalToScalarMapping: {
+    [key: string]: { type: string; literalKind: "typeof" | "instanceof" };
+  } = {};
+
+  for (const [scalarType, { type, literalKind }] of Object.entries(
+    scalarToLiteralMapping,
+  )) {
+    if (literalKind) {
+      if (literalToScalarMapping[type] && version.major > 5) {
+        continue;
+      }
+      literalToScalarMapping[type] = { type: scalarType, literalKind };
     }
-    literalToScalarMapping[type] = { type: scalarType, literalKind };
   }
+  return literalToScalarMapping;
 }
 
 export function toTSScalarType(
