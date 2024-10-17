@@ -95,46 +95,48 @@ async function main(args: string[]) {
 async function whichEdgeDbCli() {
   debug("Checking if CLI is in PATH...");
   const locations = await which("edgedb", { nothrow: true, all: true });
-  for (const location of locations) {
-    const actualLocation = await fs.realpath(location);
-    debug(
-      `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`,
-    );
-
-    if (actualLocation === SCRIPT_LOCATION) {
-      debug("  - CLI found in PATH is the current script. Ignoring.");
-      continue;
-    }
-
-    const lowerCaseLocation = actualLocation.toLowerCase();
-    // n.b. Windows package binaries are actual scripts
-    if (
-      lowerCaseLocation.endsWith(".cmd") ||
-      lowerCaseLocation.endsWith(".ps1")
-    ) {
-      debug("  - CLI found in PATH is a Windows script. Ignoring.");
-      continue;
-    }
-
-    // n.b. pnpm uses a shell script for package binaries instead of symlinks
-    if (lowerCaseLocation.includes("node_modules/.bin")) {
+  if (locations) {
+    for (const location of locations) {
+      const actualLocation = await fs.realpath(location);
       debug(
-        "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring.",
+        `  - CLI found in PATH at: ${location} (resolved to: ${actualLocation})`,
       );
-      continue;
-    }
 
-    try {
-      runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, {
-        stdio: "ignore",
-      });
-      debug("  - CLI found in PATH is wrapper script. Ignoring.");
-      continue;
-    } catch (_err) {
-      debug("  - CLI found in PATH is not a wrapper script. Using.");
-    }
+      if (actualLocation === SCRIPT_LOCATION) {
+        debug("  - CLI found in PATH is the current script. Ignoring.");
+        continue;
+      }
 
-    return location;
+      const lowerCaseLocation = actualLocation.toLowerCase();
+      // n.b. Windows package binaries are actual scripts
+      if (
+        lowerCaseLocation.endsWith(".cmd") ||
+        lowerCaseLocation.endsWith(".ps1")
+      ) {
+        debug("  - CLI found in PATH is a Windows script. Ignoring.");
+        continue;
+      }
+
+      // n.b. pnpm uses a shell script for package binaries instead of symlinks
+      if (lowerCaseLocation.includes("node_modules/.bin")) {
+        debug(
+          "  - CLI found in PATH is in a node_modules/.bin directory. Ignoring.",
+        );
+        continue;
+      }
+
+      try {
+        runEdgeDbCli(["--succeed-if-cli-bin-wrapper"], actualLocation, {
+          stdio: "ignore",
+        });
+        debug("  - CLI found in PATH is wrapper script. Ignoring.");
+        continue;
+      } catch (_err) {
+        debug("  - CLI found in PATH is not a wrapper script. Using.");
+      }
+
+      return location;
+    }
   }
   debug("  - No CLI found in PATH.");
   return null;

@@ -68,6 +68,8 @@ export interface MessageStop {
   type: "message_stop";
 }
 
+// todo do we have error chunk here?
+
 export type StreamingMessage =
   | MessageStart
   | ContentBlockStart
