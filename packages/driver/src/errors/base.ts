@@ -72,7 +72,7 @@ function tryParseInt(val: Uint8Array | string | undefined) {
 }
 
 function readAttrStr(val: Uint8Array | string | undefined) {
-  return val instanceof Uint8Array ? utf8Decoder.decode(val) : val ?? "";
+  return val instanceof Uint8Array ? utf8Decoder.decode(val) : (val ?? "");
 }
 
 export function prettyPrintError(

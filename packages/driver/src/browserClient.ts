@@ -27,7 +27,7 @@ export function createHttpClient(
   return new Client(
     new FetchClientPool(
       parseConnectArguments,
-      typeof options === "string" ? { dsn: options } : options ?? {},
+      typeof options === "string" ? { dsn: options } : (options ?? {}),
     ),
     Options.defaults(),
   );
