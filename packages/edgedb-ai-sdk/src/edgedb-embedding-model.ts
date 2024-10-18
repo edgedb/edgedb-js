@@ -8,7 +8,10 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod";
-import type { EdgeDBEmbeddingModelId } from "./edgedb-embedding-settings";
+import type {
+  EdgeDBRagEmbeddingModelId,
+  EdgeDBRagEmbeddingSettings,
+} from "./edgedb-embedding-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
 
 interface EdgeDBEmbeddingConfig {
@@ -18,25 +21,34 @@ interface EdgeDBEmbeddingConfig {
 
 export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
   readonly specificationVersion = "v1";
-  readonly modelId: EdgeDBEmbeddingModelId;
+  readonly modelId: EdgeDBRagEmbeddingModelId;
 
   private readonly config: EdgeDBEmbeddingConfig;
+  private readonly settings: EdgeDBRagEmbeddingSettings;
 
   get provider(): string {
     return this.config.provider;
   }
 
+  // this default number should depend on the LLM that is used
+  // mistral provider uses 32, openai uses 2048
+  // cohere uses 96 and is not editable in their provider ...
   get maxEmbeddingsPerCall(): number {
-    // todo is this used, can it be updated?
-    return 32;
+    return this.settings.maxEmbeddingsPerCall ?? 32;
   }
 
+  // I didn't find any usage of this in the vercel provider
   get supportsParallelCalls(): boolean {
-    return false;
+    return this.settings.supportsParallelCalls ?? true;
   }
 
-  constructor(modelId: EdgeDBEmbeddingModelId, config: EdgeDBEmbeddingConfig) {
+  constructor(
+    modelId: EdgeDBRagEmbeddingModelId,
+    settings: EdgeDBRagEmbeddingSettings,
+    config: EdgeDBEmbeddingConfig,
+  ) {
     this.modelId = modelId;
+    this.settings = settings;
     this.config = config;
   }
 

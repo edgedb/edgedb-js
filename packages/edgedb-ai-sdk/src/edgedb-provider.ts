@@ -17,7 +17,10 @@ import type {
   EdgeDBChatSettings,
 } from "./edgedb-chat-settings";
 import { EdgeDBEmbeddingModel } from "./edgedb-embedding-model";
-import type { EdgeDBEmbeddingModelId } from "./edgedb-embedding-settings";
+import type {
+  EdgeDBRagEmbeddingModelId,
+  EdgeDBRagEmbeddingSettings,
+} from "./edgedb-embedding-settings";
 
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
@@ -30,7 +33,8 @@ export interface EdgeDBProvider extends ProviderV1 {
   ): EdgeDBLanguageModel;
 
   textEmbeddingModel: (
-    modelId: EdgeDBEmbeddingModelId,
+    modelId: EdgeDBRagEmbeddingModelId,
+    settings?: EdgeDBRagEmbeddingSettings,
   ) => EmbeddingModelV1<string>;
 }
 
@@ -54,8 +58,11 @@ export async function createEdgeDBRag(client: Client): Promise<EdgeDBProvider> {
       fetch,
     });
 
-  const createEmbeddingModel = (modelId: EdgeDBEmbeddingModelId) => {
-    return new EdgeDBEmbeddingModel(modelId, {
+  const createEmbeddingModel = (
+    modelId: EdgeDBRagEmbeddingModelId,
+    settings: EdgeDBRagEmbeddingSettings = {},
+  ) => {
+    return new EdgeDBEmbeddingModel(modelId, settings, {
       provider: "edgedb.embedding",
       fetch,
     });
