@@ -2,6 +2,7 @@ import { z } from "zod";
 import type {
   LanguageModelV1,
   LanguageModelV1StreamPart,
+  LanguageModelV1CallWarning,
 } from "@ai-sdk/provider";
 import {
   type ParseResult,
@@ -52,12 +53,102 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
     );
   }
 
+  // do we support any of these settings?
+  private getArgs({
+    maxTokens,
+    temperature,
+    topP,
+    topK,
+    frequencyPenalty,
+    presencePenalty,
+    stopSequences,
+    responseFormat,
+    seed,
+  }: Parameters<LanguageModelV1["doGenerate"]>[0]) {
+    const warnings: LanguageModelV1CallWarning[] = [];
+
+    if (maxTokens != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "maxTokens",
+      });
+    }
+
+    if (topP != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "topP",
+      });
+    }
+
+    if (topK != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "topK",
+      });
+    }
+
+    if (frequencyPenalty != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "frequencyPenalty",
+      });
+    }
+
+    if (presencePenalty != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "presencePenalty",
+      });
+    }
+
+    if (stopSequences != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "stopSequences",
+      });
+    }
+
+    if (
+      responseFormat != null &&
+      responseFormat.type === "json" &&
+      responseFormat.schema != null
+    ) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "responseFormat",
+        details: "JSON response format schema is not supported",
+      });
+    }
+
+    if (seed != null) {
+      warnings.push({
+        type: "unsupported-setting",
+        setting: "seed",
+      });
+    }
+
+    const baseArgs = {
+      model: this.modelId,
+
+      // do we support this?
+      safe_prompt: false,
+
+      // check this
+      messages: [],
+
+      temperature,
+    };
+
+    return { args: { ...baseArgs }, warnings };
+  }
+
   async doGenerate(
     options: Parameters<LanguageModelV1["doGenerate"]>[0],
   ): Promise<any> {
-    const {
-      value: { response },
-    } = await postJsonToApi({
+    const { args, warnings } = this.getArgs(options);
+
+    const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
       body: {
         model: this.modelId,
@@ -78,13 +169,26 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
       fetch: this.config.fetch,
     });
 
-    return response;
+    const { messages: rawPrompt, ...rawSettings } = args;
+
+    return {
+      text: response.response ?? undefined,
+      usage: {
+        promptTokens: 0,
+        completionTokens: 0,
+      },
+      rawCall: { rawPrompt, rawSettings },
+      rawResponse: { headers: responseHeaders },
+      warnings,
+    };
   }
 
   async doStream(
     options: Parameters<LanguageModelV1["doStream"]>[0],
   ): Promise<any> {
-    const { value: response } = await postJsonToApi({
+    const { args, warnings } = this.getArgs(options);
+
+    const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
       body: {
         model: this.modelId,
@@ -103,6 +207,8 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
+
+    const { messages: rawPrompt, ...rawSettings } = args;
 
     return {
       stream: response.pipeThrough(
@@ -148,6 +254,9 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
           },
         }),
       ),
+      rawCall: { rawPrompt, rawSettings },
+      rawResponse: { headers: responseHeaders },
+      warnings,
     };
   }
 }
