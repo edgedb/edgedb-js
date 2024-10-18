@@ -48,6 +48,10 @@ export const KNOWN_TYPES = new Map<uuid, string>([
   ["00000000000000000000000000000112", "cal::date_duration"],
   ["00000000000000000000000000000130", "cfg::memory"],
   ["9565dd8804f511eea6910b6ebe179825", "ext::pgvector::vector"],
+  ["44c901c0d922489483c8061bd05e4840", "ext::postgis::geometry"],
+  ["4d7388783a5f4821ab769d8e7d6b32c4", "ext::postgis::geography"],
+  ["7fae553663114f608eb9096a5d972f48", "ext::postgis::box2d"],
+  ["c1a50ff8fded48b085c24905a8481433", "ext::postgis::box3d"],
 ]);
 
 export const KNOWN_TYPENAMES = (() => {
