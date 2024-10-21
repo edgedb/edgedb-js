@@ -179,6 +179,25 @@ export async function generateQueryBuilder(params: {
     throw new Error(`Error: no syntax files found for target "${target}"`);
   }
 
+  // libs that existed in modules/[lib] and in server v6 moved to modules/std/[lib]
+  const stdLibs = ["cal", "fts", "math", "pg"];
+
+  // instead of hardcoding we can check generated files inside modules/std
+  // if (version.major > 5) {
+  //   const stdPath = path.join(prettyOutputDir, "modules", "std");
+  //   const filenames = await fs.readdir(stdPath);
+
+  //   for (const fname of filenames) {
+  //     const fullPath = path.join(stdPath, fname);
+  //     const fileStat = await fs.stat(fullPath);
+
+  //     if (fileStat.isFile()) {
+  //       const libName = path.parse(fname).name;
+  //       stdLibs.push(libName);
+  //     }
+  //   }
+  // }
+
   for (const f of syntaxFiles) {
     const outputPath = path.join(syntaxOutDir, f.path);
     written.add(outputPath);
@@ -187,7 +206,18 @@ export async function generateQueryBuilder(params: {
       .then((content) => content)
       .catch(() => "");
 
-    const newContents = headerComment + f.content;
+    let newContents = headerComment + f.content;
+
+    // in server versions >=6 cal, fts, math and pg are moved inside std module
+    if (version.major > 5) {
+      stdLibs.forEach((lib) => {
+        newContents = newContents.replace(
+          `modules/${lib}`,
+          `modules/std/${lib}`,
+        );
+      });
+    }
+
     if (oldContents !== newContents) {
       await fs.writeFile(outputPath, newContents);
     }
