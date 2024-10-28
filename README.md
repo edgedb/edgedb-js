@@ -171,7 +171,7 @@ filter .email = <str>$email;
 
 This generator will generate a `getUser.query.ts` file alongside it that exports a function called `getUser`.
 
-```
+```ts
 import {createClient} from "edgedb";
 import {myQuery} from "./myQuery.query";
 
