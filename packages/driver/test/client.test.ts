@@ -598,6 +598,8 @@ describe("fetch: ext::pgvector::halfvec", () => {
   });
 
   it("valid: number[] arg", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
     await expect(
       con.queryRequiredSingle<boolean>(
         `select <ext::pgvector::halfvec>$0 = <ext::pgvector::halfvec>$1`,
@@ -612,6 +614,8 @@ describe("fetch: ext::pgvector::halfvec", () => {
   });
 
   it("invalid: invalid args", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
     await expect(
       con.querySingle(`select <ext::pgvector::halfvec>$0`, [
         [3.0, null, -42.5],
