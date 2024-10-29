@@ -532,7 +532,9 @@ describe("fetch: ext::pgvector::halfvec", () => {
   const con = getClient();
   const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
       select exists (
-        select sys::ExtensionPackage filter .name = 'pgvector'
+        select sys::ExtensionPackage
+        filter .name = 'pgvector'
+          and (.version.major > 0 or .version.minor >= 7)
       )`);
 
   beforeAll(async () => {
