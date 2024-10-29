@@ -42,7 +42,11 @@ import {
   DateDurationCodec,
 } from "./datetime";
 import { ConfigMemoryCodec } from "./memory";
-import { PgVectorCodec } from "./pgvector";
+import {
+  PgVectorCodec,
+  PgVectorHalfVecCodec,
+  PgVectorSparseVecCodec,
+} from "./pgvector";
 import { InternalClientError } from "../errors";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
@@ -119,3 +123,5 @@ registerScalarCodec("cal::date_duration", DateDurationCodec);
 registerScalarCodec("cfg::memory", ConfigMemoryCodec);
 
 registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
+registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
+registerScalarCodec("ext::pgvector::sparsevec", PgVectorSparseVecCodec);

@@ -38,6 +38,9 @@ import {
   AuthenticationError,
   InvalidReferenceError,
   throwWarnings,
+  Float16Array,
+  InvalidArgumentError,
+  InvalidValueError,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
@@ -434,34 +437,25 @@ test("fetch: int64 as bigint", async () => {
 if (!isDeno) {
   describe("fetch: ext::pgvector::vector", () => {
     const con = getClient();
-    const hasPgVectorExtentionQuery = `
-    select exists (
-      select sys::ExtensionPackage filter .name = 'pgvector'
-    )`;
+    const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
+      select exists (
+        select sys::ExtensionPackage filter .name = 'pgvector'
+      )`);
 
     beforeAll(async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (!hasPgVectorExtention) return;
+      if (!(await hasPgVectorExtention)) return;
       await con.execute("create extension pgvector;");
     });
 
     afterAll(async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (hasPgVectorExtention) {
+      if (await hasPgVectorExtention) {
         await con.execute("drop extension pgvector;");
       }
       await con.close();
     });
 
     it("valid: Float32Array", async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (!hasPgVectorExtention) return;
+      if (!(await hasPgVectorExtention)) return;
 
       await fc.assert(
         fc.asyncProperty(
@@ -489,10 +483,7 @@ if (!isDeno) {
     });
 
     it("valid: JSON", async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (!hasPgVectorExtention) return;
+      if (!(await hasPgVectorExtention)) return;
 
       await fc.assert(
         fc.asyncProperty(
@@ -519,10 +510,7 @@ if (!isDeno) {
     });
 
     it("invalid: empty", async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (!hasPgVectorExtention) return;
+      if (!(await hasPgVectorExtention)) return;
 
       const data = new Float32Array([]);
       await expect(
@@ -531,10 +519,7 @@ if (!isDeno) {
     });
 
     it("invalid: invalid argument", async () => {
-      const hasPgVectorExtention = await con.queryRequiredSingle<boolean>(
-        hasPgVectorExtentionQuery,
-      );
-      if (!hasPgVectorExtention) return;
+      if (!(await hasPgVectorExtention)) return;
 
       await expect(
         con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
@@ -542,6 +527,108 @@ if (!isDeno) {
     });
   });
 }
+
+describe("fetch: ext::pgvector::halfvec", () => {
+  const con = getClient();
+  const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
+      select exists (
+        select sys::ExtensionPackage filter .name = 'pgvector'
+      )`);
+
+  beforeAll(async () => {
+    if (!(await hasPgVectorExtention)) return;
+    await con.execute("create extension pgvector;");
+  });
+
+  afterAll(async () => {
+    if (await hasPgVectorExtention) {
+      await con.execute("drop extension pgvector;");
+    }
+    await con.close();
+  });
+
+  it("valid: Float16Array", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
+    const val = await con.queryRequiredSingle<Float16Array>(
+      `
+    select <ext::pgvector::halfvec>
+        [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000,
+         6.0975e-5, 2.2345e-7, -5.96e-8]
+    `,
+    );
+
+    expect(val).toBeInstanceOf(Float16Array);
+    expect(val[0]).toEqual(1.5);
+    expect(val[1]).toEqual(2);
+    expect(val[2]).toBeCloseTo(3.8, 2);
+    expect(val[3]).toEqual(0);
+    expect(val[4]).toBeCloseTo(3.457e-3, 2);
+    expect(val[5]).toEqual(64992);
+    // These values are sub-normal so they don't map perfectly onto f32
+    expect(val[6]).toBeCloseTo(6.0975e-5, 2);
+    expect(val[7]).toBeCloseTo(2.38e-7, 2);
+    expect(val[8]).toBeCloseTo(-5.96e-8, 2);
+  });
+
+  it("valid: Float16Array arg", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
+    const val = await con.queryRequiredSingle<number[]>(
+      `select <array<float32>><ext::pgvector::halfvec>$0`,
+      [
+        new Float16Array([
+          1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8,
+        ]),
+      ],
+    );
+
+    expect(val[0]).toEqual(1.5);
+    expect(val[1]).toEqual(2);
+    expect(val[2]).toBeCloseTo(3.8, 2);
+    expect(val[3]).toEqual(0);
+    expect(val[4]).toBeCloseTo(3.457e-3, 2);
+    expect(val[5]).toEqual(64992);
+    // These values are sub-normal so they don't map perfectly onto f32
+    expect(val[6]).toBeCloseTo(6.0975e-5, 2);
+    expect(val[7]).toBeCloseTo(2.38e-7, 2);
+    expect(val[8]).toBeCloseTo(-5.96e-8, 2);
+  });
+
+  it("valid: number[] arg", async () => {
+    await expect(
+      con.queryRequiredSingle<boolean>(
+        `select <ext::pgvector::halfvec>$0 = <ext::pgvector::halfvec>$1`,
+        [
+          new Float16Array([
+            1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8,
+          ]),
+          [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8],
+        ],
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("invalid: invalid args", async () => {
+    await expect(
+      con.querySingle(`select <ext::pgvector::halfvec>$0`, [
+        [3.0, null, -42.5],
+      ]),
+    ).rejects.toThrow(InvalidArgumentError);
+
+    await expect(
+      con.querySingle(`select <ext::pgvector::halfvec>$0`, [[3.0, "x", -42.5]]),
+    ).rejects.toThrow(InvalidArgumentError);
+
+    await expect(
+      con.querySingle(`select <ext::pgvector::halfvec>$0`, ["foo"]),
+    ).rejects.toThrow(InvalidArgumentError);
+
+    await expect(
+      con.querySingle(`select <ext::pgvector::halfvec>$0`, [[1_000_000]]),
+    ).rejects.toThrow(InvalidValueError);
+  });
+});
 
 test("fetch: positional args", async () => {
   const con = getClient();
