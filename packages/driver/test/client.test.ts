@@ -47,6 +47,7 @@ import {
 import { AdminUIFetchConnection } from "../src/fetchConn";
 import type { CustomCodecSpec } from "../src/codecs/registry";
 import {
+  getAvailableExtensions,
   getAvailableFeatures,
   getClient,
   getConnectOptions,
@@ -435,29 +436,22 @@ test("fetch: int64 as bigint", async () => {
   }
 });
 
-if (!isDeno) {
+const pgvectorVersion = getAvailableExtensions().get("pgvector");
+
+if (!isDeno && pgvectorVersion != null) {
   describe("fetch: ext::pgvector::vector", () => {
     const con = getClient();
-    const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
-      select exists (
-        select sys::ExtensionPackage filter .name = 'pgvector'
-      )`);
 
     beforeAll(async () => {
-      if (!(await hasPgVectorExtention)) return;
       await con.execute("create extension pgvector;");
     });
 
     afterAll(async () => {
-      if (await hasPgVectorExtention) {
-        await con.execute("drop extension pgvector;");
-      }
+      await con.execute("drop extension pgvector;");
       await con.close();
     });
 
     it("valid: Float32Array", async () => {
-      if (!(await hasPgVectorExtention)) return;
-
       await fc.assert(
         fc.asyncProperty(
           fc.float32Array({
@@ -484,8 +478,6 @@ if (!isDeno) {
     });
 
     it("valid: JSON", async () => {
-      if (!(await hasPgVectorExtention)) return;
-
       await fc.assert(
         fc.asyncProperty(
           fc.float32Array({
@@ -511,8 +503,6 @@ if (!isDeno) {
     });
 
     it("invalid: empty", async () => {
-      if (!(await hasPgVectorExtention)) return;
-
       const data = new Float32Array([]);
       await expect(
         con.querySingle("select <ext::pgvector::vector>$0;", [data]),
@@ -520,8 +510,6 @@ if (!isDeno) {
     });
 
     it("invalid: invalid argument", async () => {
-      if (!(await hasPgVectorExtention)) return;
-
       await expect(
         con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
       ).rejects.toThrow();
@@ -529,193 +517,171 @@ if (!isDeno) {
   });
 }
 
-describe("fetch: ext::pgvector::halfvec", () => {
-  const con = getClient();
-  const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
-      select exists (
-        select sys::ExtensionPackage
-        filter .name = 'pgvector'
-          and (.version.major > 0 or .version.minor >= 7)
-      )`);
+if (
+  pgvectorVersion != null &&
+  (pgvectorVersion.major > 0 || pgvectorVersion.minor >= 7)
+) {
+  describe("fetch: ext::pgvector::halfvec", () => {
+    const con = getClient();
 
-  beforeAll(async () => {
-    if (!(await hasPgVectorExtention)) return;
-    await con.execute("create extension pgvector;");
-  });
+    beforeAll(async () => {
+      await con.execute("create extension pgvector;");
+    });
 
-  afterAll(async () => {
-    if (await hasPgVectorExtention) {
+    afterAll(async () => {
       await con.execute("drop extension pgvector;");
-    }
-    await con.close();
-  });
+      await con.close();
+    });
 
-  it("valid: Float16Array", async () => {
-    if (!(await hasPgVectorExtention)) return;
-
-    const val = await con.queryRequiredSingle<Float16Array>(
-      `
+    it("valid: Float16Array", async () => {
+      const val = await con.queryRequiredSingle<Float16Array>(
+        `
     select <ext::pgvector::halfvec>
         [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000,
          6.0975e-5, 2.2345e-7, -5.96e-8]
     `,
-    );
+      );
 
-    expect(val).toBeInstanceOf(Float16Array);
-    expect(val[0]).toEqual(1.5);
-    expect(val[1]).toEqual(2);
-    expect(val[2]).toBeCloseTo(3.8, 2);
-    expect(val[3]).toEqual(0);
-    expect(val[4]).toBeCloseTo(3.457e-3, 2);
-    expect(val[5]).toEqual(64992);
-    // These values are sub-normal so they don't map perfectly onto f32
-    expect(val[6]).toBeCloseTo(6.0975e-5, 2);
-    expect(val[7]).toBeCloseTo(2.38e-7, 2);
-    expect(val[8]).toBeCloseTo(-5.96e-8, 2);
-  });
+      expect(val).toBeInstanceOf(Float16Array);
+      expect(val[0]).toEqual(1.5);
+      expect(val[1]).toEqual(2);
+      expect(val[2]).toBeCloseTo(3.8, 2);
+      expect(val[3]).toEqual(0);
+      expect(val[4]).toBeCloseTo(3.457e-3, 2);
+      expect(val[5]).toEqual(64992);
+      // These values are sub-normal so they don't map perfectly onto f32
+      expect(val[6]).toBeCloseTo(6.0975e-5, 2);
+      expect(val[7]).toBeCloseTo(2.38e-7, 2);
+      expect(val[8]).toBeCloseTo(-5.96e-8, 2);
+    });
 
-  it("valid: Float16Array arg", async () => {
-    if (!(await hasPgVectorExtention)) return;
-
-    const val = await con.queryRequiredSingle<number[]>(
-      `select <array<float32>><ext::pgvector::halfvec>$0`,
-      [
-        new Float16Array([
-          1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8,
-        ]),
-      ],
-    );
-
-    expect(val[0]).toEqual(1.5);
-    expect(val[1]).toEqual(2);
-    expect(val[2]).toBeCloseTo(3.8, 2);
-    expect(val[3]).toEqual(0);
-    expect(val[4]).toBeCloseTo(3.457e-3, 2);
-    expect(val[5]).toEqual(64992);
-    // These values are sub-normal so they don't map perfectly onto f32
-    expect(val[6]).toBeCloseTo(6.0975e-5, 2);
-    expect(val[7]).toBeCloseTo(2.38e-7, 2);
-    expect(val[8]).toBeCloseTo(-5.96e-8, 2);
-  });
-
-  it("valid: number[] arg", async () => {
-    if (!(await hasPgVectorExtention)) return;
-
-    await expect(
-      con.queryRequiredSingle<boolean>(
-        `select <ext::pgvector::halfvec>$0 = <ext::pgvector::halfvec>$1`,
+    it("valid: Float16Array arg", async () => {
+      const val = await con.queryRequiredSingle<number[]>(
+        `select <array<float32>><ext::pgvector::halfvec>$0`,
         [
           new Float16Array([
             1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8,
           ]),
-          [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8],
         ],
-      ),
-    ).resolves.toBe(true);
+      );
+
+      expect(val[0]).toEqual(1.5);
+      expect(val[1]).toEqual(2);
+      expect(val[2]).toBeCloseTo(3.8, 2);
+      expect(val[3]).toEqual(0);
+      expect(val[4]).toBeCloseTo(3.457e-3, 2);
+      expect(val[5]).toEqual(64992);
+      // These values are sub-normal so they don't map perfectly onto f32
+      expect(val[6]).toBeCloseTo(6.0975e-5, 2);
+      expect(val[7]).toBeCloseTo(2.38e-7, 2);
+      expect(val[8]).toBeCloseTo(-5.96e-8, 2);
+    });
+
+    it("valid: number[] arg", async () => {
+      await expect(
+        con.queryRequiredSingle<boolean>(
+          `select <ext::pgvector::halfvec>$0 = <ext::pgvector::halfvec>$1`,
+          [
+            new Float16Array([
+              1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8,
+            ]),
+            [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000, 6.0975e-5, 2.385e-7, -5.97e-8],
+          ],
+        ),
+      ).resolves.toBe(true);
+    });
+
+    it("invalid: invalid args", async () => {
+      await expect(
+        con.querySingle(`select <ext::pgvector::halfvec>$0`, [
+          [3.0, null, -42.5],
+        ]),
+      ).rejects.toThrow(InvalidArgumentError);
+
+      await expect(
+        con.querySingle(`select <ext::pgvector::halfvec>$0`, [
+          [3.0, "x", -42.5],
+        ]),
+      ).rejects.toThrow(InvalidArgumentError);
+
+      await expect(
+        con.querySingle(`select <ext::pgvector::halfvec>$0`, ["foo"]),
+      ).rejects.toThrow(InvalidArgumentError);
+
+      await expect(
+        con.querySingle(`select <ext::pgvector::halfvec>$0`, [[1_000_000]]),
+      ).rejects.toThrow(InvalidValueError);
+    });
   });
 
-  it("invalid: invalid args", async () => {
-    if (!(await hasPgVectorExtention)) return;
+  describe("fetch: ext::pgvector::sparsevec", () => {
+    const con = getClient();
 
-    await expect(
-      con.querySingle(`select <ext::pgvector::halfvec>$0`, [
-        [3.0, null, -42.5],
-      ]),
-    ).rejects.toThrow(InvalidArgumentError);
+    beforeAll(async () => {
+      await con.execute("create extension pgvector;");
+    });
 
-    await expect(
-      con.querySingle(`select <ext::pgvector::halfvec>$0`, [[3.0, "x", -42.5]]),
-    ).rejects.toThrow(InvalidArgumentError);
-
-    await expect(
-      con.querySingle(`select <ext::pgvector::halfvec>$0`, ["foo"]),
-    ).rejects.toThrow(InvalidArgumentError);
-
-    await expect(
-      con.querySingle(`select <ext::pgvector::halfvec>$0`, [[1_000_000]]),
-    ).rejects.toThrow(InvalidValueError);
-  });
-});
-
-describe("fetch: ext::pgvector::sparsevec", () => {
-  const con = getClient();
-  const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
-      select exists (
-        select sys::ExtensionPackage
-        filter .name = 'pgvector'
-          and (.version.major > 0 or .version.minor >= 7)
-      )`);
-
-  beforeAll(async () => {
-    if (!(await hasPgVectorExtention)) return;
-    await con.execute("create extension pgvector;");
-  });
-
-  afterAll(async () => {
-    if (await hasPgVectorExtention) {
+    afterAll(async () => {
       await con.execute("drop extension pgvector;");
-    }
-    await con.close();
-  });
 
-  it("valid: SparseVector", async () => {
-    if (!(await hasPgVectorExtention)) return;
+      await con.close();
+    });
 
-    const val = await con.queryRequiredSingle<SparseVector>(
-      `
+    it("valid: SparseVector", async () => {
+      const val = await con.queryRequiredSingle<SparseVector>(
+        `
       select <ext::pgvector::sparsevec>
           <ext::pgvector::vector>[0, 1.5, 2.0, 3.8, 0, 0]
       `,
-    );
+      );
 
-    expect(val).toBeInstanceOf(SparseVector);
-    expect(val.length).toEqual(6);
-    expect(val[1]).toEqual(1.5);
-    expect(val[2]).toEqual(2);
-    expect(val[3]).toBeCloseTo(3.8, 6);
-    expect(val[4]).toEqual(0);
-  });
+      expect(val).toBeInstanceOf(SparseVector);
+      expect(val.length).toEqual(6);
+      expect(val[1]).toEqual(1.5);
+      expect(val[2]).toEqual(2);
+      expect(val[3]).toBeCloseTo(3.8, 6);
+      expect(val[4]).toEqual(0);
+    });
 
-  it("valid: SparseVector arg", async () => {
-    if (!(await hasPgVectorExtention)) return;
-
-    const val = await con.queryRequiredSingle<Float32Array>(
-      `
+    it("valid: SparseVector arg", async () => {
+      const val = await con.queryRequiredSingle<Float32Array>(
+        `
       select <ext::pgvector::vector>
           <ext::pgvector::sparsevec>$0
       `,
-      [new SparseVector(6, { 1: 1.5, 2: 2, 4: 3.8 })],
-    );
+        [new SparseVector(6, { 1: 1.5, 2: 2, 4: 3.8 })],
+      );
 
-    expect(val).toEqual(new Float32Array([0, 1.5, 2, 0, 3.8, 0]));
+      expect(val).toEqual(new Float32Array([0, 1.5, 2, 0, 3.8, 0]));
+    });
+
+    it("invalid: invalid args", async () => {
+      expect(() => new SparseVector(1, { 1: 1.5, 2: 2, 3: 3.8 })).toThrow(
+        `length of data cannot be larger than length of sparse vector`,
+      );
+
+      expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 6: 3.8 })).toThrow(
+        `index 6 is out of range of sparse vector length`,
+      );
+
+      expect(
+        () =>
+          // @ts-expect-error
+          new SparseVector(6, { 1: 1.5, 2: 2, 3: "3.8" }),
+      ).toThrow(`expected value at index 3 to be number, got string 3.8`);
+
+      expect(
+        () =>
+          // @ts-expect-error
+          new SparseVector(6, { 1: 1.5, 2: 2, x: 3.8 }),
+      ).toThrow(`key x in data map is not an integer`);
+
+      expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 3: 0 })).toThrow(
+        `elements in sparse vector cannot be 0`,
+      );
+    });
   });
-
-  it("invalid: invalid args", async () => {
-    expect(() => new SparseVector(1, { 1: 1.5, 2: 2, 3: 3.8 })).toThrow(
-      `length of data cannot be larger than length of sparse vector`,
-    );
-
-    expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 6: 3.8 })).toThrow(
-      `index 6 is out of range of sparse vector length`,
-    );
-
-    expect(
-      () =>
-        // @ts-expect-error
-        new SparseVector(6, { 1: 1.5, 2: 2, 3: "3.8" }),
-    ).toThrow(`expected value at index 3 to be number, got string 3.8`);
-
-    expect(
-      () =>
-        // @ts-expect-error
-        new SparseVector(6, { 1: 1.5, 2: 2, x: 3.8 }),
-    ).toThrow(`key x in data map is not an integer`);
-
-    expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 3: 0 })).toThrow(
-      `elements in sparse vector cannot be 0`,
-    );
-  });
-});
+}
 
 test("fetch: positional args", async () => {
   const con = getClient();
@@ -1384,7 +1350,7 @@ if (!isDeno) {
 }
 
 test("fetch: ConfigMemory", async () => {
-  const client = await getClient();
+  const client = getClient();
 
   if (
     (await client.queryRequiredSingle(
