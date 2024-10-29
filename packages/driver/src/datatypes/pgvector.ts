@@ -1,10 +1,8 @@
-export interface SparseVector {
-  [index: number]: number;
-}
-
 export class SparseVector {
   public indexes: Uint32Array;
   public values: Float32Array;
+
+  [index: number]: number;
 
   constructor(length: number, map: Record<number, number>);
   constructor(length: number, indexes: Uint32Array, values: Float32Array);
