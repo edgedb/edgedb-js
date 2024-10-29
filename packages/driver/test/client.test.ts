@@ -41,6 +41,7 @@ import {
   Float16Array,
   InvalidArgumentError,
   InvalidValueError,
+  SparseVector,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
@@ -633,6 +634,86 @@ describe("fetch: ext::pgvector::halfvec", () => {
     await expect(
       con.querySingle(`select <ext::pgvector::halfvec>$0`, [[1_000_000]]),
     ).rejects.toThrow(InvalidValueError);
+  });
+});
+
+describe("fetch: ext::pgvector::sparsevec", () => {
+  const con = getClient();
+  const hasPgVectorExtention = con.queryRequiredSingle<boolean>(`
+      select exists (
+        select sys::ExtensionPackage
+        filter .name = 'pgvector'
+          and (.version.major > 0 or .version.minor >= 7)
+      )`);
+
+  beforeAll(async () => {
+    if (!(await hasPgVectorExtention)) return;
+    await con.execute("create extension pgvector;");
+  });
+
+  afterAll(async () => {
+    if (await hasPgVectorExtention) {
+      await con.execute("drop extension pgvector;");
+    }
+    await con.close();
+  });
+
+  it("valid: SparseVector", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
+    const val = await con.queryRequiredSingle<SparseVector>(
+      `
+      select <ext::pgvector::sparsevec>
+          <ext::pgvector::vector>[0, 1.5, 2.0, 3.8, 0, 0]
+      `,
+    );
+
+    expect(val).toBeInstanceOf(SparseVector);
+    expect(val.length).toEqual(6);
+    expect(val[1]).toEqual(1.5);
+    expect(val[2]).toEqual(2);
+    expect(val[3]).toBeCloseTo(3.8, 6);
+    expect(val[4]).toEqual(0);
+  });
+
+  it("valid: SparseVector arg", async () => {
+    if (!(await hasPgVectorExtention)) return;
+
+    const val = await con.queryRequiredSingle<Float32Array>(
+      `
+      select <ext::pgvector::vector>
+          <ext::pgvector::sparsevec>$0
+      `,
+      [new SparseVector(6, { 1: 1.5, 2: 2, 4: 3.8 })],
+    );
+
+    expect(val).toEqual(new Float32Array([0, 1.5, 2, 0, 3.8, 0]));
+  });
+
+  it("invalid: invalid args", async () => {
+    expect(() => new SparseVector(1, { 1: 1.5, 2: 2, 3: 3.8 })).toThrow(
+      `length of data cannot be larger than length of sparse vector`,
+    );
+
+    expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 6: 3.8 })).toThrow(
+      `index 6 is out of range of sparse vector length`,
+    );
+
+    expect(
+      () =>
+        // @ts-expect-error
+        new SparseVector(6, { 1: 1.5, 2: 2, 3: "3.8" }),
+    ).toThrow(`expected value at index 3 to be number, got string 3.8`);
+
+    expect(
+      () =>
+        // @ts-expect-error
+        new SparseVector(6, { 1: 1.5, 2: 2, x: 3.8 }),
+    ).toThrow(`key x in data map is not an integer`);
+
+    expect(() => new SparseVector(6, { 1: 1.5, 2: 2, 3: 0 })).toThrow(
+      `elements in sparse vector cannot be 0`,
+    );
   });
 });
 

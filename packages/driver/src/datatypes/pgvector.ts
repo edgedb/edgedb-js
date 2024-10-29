@@ -1,3 +1,7 @@
+export interface SparseVector {
+  [index: number]: number;
+}
+
 export class SparseVector {
   public indexes: Uint32Array;
   public values: Float32Array;
@@ -34,15 +38,20 @@ export class SparseVector {
       for (let i = 0; i < entries.length; i++) {
         const index = parseInt(entries[i][0], 10);
         const val = entries[i][1];
-        if (!Number.isNaN(index)) {
-          throw new Error("key in data map not an integer");
+        if (Number.isNaN(index)) {
+          throw new Error(`key ${entries[i][0]} in data map is not an integer`);
         }
-        if (index < 0 || index > length) {
+        if (index < 0 || index >= length) {
           throw new Error(
             `index ${index} is out of range of sparse vector length`,
           );
         }
         this.indexes[i] = index;
+        if (typeof val !== "number") {
+          throw new Error(
+            `expected value at index ${index} to be number, got ${typeof val} ${val}`,
+          );
+        }
         if (val === 0) {
           throw new Error("elements in sparse vector cannot be 0");
         }

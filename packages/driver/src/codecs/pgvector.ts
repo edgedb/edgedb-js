@@ -178,7 +178,7 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
       .writeUInt32(nnz)
       .writeUInt32(0);
 
-    const vecBuf = new Uint8Array(nnz * 2);
+    const vecBuf = new Uint8Array(nnz * 8);
     const data = new DataView(
       vecBuf.buffer,
       vecBuf.byteOffset,
@@ -189,7 +189,7 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
       data.setUint32(i * 4, object.indexes[i]);
     }
     for (let i = 0; i < nnz; i++) {
-      data.setFloat32(nnz + i * 4, object.values[i]);
+      data.setFloat32((nnz + i) * 4, object.values[i]);
     }
 
     buf.writeBuffer(vecBuf);
