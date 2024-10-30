@@ -627,6 +627,19 @@ if (
       await con.close();
     });
 
+    it("valid: SparseVector methods", async () => {
+      const sparseVec = new SparseVector(7, { 1: 1.5, 2: 2, 4: 3.8 });
+
+      const arr: number[] = [];
+      let i = 0;
+      for (const val of sparseVec) {
+        expect(val).toEqual(sparseVec[i++]);
+        arr.push(val);
+      }
+      expect(arr).toEqual([...new Float32Array([0, 1.5, 2, 0, 3.8, 0, 0])]);
+      expect(arr).toEqual([...sparseVec]);
+    });
+
     it("valid: SparseVector", async () => {
       const val = await con.queryRequiredSingle<SparseVector>(
         `
