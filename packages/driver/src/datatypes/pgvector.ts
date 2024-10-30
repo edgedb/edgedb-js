@@ -69,4 +69,11 @@ export class SparseVector {
       },
     });
   }
+
+  *[Symbol.iterator]() {
+    let nextIndex = 0;
+    for (let i = 0; i < this.length; i++) {
+      yield this.indexes[nextIndex] === i ? this.values[nextIndex++] : 0;
+    }
+  }
 }
