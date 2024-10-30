@@ -28,6 +28,8 @@ export {
 } from "./datatypes/datetime";
 export { ConfigMemory } from "./datatypes/memory";
 export { Range, MultiRange } from "./datatypes/range";
+export { SparseVector } from "./datatypes/pgvector";
+export { Float16Array } from "./adapter.shared.node";
 
 export type { Executor } from "./ifaces";
 

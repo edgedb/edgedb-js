@@ -62,3 +62,10 @@ export function getAvailableFeatures(): Set<string> {
 export function getEdgeDBVersion(): EdgeDBVersion {
   return JSON.parse(process.env._JEST_EDGEDB_VERSION!);
 }
+
+export function getAvailableExtensions(): Map<
+  string,
+  { major: number; minor: number }
+> {
+  return new Map(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_EXTENSIONS!));
+}
