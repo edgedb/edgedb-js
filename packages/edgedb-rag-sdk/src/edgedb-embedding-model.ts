@@ -8,9 +8,10 @@ import {
   postJsonToApi,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod";
-import type {
-  EdgeDBRagEmbeddingModelId,
-  EdgeDBRagEmbeddingSettings,
+import {
+  isMistralEmbeddingModel,
+  type EdgeDBEmbeddingModelId,
+  type EdgeDBEmbeddingSettings,
 } from "./edgedb-embedding-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
 
@@ -21,35 +22,36 @@ interface EdgeDBEmbeddingConfig {
 
 export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
   readonly specificationVersion = "v1";
-  readonly modelId: EdgeDBRagEmbeddingModelId;
+  readonly modelId: EdgeDBEmbeddingModelId;
 
   private readonly config: EdgeDBEmbeddingConfig;
-  private readonly settings: EdgeDBRagEmbeddingSettings;
-
-  get provider(): string {
-    return this.config.provider;
-  }
-
-  // this default number should depend on the LLM that is used
-  // mistral provider uses 32, openai uses 2048
-  // cohere uses 96 and is not editable in their provider ...
-  get maxEmbeddingsPerCall(): number {
-    return this.settings.maxEmbeddingsPerCall ?? 32;
-  }
-
-  // I didn't find any usage of this in the vercel provider
-  get supportsParallelCalls(): boolean {
-    return this.settings.supportsParallelCalls ?? true;
-  }
+  private readonly settings: EdgeDBEmbeddingSettings;
 
   constructor(
-    modelId: EdgeDBRagEmbeddingModelId,
-    settings: EdgeDBRagEmbeddingSettings,
+    modelId: EdgeDBEmbeddingModelId,
+    settings: EdgeDBEmbeddingSettings,
     config: EdgeDBEmbeddingConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
     this.config = config;
+  }
+
+  get provider(): string {
+    return this.config.provider;
+  }
+
+  // Mistral provider uses 32 by default, OpenAI uses 2048
+  get maxEmbeddingsPerCall(): number {
+    return (
+      this.settings.maxEmbeddingsPerCall ??
+      (isMistralEmbeddingModel(this.modelId) ? 32 : 2048)
+    );
+  }
+
+  // I didn't find any usage of this in the vercel provider
+  get supportsParallelCalls(): boolean {
+    return this.settings.supportsParallelCalls ?? true;
   }
 
   async doEmbed({
@@ -75,6 +77,8 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
         model: this.modelId,
         input: values,
         encoding_format: "float",
+        dimensions: this.settings.dimensions,
+        user: this.settings.user,
       },
       failedResponseHandler: edgedbFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(

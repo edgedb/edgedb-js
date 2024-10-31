@@ -45,11 +45,11 @@ export interface ContentBlockStart {
 
 export interface ContentBlockDelta {
   type: "content_block_delta";
-  delta: {
-    type: "text_delta";
-    text: string;
-  };
   index: number;
+  delta: {
+    text: string;
+    type: "text_delta";
+  };
 }
 
 export interface ContentBlockStop {
@@ -60,15 +60,13 @@ export interface ContentBlockStop {
 export interface MessageDelta {
   type: "message_delta";
   delta: {
-    stop_reason: "stop";
+    stop_reason: string;
   };
 }
 
 export interface MessageStop {
   type: "message_stop";
 }
-
-// todo do we have error chunk here?
 
 export type StreamingMessage =
   | MessageStart

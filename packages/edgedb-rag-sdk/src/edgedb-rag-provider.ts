@@ -9,36 +9,38 @@ import type {
   ProviderV1,
 } from "@ai-sdk/provider";
 import {
-  EdgeDBChatLanguageModel,
+  EdgeDBRagLanguageModel,
   type EdgeDBLanguageModel,
-} from "./edgedb-chat-language-model";
+} from "./edgedb-rag-language-model";
 import type {
-  EdgeDBChatModelId,
-  EdgeDBChatSettings,
-} from "./edgedb-chat-settings";
+  EdgeDBRagModelId,
+  EdgeDBRagSettings,
+} from "./edgedb-rag-settings";
 import { EdgeDBEmbeddingModel } from "./edgedb-embedding-model";
 import type {
-  EdgeDBRagEmbeddingModelId,
-  EdgeDBRagEmbeddingSettings,
+  EdgeDBEmbeddingModelId,
+  EdgeDBEmbeddingSettings,
 } from "./edgedb-embedding-settings";
 
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
-export interface EdgeDBProvider extends ProviderV1 {
-  (modelId: EdgeDBChatModelId): LanguageModelV1;
+export interface EdgeDBRagProvider extends ProviderV1 {
+  (modelId: EdgeDBRagModelId | EdgeDBEmbeddingModelId): LanguageModelV1;
 
   languageModel(
-    modelId: EdgeDBChatModelId,
-    settings?: EdgeDBChatSettings,
+    modelId: EdgeDBRagModelId,
+    settings?: EdgeDBRagSettings,
   ): EdgeDBLanguageModel;
 
   textEmbeddingModel: (
-    modelId: EdgeDBRagEmbeddingModelId,
-    settings?: EdgeDBRagEmbeddingSettings,
+    modelId: EdgeDBEmbeddingModelId,
+    settings?: EdgeDBEmbeddingSettings,
   ) => EmbeddingModelV1<string>;
 }
 
-export async function createEdgeDBRag(client: Client): Promise<EdgeDBProvider> {
+export async function createEdgeDBRag(
+  client: Client,
+): Promise<EdgeDBRagProvider> {
   const connectConfig: ResolvedConnectConfig = (
     await (client as any).pool._getNormalizedConnectConfig()
   ).connectionParams;
@@ -50,17 +52,17 @@ export async function createEdgeDBRag(client: Client): Promise<EdgeDBProvider> {
   );
 
   const createChatModel = (
-    modelId: EdgeDBChatModelId,
-    settings: EdgeDBChatSettings = {},
+    modelId: EdgeDBRagModelId,
+    settings: EdgeDBRagSettings = {},
   ) =>
-    new EdgeDBChatLanguageModel(modelId, settings, {
-      provider: "edgedb.chat",
+    new EdgeDBRagLanguageModel(modelId, settings, {
+      provider: "edgedb.rag",
       fetch,
     });
 
   const createEmbeddingModel = (
-    modelId: EdgeDBRagEmbeddingModelId,
-    settings: EdgeDBRagEmbeddingSettings = {},
+    modelId: EdgeDBEmbeddingModelId,
+    settings: EdgeDBEmbeddingSettings = {},
   ) => {
     return new EdgeDBEmbeddingModel(modelId, settings, {
       provider: "edgedb.embedding",
@@ -68,7 +70,7 @@ export async function createEdgeDBRag(client: Client): Promise<EdgeDBProvider> {
     });
   };
 
-  const provider = function (modelId: EdgeDBChatModelId) {
+  const provider = function (modelId: EdgeDBRagModelId) {
     if (new.target) {
       throw new Error(
         "The EdgeDB model function cannot be called with the new keyword.",
@@ -81,7 +83,7 @@ export async function createEdgeDBRag(client: Client): Promise<EdgeDBProvider> {
   provider.languageModel = createChatModel;
   provider.textEmbeddingModel = createEmbeddingModel;
 
-  return provider as EdgeDBProvider;
+  return provider;
 }
 
 /**
