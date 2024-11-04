@@ -157,38 +157,6 @@ export interface EdgeDBAssistantMessage {
 
 export interface EdgeDBToolMessage {
   role: "tool";
-  // name: string;
   content: string;
   tool_call_id: string;
 }
-
-// const msgs = [
-//   {
-//     role: "system",
-//     content:
-//       "You are an expert Q&A system.\nAlways answer questions based on the provided context information.\nContext information is below:\nNightshade’s Promise: A forbidden forest filled with nightshade flowers promises eternal youth, but at a price that could be too perilous.\nWhispers of the Forgotten City: Written by Elena Marquez: In the sprawling, labyrinthine city of Velloria, ancient secrets lie buried beneath cobblestone streets and candle-lit alleyways. Ivy Donovan, a young historian, stumbles upon a cryptic map that hints at the location of the legendary Sunken Library, believed to house texts lost since the city's mysterious decline centuries ago. As Ivy delves deeper into the city’s dark past, she must dodge shadowy figures who seek to keep the library's secrets hidden. Alongside an unlikely band of allies, Ivy's quest leads her through hidden passages, haunted catacombs, and forgotten ruins, where she discovers truths that could shake the foundations of her world. As they inch closer to uncovering the city's ancient mysteries, they realize some secrets might have been better left untouched.\nBeneath the Drifts: A chilling expedition beneath the ice where darkness unveils not just secrets, but a dormant, sinister will.\nWhispering Flames: Written by Seraphine Bright: In a realm where fire speaks and the ashes tell tales, a young fire whisperer must save her people from an eternal blaze.\nThe Last Alchemist: In a world drained of magic, the last alchemist undertakes a quest to reignite the lost sparks of enchantment.\nWhispers of the Forgotten: An enchanting tale of a hidden village that exists between the folds of time, where the forgotten are remembered.\nThe Gilded Mirror: A cursed mirror reflects alternative realities, trapping its viewers in a labyrinth of their potential lives.\nThe Clockmaker’s Paradox: A clockmaker in a steampunk city discovers a time paradox that could unravel the very fabric of existence.\nAshes of the Starry Sea: Written by Orion Ember: After the stars in the sky mysteriously vanish, a band of astronomers embark on a perilous journey to retrieve them.\nEchoes of the Void: A cosmic adventure across starlit galaxies to uncover the mysteries of a universe humming with the echo of ancient civilizations.\nThe Maze of Many: Written by Ariadne Thread: A labyrinth with doors leading to infinite worlds becomes a battleground for those seeking ultimate power.",
-//   },
-//   { role: "user", content: "where is Orion Ember from?" },
-// ];
-
-// const tools = [
-//   {
-//     type: "function",
-//     function: {
-//       name: "country",
-//       description: "Get the country of the author",
-//       parameters: {
-//         type: "object",
-//         properties: {
-//           author: {
-//             type: "string",
-//             description: "Author name to get the country for",
-//           },
-//         },
-//         required: ["author"],
-//         additionalProperties: False,
-//         $schema: "http://json-schema.org/draft-07/schema#",
-//       },
-//     },
-//   },
-// ];
