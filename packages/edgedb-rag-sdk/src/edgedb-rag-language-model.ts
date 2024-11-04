@@ -271,10 +271,8 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
             }),
           },
         }),
-        query:
-          typeof messages[0].content === "string"
-            ? messages[0].content
-            : messages[0].content[0].text,
+        query: [...messages].reverse().find((msg) => msg.role === "user")!
+          .content[0].text,
         stream: true,
       },
       failedResponseHandler: edgedbFailedResponseHandler,
@@ -344,7 +342,7 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
 
                     case "tool_use": {
                       toolCallContentBlocks[value.index] = {
-                        toolCallId: value.content_block.id,
+                        toolCallId: value.content_block.id || generateId(),
                         toolName: value.content_block.name,
                         args: value.content_block.args ?? "",
                       };
@@ -411,7 +409,6 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
                       argsTextDelta: value.delta.args,
                     });
 
-                    // do we need this?
                     contentBlock.args += value.delta.args;
 
                     return;
@@ -520,7 +517,7 @@ const edgedbRagChunkSchema = z.discriminatedUnion("type", [
       }),
       z.object({
         type: z.literal("tool_use"),
-        id: z.string(),
+        id: z.string().nullish(),
         name: z.string(),
         args: z.string().nullish(),
       }),
@@ -531,12 +528,12 @@ const edgedbRagChunkSchema = z.discriminatedUnion("type", [
     index: z.number(),
     delta: z.discriminatedUnion("type", [
       z.object({
-        type: z.literal("tool_call_delta"),
-        args: z.string(), // partial json
-      }),
-      z.object({
         type: z.literal("text_delta"),
         text: z.string(),
+      }),
+      z.object({
+        type: z.literal("tool_call_delta"),
+        args: z.string(), // partial json
       }),
     ]),
     logprobs: z
