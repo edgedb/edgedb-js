@@ -42,7 +42,11 @@ import {
   DateDurationCodec,
 } from "./datetime";
 import { ConfigMemoryCodec } from "./memory";
-import { PgVectorCodec } from "./pgvector";
+import {
+  PgVectorCodec,
+  PgVectorHalfVecCodec,
+  PgVectorSparseVecCodec,
+} from "./pgvector";
 import { InternalClientError } from "../errors";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
@@ -80,14 +84,14 @@ export const INVALID_CODEC = new NullCodec(INVALID_CODEC_ID);
 
 function registerScalarCodec(
   typename: string,
-  type: new (tid: uuid) => ICodec,
+  type: new (tid: uuid, typename: string | null) => ICodec,
 ): void {
   const id = KNOWN_TYPENAMES.get(typename);
   if (id == null) {
     throw new InternalClientError("unknown type name");
   }
 
-  SCALAR_CODECS.set(id, new type(id));
+  SCALAR_CODECS.set(id, new type(id, typename));
 }
 
 registerScalarCodec("std::int16", Int16Codec);
@@ -119,3 +123,5 @@ registerScalarCodec("cal::date_duration", DateDurationCodec);
 registerScalarCodec("cfg::memory", ConfigMemoryCodec);
 
 registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
+registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
+registerScalarCodec("ext::pgvector::sparsevec", PgVectorSparseVecCodec);

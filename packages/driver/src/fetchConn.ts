@@ -42,6 +42,7 @@ import Event from "./primitives/event";
 import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
+const PROTO_MIME_RE = /application\/x\.edgedb\.v_(\d+)_(\d+)\.binary/;
 
 const STUDIO_CAPABILITIES =
   (RESTRICTED_CAPABILITIES |
@@ -105,9 +106,14 @@ class BaseFetchConnection extends BaseRawConnection {
         );
       }
 
+      const contentType = resp.headers.get("content-type");
+      const matchProtoVer = contentType?.match(PROTO_MIME_RE);
+      if (matchProtoVer) {
+        this.protocolVersion = [+matchProtoVer[1], +matchProtoVer[2]];
+      }
+
       const respData = await resp.arrayBuffer();
       const buf = new Uint8Array(respData);
-
       try {
         this.buffer.feed(buf);
       } catch (e: any) {

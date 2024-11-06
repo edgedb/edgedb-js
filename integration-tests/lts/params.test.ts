@@ -103,9 +103,11 @@ SELECT (SELECT {
           tuple: readonly [string, number, readonly boolean[]];
           namedTuple: Readonly<{ a: number; b: readonly bigint[]; c: string }>;
           jsonTuple: readonly [unknown];
-          people: Readonly<
-            { name: string; age: number; tags: readonly string[] }[]
-          >;
+          people: readonly {
+            name: string;
+            age: number;
+            tags: readonly string[];
+          }[];
         }
       >
     >(true);

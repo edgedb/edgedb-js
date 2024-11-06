@@ -43,11 +43,12 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:cli",
+    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:cli && yarn build:deno",
     "build:cli": "tsc --project tsconfig.cli.json",
     "build:cjs": "tsc --project tsconfig.json",
     "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
-    "lint:fix": "tslint 'packages/*/src/**/*.ts'",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix",
     "test": "NODE_OPTIONS='--experimental-global-webcrypto' npx jest --detectOpenHandles",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
@@ -55,6 +56,7 @@
     "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
   },
   "dependencies": {
+    "@petamoriken/float16": "^3.8.7",
     "debug": "^4.3.4",
     "env-paths": "^3.0.0",
     "semver": "^7.6.2",

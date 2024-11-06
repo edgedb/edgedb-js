@@ -12,11 +12,9 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "clean": "rm -rf dist",
-    "dev": "tsup --watch",
     "lint": "eslint \"./**/*.ts*\"",
     "type-check": "tsc --noEmit",
-    "prettier-check": "prettier --check \"./**/*.ts*\"",
-    "test": "pnpm test:node && pnpm test:edge"
+    "prettier-check": "prettier --check \"./**/*.ts*\""
   },
   "exports": {
     "./package.json": "./package.json",
