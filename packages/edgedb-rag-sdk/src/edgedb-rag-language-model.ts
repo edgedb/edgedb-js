@@ -202,17 +202,12 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
           prompt: {
             ...this.settings.prompt,
             ...(messages.length > 1 && {
-              custom: [
-                ...(this.settings.prompt?.custom || []),
-                ...messages.slice(1),
-              ],
+              custom: [...(this.settings.prompt?.custom || []), ...messages],
             }),
           },
         }),
-        query:
-          typeof messages[0].content === "string"
-            ? messages[0].content
-            : messages[0].content[0].text,
+        query: [...messages].reverse().find((msg) => msg.role === "user")!
+          .content[0].text,
         stream: false,
       },
       failedResponseHandler: edgedbFailedResponseHandler,
@@ -264,10 +259,7 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
           prompt: {
             ...this.settings.prompt,
             ...(messages.length > 1 && {
-              custom: [
-                ...(this.settings.prompt?.custom || []),
-                ...messages.slice(1),
-              ],
+              custom: [...(this.settings.prompt?.custom || []), ...messages],
             }),
           },
         }),
