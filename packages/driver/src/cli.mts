@@ -95,6 +95,12 @@ async function main(args: string[]) {
 async function whichEdgeDbCli() {
   debug("Checking if CLI is in PATH...");
   const locations = await which("edgedb", { nothrow: true, all: true });
+
+  if (locations == null) {
+    debug("  - No CLI found in PATH.");
+    return null;
+  }
+
   for (const location of locations) {
     const actualLocation = await fs.realpath(location);
     debug(
