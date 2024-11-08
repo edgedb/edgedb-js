@@ -515,7 +515,7 @@
       "packages/vercel-ai-provider": {
         "packageJson": {
           "dependencies": [
-            "npm:@ai-sdk/provider-utils@^1.0.20",
+            "npm:@ai-sdk/provider-utils@1.0.20",
             "npm:@ai-sdk/provider@0.0.24",
             "npm:@repo/tsconfig@*",
             "npm:@types/node@18",

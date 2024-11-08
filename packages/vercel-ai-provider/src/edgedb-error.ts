@@ -11,7 +11,9 @@ const edgedbErrorDataSchema = z.object({
 
 export type EdgedDBErrorData = z.infer<typeof edgedbErrorDataSchema>;
 
-export const edgedbFailedResponseHandler = createJsonErrorResponseHandler({
+export const edgedbFailedResponseHandler: ReturnType<
+  typeof createJsonErrorResponseHandler
+> = createJsonErrorResponseHandler({
   errorSchema: edgedbErrorDataSchema,
   errorToMessage: (data) => data.message,
 });
