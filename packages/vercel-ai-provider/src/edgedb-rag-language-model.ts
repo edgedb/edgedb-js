@@ -28,7 +28,6 @@ import {
   mapOpenAICompletionLogProbs,
 } from "./utils";
 import { convertToEdgeDBRagMessages } from "./convert-to-edgedb-rag-messages";
-// import type { JSONSchema7 } from "json-schema";
 
 export interface EdgeDBLanguageModel extends LanguageModelV1 {
   withSettings(settings: Partial<EdgeDBRagSettings>): EdgeDBRagLanguageModel;
@@ -192,6 +191,10 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
     const { args, warnings } = this.getArgs(options);
     const { messages } = args;
 
+    const providedPromptId =
+      this.settings.prompt &&
+      ("name" in this.settings.prompt || "id" in this.settings.prompt);
+
     const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
       headers: options.headers,
@@ -202,6 +205,14 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
           prompt: {
             ...this.settings.prompt,
             ...(messages.length > 1 && {
+              // if user provides prompt.custom without id/name it is his choice
+              // to not include default prompt msgs, but if user provides messages
+              // and doesn't provide prompt.custom, since we add messages to the
+              // prompt.custom we also have to include default prompt messages
+              ...(!this.settings.prompt?.custom &&
+                !providedPromptId && {
+                  name: "builtin::rag-default",
+                }),
               custom: [...(this.settings.prompt?.custom || []), ...messages],
             }),
           },
@@ -249,6 +260,10 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
     const { args, warnings } = this.getArgs(options);
     const { messages } = args;
 
+    const providedPromptId =
+      this.settings.prompt &&
+      ("name" in this.settings.prompt || "id" in this.settings.prompt);
+
     const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
       headers: options.headers,
@@ -259,6 +274,14 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
           prompt: {
             ...this.settings.prompt,
             ...(messages.length > 1 && {
+              // if user provides prompt.custom without id/name it is his choice
+              // to not include default prompt msgs, but if user provides messages
+              // and doesn't provide prompt.custom, since we add messages to the
+              // prompt.custom we also have to include default prompt messages
+              ...(!this.settings.prompt?.custom &&
+                !providedPromptId && {
+                  name: "builtin::rag-default",
+                }),
               custom: [...(this.settings.prompt?.custom || []), ...messages],
             }),
           },
