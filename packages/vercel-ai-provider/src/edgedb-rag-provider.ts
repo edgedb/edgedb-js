@@ -87,6 +87,6 @@ export async function createEdgeDBRag(
 }
 
 /**
-Default EdgeDB provider instance.
+Default provider instance.
  */
 export const edgedbRag = createEdgeDBRag(createClient());

@@ -1,5 +1,6 @@
 {
-  "name": "@edgedb/rag-sdk",
+  "name": "@edgedb/vercel-ai-provider",
+  "description": "Provider for the Vercel AI SDK",
   "version": "0.0.1",
   "license": "Apache-2.0",
   "sideEffects": false,
