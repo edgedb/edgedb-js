@@ -42,6 +42,7 @@ import {
   InvalidArgumentError,
   InvalidValueError,
   SparseVector,
+  UnsupportedFeatureError,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
@@ -2302,12 +2303,14 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       tlsSecurity: "insecure",
     });
 
+    const edgedbVer = getEdgeDBVersion();
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
         getHTTPSCRAMAuth(cryptoUtils),
       ),
       codecsRegistry,
+      [edgedbVer.major, edgedbVer.minor],
     );
 
     const query = `SELECT Function { name }`;
@@ -2355,7 +2358,9 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       fetchConn.rawParse(Language.EDGEQL, `select 1`, Session.defaults()),
     ).rejects.toThrow(AuthenticationError);
   });
+}
 
+if (getEdgeDBVersion().major >= 6) {
   test("querySQL", async () => {
     let client = getClient();
 
@@ -2391,21 +2396,21 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     try {
       await client.transaction(async (tx) => {
         await tx.execute(`
-          CREATE TYPE ${typename} {
-            CREATE REQUIRED PROPERTY prop1 -> std::str;
-          };
-        `);
+        CREATE TYPE ${typename} {
+          CREATE REQUIRED PROPERTY prop1 -> std::str;
+        };
+      `);
 
         await tx.executeSQL(`
-          INSERT INTO "${typename}" (prop1) VALUES (123);
-        `);
+        INSERT INTO "${typename}" (prop1) VALUES (123);
+      `);
 
         let res = await tx.querySingle(query);
         expect(res).toBe("123");
 
         await tx.querySQL(`
-          UPDATE "${typename}" SET prop1 = '345';
-        `);
+        UPDATE "${typename}" SET prop1 = '345';
+      `);
 
         res = await tx.querySingle(query);
         expect(res).toBe("345");
@@ -2419,5 +2424,23 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     } finally {
       await client.close();
     }
+  });
+} else {
+  test("SQL methods should fail nicely if proto v3 not supported", async () => {
+    let client = getClient();
+
+    const unsupportedError = new UnsupportedFeatureError(
+      "the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer",
+    );
+
+    await expect(client.querySQL("select 1")).rejects.toThrow(unsupportedError);
+
+    await expect(client.executeSQL("select 1")).rejects.toThrow(
+      unsupportedError,
+    );
+
+    await expect(
+      client.transaction((tx) => tx.querySQL("select 1")),
+    ).rejects.toThrow(unsupportedError);
   });
 }

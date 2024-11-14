@@ -22,7 +22,7 @@ import { NamedTupleCodec } from "./codecs/namedtuple";
 import { ObjectCodec } from "./codecs/object";
 import type { CodecsRegistry } from "./codecs/registry";
 import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
-import { versionGreaterThanOrEqual } from "./utils";
+import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
 import type {
@@ -1250,6 +1250,15 @@ export class BaseRawConnection {
     privilegedMode = false,
     language: Language = Language.EDGEQL,
   ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
+    if (
+      language !== Language.EDGEQL &&
+      versionGreaterThan([3, 0], this.protocolVersion)
+    ) {
+      throw new errors.UnsupportedFeatureError(
+        `the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer`,
+      );
+    }
+
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
         throw new errors.InterfaceError(

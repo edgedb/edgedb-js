@@ -26,7 +26,11 @@ import { NULL_CODEC } from "./codecs/codecs";
 import type { ICodec } from "./codecs/ifaces";
 import type { CodecsRegistry } from "./codecs/registry";
 import type { NormalizedConnectConfig } from "./conUtils";
-import { InternalClientError, ProtocolError } from "./errors";
+import {
+  BinaryProtocolError,
+  InternalClientError,
+  ProtocolError,
+} from "./errors";
 import type { HttpSCRAMAuth } from "./httpScram";
 import {
   Cardinality,
@@ -40,7 +44,11 @@ import type { Session } from "./options";
 import { WriteBuffer } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
-import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils";
+import {
+  type AuthenticatedFetch,
+  getAuthenticatedFetch,
+  versionEqual,
+} from "./utils";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 const PROTO_MIME_RE = /application\/x\.edgedb\.v_(\d+)_(\d+)\.binary/;
@@ -137,6 +145,21 @@ class BaseFetchConnection extends BaseRawConnection {
     this.__sendData(data);
   }
 
+  async fetch(...args: Parameters<BaseRawConnection["fetch"]>) {
+    const protoVer = this.protocolVersion;
+    try {
+      return await super.fetch(...args);
+    } catch (err: unknown) {
+      if (
+        err instanceof BinaryProtocolError &&
+        !versionEqual(protoVer, this.protocolVersion)
+      ) {
+        return await super.fetch(...args);
+      }
+      throw err;
+    }
+  }
+
   static create<T extends typeof BaseFetchConnection>(
     this: T,
     fetch: AuthenticatedFetch,
@@ -153,6 +176,21 @@ class BaseFetchConnection extends BaseRawConnection {
 
 export class AdminUIFetchConnection extends BaseFetchConnection {
   adminUIMode = true;
+
+  static create<T extends typeof BaseFetchConnection>(
+    this: T,
+    fetch: AuthenticatedFetch,
+    registry: CodecsRegistry,
+    knownServerVersion?: [number, number],
+  ): InstanceType<T> {
+    const conn = super.create(fetch, registry);
+
+    if (knownServerVersion && knownServerVersion[0] < 6) {
+      conn.protocolVersion = [2, 0];
+    }
+
+    return conn as InstanceType<T>;
+  }
 
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
