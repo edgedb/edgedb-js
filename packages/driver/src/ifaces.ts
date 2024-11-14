@@ -34,6 +34,11 @@ export enum Cardinality {
   AT_LEAST_ONE = chars.$M,
 }
 
+export enum Language {
+  EDGEQL = chars.$E,
+  SQL = chars.$S,
+}
+
 export type QueryArgs = Record<string, unknown> | unknown[] | null;
 
 export interface Executor {

@@ -2348,4 +2348,70 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       fetchConn.rawParse(`select 1`, Session.defaults()),
     ).rejects.toThrowError(AuthenticationError);
   });
+
+  test("querySQL", async () => {
+    let client = getClient();
+
+    try {
+      let res = await client.querySQL("select 1");
+      expect(JSON.stringify(res)).toEqual("[{\"col~1\":1}]");
+
+      res = await client.querySQL("select 1 AS foo, 2 AS bar");
+      expect(JSON.stringify(res)).toEqual("[{\"foo\":1,\"bar\":2}]");
+
+      // XXX -- there seems to be a bug, likely in the server
+      // res = await client.querySQL("select 1 + $1::int8", [41]);
+      // expect(JSON.stringify(res)).toEqual("[{\"col~1\":1}]");
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("executeSQL", async () => {
+    let client = getClient();
+
+    try {
+      // just test that it doesn't crash
+      await client.executeSQL("select 1");
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("transaction.SQL", async () => {
+    const typename = "ExecuteSQL_01";
+    const query = `SELECT ${typename}.prop1 LIMIT 1`;
+    const client = getClient();
+    try {
+      await client.transaction(async (tx) => {
+        await tx.execute(`
+          CREATE TYPE ${typename} {
+            CREATE REQUIRED PROPERTY prop1 -> std::str;
+          };
+        `);
+
+        await tx.executeSQL(`
+          INSERT INTO "${typename}" (prop1) VALUES (123);
+        `)
+
+        let res = await tx.querySingle(query);
+        expect(res).toBe('123');
+
+        await tx.querySQL(`
+          UPDATE "${typename}" SET prop1 = '345';
+        `)
+
+        res = await tx.querySingle(query);
+        expect(res).toBe('345');
+
+        throw new CancelTransaction();
+      });
+    } catch (e) {
+      if (!(e instanceof CancelTransaction)) {
+        throw e;
+      }
+    } finally {
+      await client.close();
+    }
+  });
 }

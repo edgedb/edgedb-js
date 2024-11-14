@@ -31,7 +31,12 @@ import type {
   QueryArgs,
   ServerSettings,
 } from "./ifaces";
-import { Cardinality, LegacyHeaderCodes, OutputFormat } from "./ifaces";
+import {
+  Cardinality,
+  LegacyHeaderCodes,
+  OutputFormat,
+  Language,
+} from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,
@@ -45,7 +50,7 @@ import LRU from "./primitives/lru";
 import type { SerializedSessionState } from "./options";
 import { Session } from "./options";
 
-export const PROTO_VER: ProtocolVersion = [2, 0];
+export const PROTO_VER: ProtocolVersion = [3, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum TransactionStatus {
@@ -892,6 +897,7 @@ export class BaseRawConnection {
     state: Session,
     capabilitiesFlags: number,
     options: QueryOptions | undefined,
+    language: Language = Language.EDGEQL,
   ) {
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
@@ -906,6 +912,9 @@ export class BaseRawConnection {
           : 0),
     );
     wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
+    if (versionGreaterThanOrEqual(this.protocolVersion, [3, 0])) {
+      wb.writeChar(language);
+    }
     wb.writeChar(outputFormat);
     wb.writeChar(
       expectedCardinality === Cardinality.ONE ||
@@ -1064,6 +1073,7 @@ export class BaseRawConnection {
     result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
+    language: Language = Language.EDGEQL,
   ): Promise<errors.EdgeDBError[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
@@ -1077,6 +1087,7 @@ export class BaseRawConnection {
       state,
       capabilitiesFlags,
       options,
+      language,
     );
 
     wb.writeBuffer(inCodec.tidBuffer);
@@ -1201,11 +1212,12 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    language: Language = Language.EDGEQL,
   ): string {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
       expectedCardinality === Cardinality.AT_MOST_ONE;
-    return [outputFormat, expectOne, query.length, query].join(";");
+    return [language, outputFormat, expectOne, query.length, query].join(";");
   }
 
   private _validateFetchCardinality(
@@ -1232,6 +1244,7 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     state: Session,
     privilegedMode = false,
+    language: Language = Language.EDGEQL,
   ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
@@ -1255,6 +1268,7 @@ export class BaseRawConnection {
       query,
       outputFormat,
       expectedCardinality,
+      language,
     );
     const ret: any[] = [];
     // @ts-ignore
@@ -1293,6 +1307,8 @@ export class BaseRawConnection {
           outCodec ?? NULL_CODEC,
           ret,
           privilegedMode ? Capabilities.ALL : undefined,
+          undefined, /* options: QueryOptions */
+          language,
         );
       } catch (e) {
         if (e instanceof errors.ParameterTypeMismatchError) {
@@ -1307,6 +1323,8 @@ export class BaseRawConnection {
             outCodec ?? NULL_CODEC,
             ret,
             privilegedMode ? Capabilities.ALL : undefined,
+            undefined, /* options: QueryOptions */
+            language,
           );
         } else {
           throw e;
