@@ -897,7 +897,7 @@ export class BaseRawConnection {
     state: Session,
     capabilitiesFlags: number,
     options: QueryOptions | undefined,
-    language: Language = Language.EDGEQL,
+    language: Language,
   ) {
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
@@ -943,6 +943,7 @@ export class BaseRawConnection {
   }
 
   async _parse(
+    language: Language,
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
@@ -962,6 +963,7 @@ export class BaseRawConnection {
       state,
       capabilitiesFlags,
       options,
+      language,
     );
 
     wb.endMessage();
@@ -1040,6 +1042,7 @@ export class BaseRawConnection {
     if (error !== null) {
       if (error instanceof errors.StateMismatchError) {
         return this._parse(
+          language,
           query,
           outputFormat,
           expectedCardinality,
@@ -1063,6 +1066,7 @@ export class BaseRawConnection {
   }
 
   protected async _executeFlow(
+    language: Language,
     query: string,
     args: QueryArgs,
     outputFormat: OutputFormat,
@@ -1073,7 +1077,6 @@ export class BaseRawConnection {
     result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
-    language: Language = Language.EDGEQL,
   ): Promise<errors.EdgeDBError[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
@@ -1190,6 +1193,7 @@ export class BaseRawConnection {
     if (error != null) {
       if (error instanceof errors.StateMismatchError) {
         return this._executeFlow(
+          language,
           query,
           args,
           outputFormat,
@@ -1287,6 +1291,7 @@ export class BaseRawConnection {
         (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
       ) {
         [card, inCodec, outCodec, _, _, _, warnings] = await this._parse(
+          language,
           query,
           outputFormat,
           expectedCardinality,
@@ -1298,6 +1303,7 @@ export class BaseRawConnection {
 
       try {
         warnings = await this._executeFlow(
+          language,
           query,
           args,
           outputFormat,
@@ -1307,13 +1313,12 @@ export class BaseRawConnection {
           outCodec ?? NULL_CODEC,
           ret,
           privilegedMode ? Capabilities.ALL : undefined,
-          undefined, /* options: QueryOptions */
-          language,
         );
       } catch (e) {
         if (e instanceof errors.ParameterTypeMismatchError) {
           [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
           warnings = await this._executeFlow(
+            language,
             query,
             args,
             outputFormat,
@@ -1323,8 +1328,6 @@ export class BaseRawConnection {
             outCodec ?? NULL_CODEC,
             ret,
             privilegedMode ? Capabilities.ALL : undefined,
-            undefined, /* options: QueryOptions */
-            language,
           );
         } else {
           throw e;

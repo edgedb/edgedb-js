@@ -30,6 +30,7 @@ import { InternalClientError, ProtocolError } from "./errors";
 import type { HttpSCRAMAuth } from "./httpScram";
 import {
   Cardinality,
+  type Language,
   OutputFormat,
   type ProtocolVersion,
   type QueryArgs,
@@ -155,6 +156,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
 
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
+    language: Language,
     query: string,
     state: Session,
     options?: QueryOptions,
@@ -165,6 +167,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
     this.abortSignal = abortSignal ?? null;
 
     const result = (await this._parse(
+      language,
       query,
       OutputFormat.BINARY,
       Cardinality.MANY,
@@ -183,6 +186,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   }
 
   public async rawExecute(
+    language: Language,
     query: string,
     state: Session,
     outCodec?: ICodec,
@@ -195,6 +199,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
 
     const result = new WriteBuffer();
     await this._executeFlow(
+      language,
       query,
       args,
       outCodec ? OutputFormat.BINARY : OutputFormat.NONE,

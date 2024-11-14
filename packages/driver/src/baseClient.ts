@@ -31,6 +31,7 @@ import {
   Cardinality,
   OutputFormat,
   Language,
+  type SQLQueryArgs,
 } from "./ifaces";
 import type {
   RetryOptions,
@@ -190,7 +191,7 @@ export class ClientConnectionHolder {
           outputFormat,
           expectedCardinality,
           this.options.session,
-          false,  /* privilegedMode */
+          false /* privilegedMode */,
           language,
         );
         if (warnings.length) {
@@ -230,7 +231,7 @@ export class ClientConnectionHolder {
     );
   }
 
-  async executeSQL(query: string, args?: QueryArgs): Promise<void> {
+  async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
     await this.retryingFetch(
       query,
       args,
@@ -249,7 +250,7 @@ export class ClientConnectionHolder {
     );
   }
 
-  async querySQL(query: string, args?: QueryArgs): Promise<any> {
+  async querySQL(query: string, args?: SQLQueryArgs): Promise<any> {
     return this.retryingFetch(
       query,
       args,
@@ -653,7 +654,7 @@ export class Client implements Executor {
     }
   }
 
-  async executeSQL(query: string, args?: QueryArgs): Promise<void> {
+  async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.executeSQL(query, args);
@@ -671,7 +672,10 @@ export class Client implements Executor {
     }
   }
 
-  async querySQL<T = unknown>(query: string, args?: unknown[]): Promise<T[]> {
+  async querySQL<T = unknown>(
+    query: string,
+    args?: SQLQueryArgs,
+  ): Promise<T[]> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.querySQL(query, args);
@@ -760,6 +764,7 @@ export class Client implements Executor {
     try {
       const cxn = await holder._getConnection();
       const result = await cxn._parse(
+        Language.EDGEQL,
         query,
         OutputFormat.BINARY,
         Cardinality.MANY,

@@ -58,6 +58,7 @@ import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/adapter.crypto.node";
 import { getAuthenticatedFetch } from "../src/utils";
+import { Language } from "../src/ifaces";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2316,8 +2317,14 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       implicitLimit: BigInt(5),
     } as const;
 
-    const [_, outCodec] = await fetchConn.rawParse(query, state, options);
+    const [_, outCodec] = await fetchConn.rawParse(
+      Language.EDGEQL,
+      query,
+      state,
+      options,
+    );
     const resultData = await fetchConn.rawExecute(
+      Language.EDGEQL,
       query,
       state,
       outCodec,
@@ -2345,8 +2352,8 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     );
 
     await expect(
-      fetchConn.rawParse(`select 1`, Session.defaults()),
-    ).rejects.toThrowError(AuthenticationError);
+      fetchConn.rawParse(Language.EDGEQL, `select 1`, Session.defaults()),
+    ).rejects.toThrow(AuthenticationError);
   });
 
   test("querySQL", async () => {
@@ -2354,14 +2361,13 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 
     try {
       let res = await client.querySQL("select 1");
-      expect(JSON.stringify(res)).toEqual("[{\"col~1\":1}]");
+      expect(JSON.stringify(res)).toEqual('[{"col~1":1}]');
 
       res = await client.querySQL("select 1 AS foo, 2 AS bar");
-      expect(JSON.stringify(res)).toEqual("[{\"foo\":1,\"bar\":2}]");
+      expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
 
-      // XXX -- there seems to be a bug, likely in the server
-      // res = await client.querySQL("select 1 + $1::int8", [41]);
-      // expect(JSON.stringify(res)).toEqual("[{\"col~1\":1}]");
+      res = await client.querySQL("select 1 + $1::int8", [41]);
+      expect(JSON.stringify(res)).toEqual('[{"col~1":42}]');
     } finally {
       await client.close();
     }
@@ -2392,17 +2398,17 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
 
         await tx.executeSQL(`
           INSERT INTO "${typename}" (prop1) VALUES (123);
-        `)
+        `);
 
         let res = await tx.querySingle(query);
-        expect(res).toBe('123');
+        expect(res).toBe("123");
 
         await tx.querySQL(`
           UPDATE "${typename}" SET prop1 = '345';
-        `)
+        `);
 
         res = await tx.querySingle(query);
-        expect(res).toBe('345');
+        expect(res).toBe("345");
 
         throw new CancelTransaction();
       });
