@@ -146,6 +146,14 @@ class BaseFetchConnection extends BaseRawConnection {
   }
 
   async fetch(...args: Parameters<BaseRawConnection["fetch"]>) {
+    // In protocol v3 the format of the parse/execute messages depend on the
+    // protocol version. In the fetch conn we don't know the server's supported
+    // proto version until after the first message is sent, so the first
+    // message may be sent with a format the server doesn't support.
+    // As a workaround we just retry sending the message (using the now known
+    // proto ver) if the supported protocol version returned by the server is
+    // different to the protocol version used to send the message, and this
+    // caused a BinaryProtocolError.
     const protoVer = this.protocolVersion;
     try {
       return await super.fetch(...args);
@@ -185,6 +193,11 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   ): InstanceType<T> {
     const conn = super.create(fetch, registry);
 
+    // This class is only used by the UI, and the UI already knows the version
+    // of the server (either it's bundled with the local server, or known from
+    // the cloud api). So we can pre set the protocol version we know the
+    // server supports, instead of doing the retry strategy of
+    // BaseFetchConn.fetch in the raw methods below.
     if (knownServerVersion && knownServerVersion[0] < 6) {
       conn.protocolVersion = [2, 0];
     }
