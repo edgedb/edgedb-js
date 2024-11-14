@@ -39,7 +39,7 @@ type ErrorConstructor = new (...args: any[]) => Error;
 // modified from 'https://deno.land/x/expect/matchers.ts'
 function toThrow(
   value: any,
-  error?: RegExp | ErrorConstructor | string,
+  error?: RegExp | ErrorConstructor | string | Error,
 ): MatchResult {
   let fn;
   if (typeof value === "function") {
@@ -76,12 +76,22 @@ function toThrow(
         );
       }
     } else if (error != null) {
-      if (!(value instanceof error)) {
+      const errCtor = error instanceof Error ? error.constructor : error;
+      if (!(value instanceof errCtor)) {
         return buildFail(
           `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
             actualString,
           )} to throw error matching ${green(error.name)} but it threw ${red(
             (value as any).constructor.name,
+          )}`,
+        );
+      }
+      if (error instanceof Error && !value.message.includes(error.message)) {
+        return buildFail(
+          `expect(${ACTUAL}).toThrow(${EXPECTED})\n\nexpected ${red(
+            actualString,
+          )} to throw error matching ${green(error.message)} but it threw ${red(
+            value.toString(),
           )}`,
         );
       }
@@ -109,8 +119,8 @@ type Expected = ReturnType<typeof _expect>;
 
 type ExpectedExtended = Expected & {
   toBeCloseTo(...args: any[]): void;
-  toThrow(error?: RegExp | ErrorConstructor | string): void;
-  toThrowError(error?: RegExp | ErrorConstructor | string): void;
+  toThrow(error?: RegExp | ErrorConstructor | string | Error): void;
+  toThrowError(error?: RegExp | ErrorConstructor | string | Error): void;
 
   not: ExpectedExtended;
   resolves: ExpectedExtended;

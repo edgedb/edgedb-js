@@ -2429,18 +2429,24 @@ if (getEdgeDBVersion().major >= 6) {
   test("SQL methods should fail nicely if proto v3 not supported", async () => {
     let client = getClient();
 
-    const unsupportedError = new UnsupportedFeatureError(
-      "the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer",
-    );
+    try {
+      const unsupportedError = new UnsupportedFeatureError(
+        "the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer",
+      );
 
-    await expect(client.querySQL("select 1")).rejects.toThrow(unsupportedError);
+      await expect(client.querySQL("select 1")).rejects.toThrow(
+        unsupportedError,
+      );
 
-    await expect(client.executeSQL("select 1")).rejects.toThrow(
-      unsupportedError,
-    );
+      await expect(client.executeSQL("select 1")).rejects.toThrow(
+        unsupportedError,
+      );
 
-    await expect(
-      client.transaction((tx) => tx.querySQL("select 1")),
-    ).rejects.toThrow(unsupportedError);
+      await expect(
+        client.transaction((tx) => tx.querySQL("select 1")),
+      ).rejects.toThrow(unsupportedError);
+    } finally {
+      await client.close();
+    }
   });
 }
