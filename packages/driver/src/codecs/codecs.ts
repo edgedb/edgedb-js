@@ -31,7 +31,7 @@ import { BigIntCodec, DecimalStringCodec } from "./numerics";
 import { StrCodec } from "./text";
 import { UUIDCodec } from "./uuid";
 import { BytesCodec } from "./bytes";
-import { JSONCodec } from "./json";
+import { JSONCodec, PgTextJSONCodec } from "./json";
 import {
   DateTimeCodec,
   LocalDateCodec,
@@ -121,6 +121,12 @@ registerScalarCodec("cal::relative_duration", RelativeDurationCodec);
 registerScalarCodec("cal::date_duration", DateDurationCodec);
 
 registerScalarCodec("cfg::memory", ConfigMemoryCodec);
+
+registerScalarCodec("std::pg::json", PgTextJSONCodec);
+registerScalarCodec("std::pg::timestamptz", DateTimeCodec);
+registerScalarCodec("std::pg::timestamp", LocalDateTimeCodec);
+registerScalarCodec("std::pg::date", LocalDateCodec);
+registerScalarCodec("std::pg::interval", RelativeDurationCodec);
 
 registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
 registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
