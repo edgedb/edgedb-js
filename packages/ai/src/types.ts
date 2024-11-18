@@ -3,9 +3,9 @@ import { z } from "zod";
 export type ChatParticipantRole = "system" | "user" | "assistant" | "tool";
 
 export type Prompt =
-  | { name: string; custom?: EdgeDBRagMessage }
-  | { id: string; custom?: EdgeDBRagMessage[] }
-  | { custom: EdgeDBRagMessage[] };
+  | { name: string; custom?: EdgeDBMessage[] }
+  | { id: string; custom?: EdgeDBMessage[] }
+  | { custom: EdgeDBMessage[] };
 
 export interface AIOptions {
   model: string;
@@ -27,7 +27,7 @@ export interface RAGRequest {
   stream?: boolean;
 }
 
-export type EdgeDBRagMessage =
+export type EdgeDBMessage =
   | EdgeDBSystemMessage
   | EdgeDBUserMessage
   | EdgeDBAssistantMessage

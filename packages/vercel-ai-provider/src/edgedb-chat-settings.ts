@@ -25,13 +25,13 @@ export type AnthropicModelId =
   | "claude-3-sonnet-20240229"
   | "claude-3-opus-20240229";
 
-export type EdgeDBRagModelId =
+export type EdgeDBChatModelId =
   | OpenAIModelId
   | MistralModelId
   | AnthropicModelId
   | (string & {});
 
-export function isAnthropicModel(model: EdgeDBRagModelId): boolean {
+export function isAnthropicModel(model: EdgeDBChatModelId): boolean {
   return (
     model === "claude-3-5-sonnet-20240620" ||
     model === "claude-3-haiku-20240307" ||
@@ -40,7 +40,7 @@ export function isAnthropicModel(model: EdgeDBRagModelId): boolean {
   );
 }
 
-export function isOpenAIModel(model: EdgeDBRagModelId): boolean {
+export function isOpenAIModel(model: EdgeDBChatModelId): boolean {
   return (
     model === "gpt-4o" ||
     model === "gpt-4o-mini" ||
@@ -52,9 +52,9 @@ export function isOpenAIModel(model: EdgeDBRagModelId): boolean {
 }
 
 export type Prompt =
-  | { name: string; custom?: EdgeDBRagMessage[] }
-  | { id: string; custom?: EdgeDBRagMessage[] }
-  | { custom: EdgeDBRagMessage[] };
+  | { name: string; custom?: EdgeDBMessage[] }
+  | { id: string; custom?: EdgeDBMessage[] }
+  | { custom: EdgeDBMessage[] };
 
 export interface QueryContext {
   query: string;
@@ -63,12 +63,12 @@ export interface QueryContext {
   max_object_count?: number;
 }
 
-export interface EdgeDBRagConfig {
+export interface EdgeDBChatConfig {
   provider: string;
   fetch: FetchFunction;
 }
 
-export interface EdgeDBRagSettings {
+export interface EdgeDBChatSettings {
   context?: QueryContext;
   prompt?: Prompt;
 
@@ -129,7 +129,7 @@ monitor and detect abuse. Learn more.
   // cacheControl?: boolean;
 }
 
-export type EdgeDBRagMessage =
+export type EdgeDBMessage =
   | EdgeDBSystemMessage
   | EdgeDBUserMessage
   | EdgeDBAssistantMessage

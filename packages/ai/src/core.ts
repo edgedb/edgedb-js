@@ -9,12 +9,7 @@ import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-import type {
-  AIOptions,
-  QueryContext,
-  RAGRequest,
-  StreamingMessage,
-} from "./types.js";
+import type { AIOptions, QueryContext, StreamingMessage } from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
 
@@ -68,10 +63,16 @@ export class EdgeDBAI {
     });
   }
 
-  private async fetchRag(request: Omit<RAGRequest, "model" | "prompt">) {
+  private async fetchRag(request: any) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
+
+    const { messages } = request;
+
+    const providedPrompt =
+      this.options.prompt &&
+      ("name" in this.options.prompt || "id" in this.options.prompt);
 
     const response = await (
       await this.authenticatedFetch
@@ -81,7 +82,24 @@ export class EdgeDBAI {
       body: JSON.stringify({
         ...request,
         model: this.options.model,
-        prompt: this.options.prompt,
+        ...((this.options.prompt || messages.length > 1) && {
+          prompt: {
+            ...this.options.prompt,
+            ...(messages.length > 1 && {
+              // if user provides prompt.custom without id/name it is his choice
+              // to not include default prompt msgs, but if user provides messages
+              // and doesn't provide prompt.custom, since we add messages to the
+              // prompt.custom we also have to include default prompt messages
+              ...(!this.options.prompt?.custom &&
+                !providedPrompt && {
+                  name: "builtin::rag-default",
+                }),
+              custom: [...(this.options.prompt?.custom || []), ...messages],
+            }),
+          },
+        }),
+        query: [...messages].reverse().find((msg) => msg.role === "user")!
+          .content[0].text,
       }),
     });
 
@@ -93,10 +111,10 @@ export class EdgeDBAI {
     return response;
   }
 
-  async queryRag(query: string, context = this.context): Promise<string> {
+  async queryRag(request: any, context = this.context): Promise<string> {
     const res = await this.fetchRag({
       context,
-      query,
+      ...request,
       stream: false,
     });
 
@@ -117,19 +135,18 @@ export class EdgeDBAI {
         "Expected response to be object with response key of type string",
       );
     }
-
     return data.response;
   }
 
   streamRag(
-    query: string,
+    request: any,
     context = this.context,
   ): AsyncIterable<StreamingMessage> & PromiseLike<Response> {
     const fetchRag = this.fetchRag.bind(this);
 
     const ragOptions = {
       context,
-      query,
+      ...request,
       stream: true,
     };
 

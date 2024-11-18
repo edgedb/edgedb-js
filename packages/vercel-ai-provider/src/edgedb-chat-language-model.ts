@@ -15,38 +15,38 @@ import {
   generateId,
 } from "@ai-sdk/provider-utils";
 import {
-  type EdgeDBRagConfig,
-  type EdgeDBRagModelId,
-  type EdgeDBRagSettings,
+  type EdgeDBChatConfig,
+  type EdgeDBChatModelId,
+  type EdgeDBChatSettings,
   isAnthropicModel,
   isOpenAIModel,
-} from "./edgedb-rag-settings";
+} from "./edgedb-chat-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
 import {
-  mapEdgedbRagStopReason,
+  mapEdgedbStopReason,
   getResponseMetadata,
   mapOpenAICompletionLogProbs,
 } from "./utils";
-import { convertToEdgeDBRagMessages } from "./convert-to-edgedb-rag-messages";
+import { convertToEdgeDBMessages } from "./convert-to-edgedb-messages";
 
 export interface EdgeDBLanguageModel extends LanguageModelV1 {
-  withSettings(settings: Partial<EdgeDBRagSettings>): EdgeDBRagLanguageModel;
+  withSettings(settings: Partial<EdgeDBChatSettings>): EdgeDBChatLanguageModel;
 }
 
-export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
+export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
   readonly specificationVersion = "v1";
   readonly defaultObjectGenerationMode = "json";
   readonly supportsImageUrls = false;
 
-  readonly modelId: EdgeDBRagModelId;
-  readonly settings: EdgeDBRagSettings;
+  readonly modelId: EdgeDBChatModelId;
+  readonly settings: EdgeDBChatSettings;
 
-  private readonly config: EdgeDBRagConfig;
+  private readonly config: EdgeDBChatConfig;
 
   constructor(
-    modelId: EdgeDBRagModelId,
-    settings: EdgeDBRagSettings,
-    config: EdgeDBRagConfig,
+    modelId: EdgeDBChatModelId,
+    settings: EdgeDBChatSettings,
+    config: EdgeDBChatConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -57,8 +57,8 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
     return this.config.provider;
   }
 
-  withSettings(settings: Partial<EdgeDBRagSettings>) {
-    return new EdgeDBRagLanguageModel(
+  withSettings(settings: Partial<EdgeDBChatSettings>) {
+    return new EdgeDBChatLanguageModel(
       this.modelId,
       { ...this.settings, ...settings },
       this.config,
@@ -142,7 +142,7 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
 
     const baseArgs = {
       model: this.modelId,
-      messages: convertToEdgeDBRagMessages(prompt),
+      messages: convertToEdgeDBMessages(prompt),
       temperature,
       max_tokens: maxTokens,
       top_p: topP,
@@ -241,7 +241,7 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
         toolName: toolCall.name,
         args: JSON.stringify(toolCall.args),
       })),
-      finishReason: mapEdgedbRagStopReason(finish_reason),
+      finishReason: mapEdgedbStopReason(finish_reason),
       logprobs: mapOpenAICompletionLogProbs(logprobs),
       usage: {
         promptTokens: usage.prompt_tokens,
@@ -439,7 +439,7 @@ export class EdgeDBRagLanguageModel implements EdgeDBLanguageModel {
               }
 
               case "message_delta": {
-                finishReason = mapEdgedbRagStopReason(value.delta.stop_reason);
+                finishReason = mapEdgedbStopReason(value.delta.stop_reason);
                 if (value.usage) {
                   usage.completionTokens = value.usage.completion_tokens;
                 }
@@ -586,7 +586,7 @@ function prepareToolsAndToolChoice(
   mode: Parameters<LanguageModelV1["doGenerate"]>[0]["mode"] & {
     type: "regular";
   },
-  model: EdgeDBRagModelId,
+  model: EdgeDBChatModelId,
 ) {
   const isOpenAI = isOpenAIModel(model);
   const isAnthropic = isAnthropicModel(model);

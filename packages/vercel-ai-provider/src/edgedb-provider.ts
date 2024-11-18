@@ -9,13 +9,13 @@ import type {
   ProviderV1,
 } from "@ai-sdk/provider";
 import {
-  EdgeDBRagLanguageModel,
+  EdgeDBChatLanguageModel,
   type EdgeDBLanguageModel,
-} from "./edgedb-rag-language-model";
+} from "./edgedb-chat-language-model";
 import type {
-  EdgeDBRagModelId,
-  EdgeDBRagSettings,
-} from "./edgedb-rag-settings";
+  EdgeDBChatModelId,
+  EdgeDBChatSettings,
+} from "./edgedb-chat-settings";
 import { EdgeDBEmbeddingModel } from "./edgedb-embedding-model";
 import type {
   EdgeDBEmbeddingModelId,
@@ -24,12 +24,12 @@ import type {
 
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
-export interface EdgeDBRagProvider extends ProviderV1 {
-  (modelId: EdgeDBRagModelId | EdgeDBEmbeddingModelId): LanguageModelV1;
+export interface EdgeDBProvider extends ProviderV1 {
+  (modelId: EdgeDBChatModelId | EdgeDBEmbeddingModelId): LanguageModelV1;
 
   languageModel(
-    modelId: EdgeDBRagModelId,
-    settings?: EdgeDBRagSettings,
+    modelId: EdgeDBChatModelId,
+    settings?: EdgeDBChatSettings,
   ): EdgeDBLanguageModel;
 
   textEmbeddingModel: (
@@ -38,9 +38,7 @@ export interface EdgeDBRagProvider extends ProviderV1 {
   ) => EmbeddingModelV1<string>;
 }
 
-export async function createEdgeDBRag(
-  client: Client,
-): Promise<EdgeDBRagProvider> {
+export async function createEdgeDB(client: Client): Promise<EdgeDBProvider> {
   const connectConfig: ResolvedConnectConfig = (
     await (client as any).pool._getNormalizedConnectConfig()
   ).connectionParams;
@@ -52,11 +50,11 @@ export async function createEdgeDBRag(
   );
 
   const createChatModel = (
-    modelId: EdgeDBRagModelId,
-    settings: EdgeDBRagSettings = {},
+    modelId: EdgeDBChatModelId,
+    settings: EdgeDBChatSettings = {},
   ) =>
-    new EdgeDBRagLanguageModel(modelId, settings, {
-      provider: "edgedb.rag",
+    new EdgeDBChatLanguageModel(modelId, settings, {
+      provider: "edgedb.chat",
       fetch,
     });
 
@@ -70,7 +68,7 @@ export async function createEdgeDBRag(
     });
   };
 
-  const provider = function (modelId: EdgeDBRagModelId) {
+  const provider = function (modelId: EdgeDBChatModelId) {
     if (new.target) {
       throw new Error(
         "The EdgeDB model function cannot be called with the new keyword.",
@@ -89,4 +87,4 @@ export async function createEdgeDBRag(
 /**
 Default provider instance.
  */
-export const edgedbRag = createEdgeDBRag(createClient());
+export const edgedb = createEdgeDB(createClient());

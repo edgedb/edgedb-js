@@ -1,2 +1,2 @@
-export { createEdgeDBRag, edgedbRag } from "./edgedb-rag-provider";
-export type { EdgeDBRagProvider } from "./edgedb-rag-provider";
+export { createEdgeDB, edgedb } from "./edgedb-provider";
+export type { EdgeDBProvider } from "./edgedb-provider";

@@ -1,10 +1,10 @@
 import { type LanguageModelV1Prompt } from "@ai-sdk/provider";
-import type { EdgeDBRagMessage } from "./edgedb-rag-settings";
+import type { EdgeDBMessage } from "./edgedb-chat-settings";
 
-export function convertToEdgeDBRagMessages(
+export function convertToEdgeDBMessages(
   prompt: LanguageModelV1Prompt,
-): EdgeDBRagMessage[] {
-  const messages: EdgeDBRagMessage[] = [];
+): EdgeDBMessage[] {
+  const messages: EdgeDBMessage[] = [];
 
   for (const { role, content } of prompt) {
     switch (role) {
