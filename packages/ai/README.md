@@ -22,8 +22,8 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
 - `client`: An EdgeDB client instance.
 - `options`: Configuration options for the AI model.
-  - `model`: Required. Specifies the AI model to use. This could be a version of GPT or any other model supported by EdgeDB AI.
-  - `prompt`: Optional. Defines the input prompt for the AI model. The prompt can be a simple string, an ID referencing a stored prompt, or a custom prompt structure that includes roles and content for more complex interactions. The default is the built-in system prompt.
+  - `model`: Required. Specifies the AI model to use. This could be some of the OpenAI, Mistral or Anthropic models supported by EdgeDB AI.
+  - `prompt`: Optional. Defines the input messages for the AI model. The prompt can have an `ID` or a `name` referencing a stored prompt. The referenced prompt will supply predefined messages. Optionally, include a custom list of messages using the `custom` field. These custom messages will be concatenated with messages from the stored prompt referenced by `id` or `name`. If no `id` or `name` is specified, only the `custom` messages will be used. If no `id`, `name`, or `custom` messages are provided, the built-in system prompt will be used by default.
 
 ### `EdgeDBAI`
 
@@ -51,6 +51,10 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 - `generateEmbeddings(inputs: string[], model: string): Promise<number[]>`
 
   Generates embeddings for the array of strings.
+
+## Tool Calls
+
+Tool calls are supported by the AI extension but the tool calls should be executed on the client side and results should be provided back to the EdgeDB AI.
 
 ## Example
 

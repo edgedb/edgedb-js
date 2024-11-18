@@ -13,10 +13,10 @@ npm i @edgedb/vercel-ai-provider
 
 ## Provider Instance
 
-You can import the default provider instance `edgedbRag` from `@edgedb/vercel-ai-provider`:
+You can import the default provider instance `edgedb` from `@edgedb/vercel-ai-provider`:
 
 ```ts
-import { edgedbRag } from "@edgedb/vercel-ai-provider";
+import { edgedb } from "@edgedb/vercel-ai-provider";
 ```
 
 ## Example
@@ -24,9 +24,9 @@ import { edgedbRag } from "@edgedb/vercel-ai-provider";
 ```ts
 import { generateText } from "ai";
 import { createClient } from "edgedb";
-import { edgedbRag } from "@edgedb/vercel-ai-provider";
+import { edgedb } from "@edgedb/vercel-ai-provider";
 
-const textModel = (await edgedbRag).languageModel("gpt-4-turbo-preview");
+const textModel = (await edgedb).languageModel("gpt-4-turbo-preview");
 
 const { text } = await generateText({
   model: textModel.withSettings({
@@ -40,4 +40,4 @@ console.log(text);
 
 ## Documentation
 
-Please check out the **[EdgeDB provider documentation](https://docs.edgedb.com)** for more information.
+Please check out the **[EdgeDB provider documentation](https://docs.edgedb.com/ai/vercel-ai-provider)** for more information.
