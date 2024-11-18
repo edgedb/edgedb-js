@@ -11,11 +11,12 @@
     "/dist"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.json",
     "clean": "rm -rf dist",
-    "lint": "eslint \"./**/*.ts*\"",
-    "type-check": "tsc --noEmit",
-    "prettier-check": "prettier --check \"./**/*.ts*\""
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "test": "jest --detectOpenHandles --passWithNoTests",
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
   },
   "exports": {
     "./package.json": "./package.json",

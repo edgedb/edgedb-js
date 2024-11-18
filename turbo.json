@@ -19,7 +19,9 @@
         "@edgedb/auth-nextjs#typecheck",
         "@edgedb/auth-express#typecheck",
         "@edgedb/auth-remix#typecheck",
-        "@edgedb/auth-sveltekit#typecheck"
+        "@edgedb/auth-sveltekit#typecheck",
+        "@edgedb/ai#typecheck",
+        "@edgedb/vercel-ai-provider#typecheck"
       ]
     },
     "ci:test": {
