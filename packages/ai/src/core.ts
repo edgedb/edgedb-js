@@ -9,7 +9,12 @@ import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-import type { AIOptions, QueryContext, StreamingMessage } from "./types.js";
+import type {
+  AIOptions,
+  QueryContext,
+  StreamingMessage,
+  RagRequest,
+} from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
 
@@ -63,7 +68,7 @@ export class EdgeDBAI {
     });
   }
 
-  private async fetchRag(request: any) {
+  private async fetchRag(request: RagRequest, context: QueryContext) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
@@ -81,6 +86,7 @@ export class EdgeDBAI {
       headers,
       body: JSON.stringify({
         ...request,
+        context,
         model: this.options.model,
         ...((this.options.prompt || messages.length > 1) && {
           prompt: {
@@ -111,12 +117,14 @@ export class EdgeDBAI {
     return response;
   }
 
-  async queryRag(request: any, context = this.context): Promise<string> {
-    const res = await this.fetchRag({
+  async queryRag(request: RagRequest, context = this.context): Promise<string> {
+    const res = await this.fetchRag(
+      {
+        ...request,
+        stream: false,
+      },
       context,
-      ...request,
-      stream: false,
-    });
+    );
 
     if (!res.headers.get("content-type")?.includes("application/json")) {
       throw new Error(
@@ -132,27 +140,27 @@ export class EdgeDBAI {
       typeof data.response !== "string"
     ) {
       throw new Error(
-        "Expected response to be object with response key of type string",
+        "Expected response to be an object with response key of type string",
       );
     }
     return data.response;
   }
 
   streamRag(
-    request: any,
+    request: RagRequest,
     context = this.context,
   ): AsyncIterable<StreamingMessage> & PromiseLike<Response> {
     const fetchRag = this.fetchRag.bind(this);
 
-    const ragOptions = {
-      context,
-      ...request,
-      stream: true,
-    };
-
     return {
       async *[Symbol.asyncIterator]() {
-        const res = await fetchRag(ragOptions);
+        const res = await fetchRag(
+          {
+            ...request,
+            stream: true,
+          },
+          context,
+        );
 
         if (!res.body) {
           throw new Error("Expected response to include a body");
@@ -184,7 +192,13 @@ export class EdgeDBAI {
           | undefined
           | null,
       ): Promise<TResult1 | TResult2> {
-        return fetchRag(ragOptions).then(onfulfilled, onrejected);
+        return fetchRag(
+          {
+            ...request,
+            stream: true,
+          },
+          context,
+        ).then(onfulfilled, onrejected);
       },
     };
   }

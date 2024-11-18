@@ -19,11 +19,8 @@ export interface QueryContext {
   max_object_count?: number;
 }
 
-export interface RAGRequest {
-  model: string;
-  prompt?: Prompt;
-  context: QueryContext;
-  query: string;
+export interface RagRequest {
+  messages: EdgeDBMessage[];
   stream?: boolean;
 }
 
