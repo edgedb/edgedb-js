@@ -88,20 +88,18 @@ export class EdgeDBAI {
         ...request,
         context,
         model: this.options.model,
-        ...((this.options.prompt || messages.length > 1) && {
+        ...(this.options.prompt && {
           prompt: {
             ...this.options.prompt,
-            ...(messages.length > 1 && {
-              // if user provides prompt.custom without id/name it is his choice
-              // to not include default prompt msgs, but if user provides messages
-              // and doesn't provide prompt.custom, since we add messages to the
-              // prompt.custom we also have to include default prompt messages
-              ...(!this.options.prompt?.custom &&
-                !providedPrompt && {
-                  name: "builtin::rag-default",
-                }),
-              custom: [...(this.options.prompt?.custom || []), ...messages],
-            }),
+            // if user provides prompt.custom without id/name it is his choice
+            // to not include default prompt msgs, but if user provides messages
+            // and doesn't provide prompt.custom, since we add messages to the
+            // prompt.custom we also have to include default prompt messages
+            ...(!this.options.prompt?.custom &&
+              !providedPrompt && {
+                name: "builtin::rag-default",
+              }),
+            custom: [...(this.options.prompt?.custom || []), ...messages],
           },
         }),
         query: [...messages].reverse().find((msg) => msg.role === "user")!
