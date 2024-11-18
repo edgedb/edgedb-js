@@ -22,6 +22,7 @@ export interface QueryContext {
 export interface RagRequest {
   messages: EdgeDBMessage[];
   stream?: boolean;
+  [key: string]: unknown;
 }
 
 export type EdgeDBMessage =
