@@ -30,6 +30,8 @@ export { ConfigMemory } from "./datatypes/memory";
 export { Range, MultiRange } from "./datatypes/range";
 export { SparseVector } from "./datatypes/pgvector";
 export { Float16Array } from "./utils";
+export * from "./datatypes/postgis";
+export { parseWKT } from "./datatypes/wkt";
 
 export type { Executor } from "./ifaces";
 

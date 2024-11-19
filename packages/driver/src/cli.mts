@@ -341,6 +341,7 @@ async function downloadFile(url: string | URL, path: string) {
     throw new Error(`  - Download failed: ${response.statusText}`);
   }
 
+  // @ts-ignore
   const fileStream = createWriteStream(path, { flush: true });
 
   if (response.body) {

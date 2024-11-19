@@ -54,6 +54,18 @@ export class Point extends Geometry {
       this.m !== null,
     )} ${Number.isNaN(this.x) ? "EMPTY" : "(" + _pointToWKT(this) + ")"}`;
   }
+
+  equals(other: Point): boolean {
+    return (
+      this.srid === other.srid &&
+      (Number.isNaN(this.x)
+        ? this.hasZ === other.hasZ && this.hasM === other.hasM
+        : this.x === other.x &&
+          this.y === other.y &&
+          this.z === other.z &&
+          this.m === other.m)
+    );
+  }
 }
 
 export class MultiPoint extends Geometry {
@@ -116,6 +128,13 @@ export class LineString extends Geometry {
     public srid: number | null,
   ) {
     super();
+    this._validate();
+  }
+
+  protected _validate() {
+    if (this.points.length === 1) {
+      throw new Error(`expected zero, or 2 or more points in LineString`);
+    }
   }
 
   protected static _wktName = "LINESTRING";
@@ -139,6 +158,17 @@ export class LineString extends Geometry {
 
 export class CircularString extends LineString {
   protected static _wktName = "CIRCULARSTRING";
+
+  protected _validate() {
+    if (
+      this.points.length !== 0 &&
+      (this.points.length <= 1 || this.points.length % 2 !== 1)
+    ) {
+      throw new Error(
+        `expected zero points, or odd number of points greater than 1 in CircularString`,
+      );
+    }
+  }
 }
 
 function _multilinestringToWKT(
@@ -205,6 +235,13 @@ export class CompoundCurve extends Geometry {
     public srid: number | null,
   ) {
     super();
+    let lastPoint: Point | null = null;
+    for (const segment of geometries) {
+      if (lastPoint && !segment.points[0].equals(lastPoint)) {
+        throw new Error("segments in CompoundCurve do not join");
+      }
+      lastPoint = segment.points[segment.points.length - 1];
+    }
   }
 
   toWKT(
@@ -281,6 +318,21 @@ export class Polygon extends Geometry {
     public srid: number | null,
   ) {
     super();
+    this._validate();
+  }
+
+  protected _validate() {
+    if (
+      this.rings.some(
+        (ring) =>
+          ring.points.length < 4 ||
+          !ring.points[0].equals(ring.points[ring.points.length - 1]),
+      )
+    ) {
+      throw new Error(
+        "expected rings in Polygon to be closed and to have at least 4 points",
+      );
+    }
   }
 
   protected static _wktName = "POLYGON";
@@ -305,6 +357,23 @@ export class Polygon extends Geometry {
 
 export class Triangle extends Polygon {
   protected static _wktName = "TRIANGLE";
+
+  protected _validate() {
+    if (this.rings.length > 1) {
+      throw new Error("Triangle can only contain a single ring");
+    }
+    if (
+      this.rings.some(
+        (ring) =>
+          ring.points.length !== 4 ||
+          !ring.points[0].equals(ring.points[ring.points.length - 1]),
+      )
+    ) {
+      throw new Error(
+        "expected Triangle to be closed and to have exactly 4 points",
+      );
+    }
+  }
 }
 
 export class CurvePolygon extends Geometry {
@@ -315,6 +384,23 @@ export class CurvePolygon extends Geometry {
     public srid: number | null,
   ) {
     super();
+    if (
+      this.geometries.some(
+        (ring) =>
+          (ring instanceof LineString && ring.points.length < 4) ||
+          (ring instanceof CompoundCurve
+            ? !ring.geometries[0].points[0].equals(
+                ring.geometries[ring.geometries.length - 1].points[
+                  ring.geometries[ring.geometries.length - 1].points.length - 1
+                ],
+              )
+            : !ring.points[0].equals(ring.points[ring.points.length - 1])),
+      )
+    ) {
+      throw new Error(
+        "expected rings in CurvePolygon to be closed and LinearRings to have at least 4 points",
+      );
+    }
   }
 
   toWKT(
