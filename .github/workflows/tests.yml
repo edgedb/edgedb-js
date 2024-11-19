@@ -88,6 +88,7 @@ jobs:
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
       - name: Install postgis extension
+        if: ${{ matrix.edgedb-version == 'nightly' }}
         run: |
           edgedb extension install -E postgis -I test
 
