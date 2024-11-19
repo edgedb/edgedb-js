@@ -1,5 +1,5 @@
 import {
-  AnyGeometry,
+  type AnyGeometry,
   Box2D,
   Box3D,
   CircularString,
@@ -20,8 +20,8 @@ import {
   TriangulatedIrregularNetwork,
 } from "../datatypes/postgis";
 import { InternalClientError, InvalidArgumentError } from "../errors";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import { ICodec, ScalarCodec } from "./ifaces";
+import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import { type ICodec, ScalarCodec } from "./ifaces";
 
 export class PostgisGeometryCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {

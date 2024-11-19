@@ -1,6 +1,6 @@
 import {
-  AnyGeometry,
-  Geometry,
+  type AnyGeometry,
+  type Geometry,
   GeometryCollection,
   LineString,
   MultiLineString,
@@ -370,10 +370,10 @@ export function parseWKT(wkt: string) {
   }
 }
 
-function createParseError(wkt: string, index: number, error: string) {
+function createParseError(_wkt: string, index: number, error: string) {
   return new Error(`${error} at position ${index}`);
 }
 
-function assertNever(type: never, message: string): never {
+function assertNever(_type: never, message: string): never {
   throw new Error(message);
 }

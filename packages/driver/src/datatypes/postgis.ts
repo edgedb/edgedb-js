@@ -45,8 +45,8 @@ export class Point extends Geometry {
   }
 
   toWKT(
-    indent?: number | null,
-    truncate: number = Infinity,
+    _indent?: number | null,
+    _truncate: number = Infinity,
     depth: number = 0,
   ): string {
     return `${_sridWKTPrefix(this.srid, depth)}POINT${_flagsToWKT(
@@ -144,7 +144,7 @@ export class LineString extends Geometry {
     truncate: number = Infinity,
     depth: number = 0,
   ): string {
-    let wkt = `${_sridWKTPrefix(this.srid, depth)}${
+    const wkt = `${_sridWKTPrefix(this.srid, depth)}${
       (this.constructor as typeof LineString)._wktName
     }${_flagsToWKT(this.hasZ, this.hasM)} `;
     if (this.points.length === 0) {
@@ -208,7 +208,7 @@ export class MultiLineString extends Geometry {
     truncate: number = Infinity,
     depth: number = 0,
   ): string {
-    let wkt = `${_sridWKTPrefix(this.srid, depth)}MULTILINESTRING${_flagsToWKT(
+    const wkt = `${_sridWKTPrefix(this.srid, depth)}MULTILINESTRING${_flagsToWKT(
       this.hasZ,
       this.hasM,
     )} `;
@@ -342,7 +342,7 @@ export class Polygon extends Geometry {
     truncate: number = Infinity,
     depth: number = 0,
   ): string {
-    let wkt = `${_sridWKTPrefix(this.srid, depth)}${
+    const wkt = `${_sridWKTPrefix(this.srid, depth)}${
       (this.constructor as typeof Polygon)._wktName
     }${_flagsToWKT(this.hasZ, this.hasM)} `;
     if (this.rings.length === 0) {
