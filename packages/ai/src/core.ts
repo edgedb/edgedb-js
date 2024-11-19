@@ -109,7 +109,7 @@ export class EdgeDBAI {
 
     if (!response.ok) {
       const bodyText = await response.text();
-      throw new Error(bodyText);
+      throw new Error(JSON.parse(bodyText).message);
     }
 
     return response;
