@@ -157,13 +157,15 @@ const mFlag = 0x40000000;
 const sridFlag = 0x20000000;
 const allFlags = zFlag | mFlag | sridFlag;
 
-function _parseGeometry(buf: ReadBuffer): AnyGeometry {
+function _parseGeometry(
+  buf: ReadBuffer,
+  srid: number | null = null,
+): AnyGeometry {
   const le = buf.readUInt8() === 1;
   let type = buf.readUInt32(le);
   const z = (type & zFlag) !== 0;
   const m = (type & mFlag) !== 0;
 
-  let srid: number | null = null;
   if ((type & sridFlag) !== 0) {
     srid = buf.readUInt32(le);
   }
@@ -411,7 +413,7 @@ function _parseGeometryCollection(
   const geometryCount = buf.readUInt32(le);
   const geometries: AnyGeometry[] = new Array(geometryCount);
   for (let i = 0; i < geometryCount; i++) {
-    geometries[i] = _parseGeometry(buf);
+    geometries[i] = _parseGeometry(buf, srid);
   }
   return new GeometryCollection(geometries, z, m, srid);
 }
