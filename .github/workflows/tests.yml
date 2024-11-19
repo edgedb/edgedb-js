@@ -87,6 +87,10 @@ jobs:
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
+      - name: Install postgis extension
+        run: |
+          edgedb extension install -E postgis -I test
+
       - name: Run package tests
         run: |
           yarn ci:test
