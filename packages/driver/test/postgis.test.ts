@@ -351,4 +351,8 @@ if (getAvailableExtensions().get("postgis")) {
       }
     });
   });
+} else {
+  test.skip("postgis ext not available: skipping postgis tests", () => {
+    // dummy test to satisfy jest
+  });
 }
