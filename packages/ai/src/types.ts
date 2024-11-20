@@ -19,11 +19,14 @@ export interface QueryContext {
   max_object_count?: number;
 }
 
-export interface RagRequest {
-  messages: EdgeDBMessage[];
+interface RagRequestBase {
   stream?: boolean;
   [key: string]: unknown;
 }
+
+export type RagRequest =
+  | (RagRequestBase & { messages: EdgeDBMessage[]; prompt?: undefined })
+  | (RagRequestBase & { prompt: string; messages?: undefined });
 
 export type EdgeDBMessage =
   | EdgeDBSystemMessage

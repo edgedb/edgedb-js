@@ -201,20 +201,18 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
       body: {
         ...args,
         context: this.settings.context,
-        ...(this.settings.prompt && {
-          prompt: {
-            ...this.settings.prompt,
-            // if user provides prompt.custom without id/name it is his choice
-            // to not include default prompt msgs, but if user provides messages
-            // and doesn't provide prompt.custom, since we add messages to the
-            // prompt.custom we also have to include default prompt messages
-            ...(!this.settings.prompt?.custom &&
-              !providedPromptId && {
-                name: "builtin::rag-default",
-              }),
-            custom: [...(this.settings.prompt?.custom || []), ...messages],
-          },
-        }),
+        prompt: {
+          ...this.settings.prompt,
+          // if user provides prompt.custom without id/name it is his choice
+          // to not include default prompt msgs, but if user provides messages
+          // and doesn't provide prompt.custom, since we add messages to the
+          // prompt.custom we also have to include default prompt messages
+          ...(!this.settings.prompt?.custom &&
+            !providedPromptId && {
+              name: "builtin::rag-default",
+            }),
+          custom: [...(this.settings.prompt?.custom || []), ...messages],
+        },
         query: [...messages].reverse().find((msg) => msg.role === "user")!
           .content[0].text,
         stream: false,
@@ -268,20 +266,18 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
       body: {
         ...args,
         context: this.settings.context,
-        ...(this.settings.prompt && {
-          prompt: {
-            ...this.settings.prompt,
-            // if user provides prompt.custom without id/name it is his choice
-            // to not include default prompt msgs, but if user provides messages
-            // and doesn't provide prompt.custom, since we add messages to the
-            // prompt.custom we also have to include default prompt messages
-            ...(!this.settings.prompt?.custom &&
-              !providedPromptId && {
-                name: "builtin::rag-default",
-              }),
-            custom: [...(this.settings.prompt?.custom || []), ...messages],
-          },
-        }),
+        prompt: {
+          ...this.settings.prompt,
+          // if user provides prompt.custom without id/name it is his choice
+          // to not include default prompt msgs, but if user provides messages
+          // and doesn't provide prompt.custom, since we add messages to the
+          // prompt.custom we also have to include default prompt messages
+          ...(!this.settings.prompt?.custom &&
+            !providedPromptId && {
+              name: "builtin::rag-default",
+            }),
+          custom: [...(this.settings.prompt?.custom || []), ...messages],
+        },
         query: [...messages].reverse().find((msg) => msg.role === "user")!
           .content[0].text,
         stream: true,

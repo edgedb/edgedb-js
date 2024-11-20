@@ -14,6 +14,7 @@ import type {
   QueryContext,
   StreamingMessage,
   RagRequest,
+  EdgeDBMessage,
 } from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
@@ -73,7 +74,16 @@ export class EdgeDBAI {
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
 
-    const { messages } = request;
+    const { messages: initialMessages, prompt } = request;
+
+    if (prompt && initialMessages)
+      throw new Error(
+        "You can provide either a prompt or a messages array, not both.",
+      );
+
+    const messages: EdgeDBMessage[] | undefined = prompt
+      ? [{ role: "user" as const, content: [{ type: "text", text: prompt }] }]
+      : initialMessages;
 
     const providedPrompt =
       this.options.prompt &&
@@ -88,21 +98,19 @@ export class EdgeDBAI {
         ...request,
         context,
         model: this.options.model,
-        ...(this.options.prompt && {
-          prompt: {
-            ...this.options.prompt,
-            // if user provides prompt.custom without id/name it is his choice
-            // to not include default prompt msgs, but if user provides messages
-            // and doesn't provide prompt.custom, since we add messages to the
-            // prompt.custom we also have to include default prompt messages
-            ...(!this.options.prompt?.custom &&
-              !providedPrompt && {
-                name: "builtin::rag-default",
-              }),
-            custom: [...(this.options.prompt?.custom || []), ...messages],
-          },
-        }),
-        query: [...messages].reverse().find((msg) => msg.role === "user")!
+        prompt: {
+          ...this.options.prompt,
+          // if user provides prompt.custom without id/name it is his choice
+          // to not include default prompt msgs, but if user provides messages
+          // and doesn't provide prompt.custom, since we add messages to the
+          // prompt.custom we also have to include default prompt messages
+          ...(!this.options.prompt?.custom &&
+            !providedPrompt && {
+              name: "builtin::rag-default",
+            }),
+          custom: [...(this.options.prompt?.custom || []), ...messages!],
+        },
+        query: [...messages!].reverse().find((msg) => msg.role === "user")!
           .content[0].text,
       }),
     });
