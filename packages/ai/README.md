@@ -54,7 +54,7 @@ Creates an instance of `EdgeDBAI` with the specified client and options.
 
 ## Tool Calls
 
-Tool calls are supported by the AI extension but the tool calls should be executed on the client side and results should be provided back to the EdgeDB AI.
+Tool calls are supported by the AI extension. They should be executed on the client side and tool call results should be provided back to the EdgeDB AI.
 
 ## Example
 
