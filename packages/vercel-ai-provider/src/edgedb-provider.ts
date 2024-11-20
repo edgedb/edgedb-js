@@ -1,5 +1,4 @@
 import { type Client, createClient } from "edgedb";
-import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
 import { getAuthenticatedFetch } from "edgedb/dist/utils.js";
@@ -39,9 +38,7 @@ export interface EdgeDBProvider extends ProviderV1 {
 }
 
 export async function createEdgeDB(client: Client): Promise<EdgeDBProvider> {
-  const connectConfig: ResolvedConnectConfig = (
-    await (client as any).pool._getNormalizedConnectConfig()
-  ).connectionParams;
+  const connectConfig = await client.resolveConnectionParams();
 
   const fetch = await getAuthenticatedFetch(
     connectConfig,
