@@ -19,7 +19,6 @@ import {
   type EdgeDBChatModelId,
   type EdgeDBChatSettings,
   isAnthropicModel,
-  isOpenAIModel,
 } from "./edgedb-chat-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
 import {
@@ -28,6 +27,7 @@ import {
   mapOpenAICompletionLogProbs,
 } from "./utils";
 import { convertToEdgeDBMessages } from "./convert-to-edgedb-messages";
+import { prepareTools } from "./edgedb-prepare-tools";
 
 export interface EdgeDBLanguageModel extends LanguageModelV1 {
   withSettings(settings: Partial<EdgeDBChatSettings>): EdgeDBChatLanguageModel;
@@ -167,7 +167,7 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
         return {
           args: {
             ...baseArgs,
-            ...prepareToolsAndToolChoice(mode, this.modelId),
+            ...prepareTools(mode, this.modelId),
           },
           warnings,
         };
@@ -572,97 +572,3 @@ const edgedbRagChunkSchema = z.discriminatedUnion("type", [
     }),
   }),
 ]);
-
-// doesn't support atm structured outputs with OpenAI type regular
-function prepareToolsAndToolChoice(
-  mode: Parameters<LanguageModelV1["doGenerate"]>[0]["mode"] & {
-    type: "regular";
-  },
-  model: EdgeDBChatModelId,
-) {
-  const isOpenAI = isOpenAIModel(model);
-  const isAnthropic = isAnthropicModel(model);
-
-  // when the tools array is empty, change it to undefined to prevent errors:
-  const tools = mode.tools?.length ? mode.tools : undefined;
-
-  if (tools == null) {
-    return { tools: undefined, tool_choice: undefined };
-  }
-
-  const toolChoice = mode.toolChoice;
-
-  const mappedTools = tools.map((tool) =>
-    isAnthropic
-      ? {
-          name: tool.name,
-          description: tool.description,
-          input_schema: tool.parameters,
-        }
-      : {
-          type: "function",
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters,
-          },
-        },
-  );
-
-  if (toolChoice == null) {
-    return { tools: mappedTools, tool_choice: undefined };
-  }
-
-  const type = toolChoice.type;
-
-  switch (type) {
-    case "auto":
-      return {
-        tools: mappedTools,
-        tool_choice: isAnthropic ? { type: "auto" } : "auto",
-      };
-    case "none":
-      return isAnthropic
-        ? { tools: undefined, tool_choice: undefined }
-        : { tools: mappedTools, tool_choice: type };
-    case "required":
-      return {
-        tools: mappedTools,
-        tool_choice: isAnthropic
-          ? { type: "any" }
-          : isOpenAI
-            ? "required"
-            : "any",
-      };
-
-    // mistral does not support tool mode directly,
-    // so we filter the tools and force the tool choice through 'any'
-    case "tool":
-      return isAnthropic
-        ? {
-            tools: mappedTools,
-            tool_choice: { type: "tool", name: toolChoice.toolName },
-          }
-        : isOpenAI
-          ? {
-              tools: mappedTools,
-              tool_choice: {
-                type: "function",
-                function: {
-                  name: toolChoice.toolName,
-                },
-              },
-            }
-          : {
-              tools: mappedTools.filter(
-                (tool) => tool.function!.name === toolChoice.toolName,
-              ),
-              tool_choice: "any",
-            };
-
-    default: {
-      const _exhaustiveCheck: never = type;
-      throw new Error(`Unsupported tool choice type: ${_exhaustiveCheck}`);
-    }
-  }
-}

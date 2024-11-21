@@ -27,8 +27,8 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/provider": "0.0.24",
-    "@ai-sdk/provider-utils": "1.0.20"
+    "@ai-sdk/provider": "^1.0.0",
+    "@ai-sdk/provider-utils": "^2.0.0"
   },
   "devDependencies": {
     "@repo/tsconfig": "*",
