@@ -81,9 +81,9 @@ export class EdgeDBAI {
         "You can provide either a prompt or a messages array, not both.",
       );
 
-    const messages: EdgeDBMessage[] | undefined = prompt
+    const messages: EdgeDBMessage[] = prompt
       ? [{ role: "user" as const, content: [{ type: "text", text: prompt }] }]
-      : initialMessages;
+      : initialMessages ?? [];
 
     const providedPrompt =
       this.options.prompt &&
@@ -108,16 +108,25 @@ export class EdgeDBAI {
             !providedPrompt && {
               name: "builtin::rag-default",
             }),
-          custom: [...(this.options.prompt?.custom || []), ...messages!],
+          custom: [...(this.options.prompt?.custom || []), ...messages],
         },
-        query: [...messages!].reverse().find((msg) => msg.role === "user")!
+        query: [...messages].reverse().find((msg) => msg.role === "user")!
           .content[0].text,
       }),
     });
 
     if (!response.ok) {
-      const bodyText = await response.text();
-      throw new Error(JSON.parse(bodyText).message);
+      const contentType = response.headers.get("content-type");
+      let errorMessage: string;
+
+      if (contentType && contentType.includes("application/json")) {
+        const json = await response.json();
+        errorMessage = json.message || "An error occurred";
+      } else {
+        const bodyText = await response.text();
+        errorMessage = bodyText || "An unknown error occurred";
+      }
+      throw new Error(errorMessage);
     }
 
     return response;
