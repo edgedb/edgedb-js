@@ -899,6 +899,12 @@ export class BaseRawConnection {
     options: QueryOptions | undefined,
     language: Language,
   ) {
+    const annotations = Object.entries(state.annotations);
+    wb.writeUInt16(annotations.length);
+    for (const [name, value] of annotations) {
+      wb.writeString(name);
+      wb.writeString(value);
+    }
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
       0,
@@ -953,7 +959,6 @@ export class BaseRawConnection {
   ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$P);
-    wb.writeUInt16(0); // no headers
 
     this._encodeParseParams(
       wb,
@@ -1080,7 +1085,6 @@ export class BaseRawConnection {
   ): Promise<errors.EdgeDBError[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeUInt16(0); // no headers
 
     this._encodeParseParams(
       wb,

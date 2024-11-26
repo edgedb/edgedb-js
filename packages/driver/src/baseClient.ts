@@ -604,6 +604,13 @@ export class Client implements Executor {
     );
   }
 
+  withTag(tag: string): Client {
+    return new Client(
+      this.pool,
+      this.options.withSession(this.options.session.withTag(tag)),
+    );
+  }
+
   withWarningHandler(handler: WarningHandler): Client {
     return new Client(this.pool, this.options.withWarningHandler(handler));
   }
