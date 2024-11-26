@@ -82,6 +82,7 @@ jobs:
         with:
           instance-name: test
           server-version: ${{ matrix.edgedb-version }}
+          cli-version: ${{ matrix.edgedb-version == 'nightly' && 'nightly' || 'stable' }}
 
       - name: Show actual EdgeDB server version
         run: |
