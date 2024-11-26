@@ -22,7 +22,7 @@ import { NamedTupleCodec } from "./codecs/namedtuple";
 import { ObjectCodec } from "./codecs/object";
 import type { CodecsRegistry } from "./codecs/registry";
 import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
-import { versionGreaterThanOrEqual } from "./utils";
+import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
 import type {
@@ -31,7 +31,12 @@ import type {
   QueryArgs,
   ServerSettings,
 } from "./ifaces";
-import { Cardinality, LegacyHeaderCodes, OutputFormat } from "./ifaces";
+import {
+  Cardinality,
+  LegacyHeaderCodes,
+  OutputFormat,
+  Language,
+} from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,
@@ -45,7 +50,7 @@ import LRU from "./primitives/lru";
 import type { SerializedSessionState } from "./options";
 import { Session } from "./options";
 
-export const PROTO_VER: ProtocolVersion = [2, 0];
+export const PROTO_VER: ProtocolVersion = [3, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
 
 enum TransactionStatus {
@@ -892,6 +897,7 @@ export class BaseRawConnection {
     state: Session,
     capabilitiesFlags: number,
     options: QueryOptions | undefined,
+    language: Language,
   ) {
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
@@ -906,6 +912,9 @@ export class BaseRawConnection {
           : 0),
     );
     wb.writeBigInt64(options?.implicitLimit ?? BigInt(0));
+    if (versionGreaterThanOrEqual(this.protocolVersion, [3, 0])) {
+      wb.writeChar(language);
+    }
     wb.writeChar(outputFormat);
     wb.writeChar(
       expectedCardinality === Cardinality.ONE ||
@@ -934,6 +943,7 @@ export class BaseRawConnection {
   }
 
   async _parse(
+    language: Language,
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
@@ -953,6 +963,7 @@ export class BaseRawConnection {
       state,
       capabilitiesFlags,
       options,
+      language,
     );
 
     wb.endMessage();
@@ -1031,6 +1042,7 @@ export class BaseRawConnection {
     if (error !== null) {
       if (error instanceof errors.StateMismatchError) {
         return this._parse(
+          language,
           query,
           outputFormat,
           expectedCardinality,
@@ -1054,6 +1066,7 @@ export class BaseRawConnection {
   }
 
   protected async _executeFlow(
+    language: Language,
     query: string,
     args: QueryArgs,
     outputFormat: OutputFormat,
@@ -1077,6 +1090,7 @@ export class BaseRawConnection {
       state,
       capabilitiesFlags,
       options,
+      language,
     );
 
     wb.writeBuffer(inCodec.tidBuffer);
@@ -1179,6 +1193,7 @@ export class BaseRawConnection {
     if (error != null) {
       if (error instanceof errors.StateMismatchError) {
         return this._executeFlow(
+          language,
           query,
           args,
           outputFormat,
@@ -1201,11 +1216,12 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    language: Language = Language.EDGEQL,
   ): string {
     const expectOne =
       expectedCardinality === Cardinality.ONE ||
       expectedCardinality === Cardinality.AT_MOST_ONE;
-    return [outputFormat, expectOne, query.length, query].join(";");
+    return [language, outputFormat, expectOne, query.length, query].join(";");
   }
 
   private _validateFetchCardinality(
@@ -1232,7 +1248,17 @@ export class BaseRawConnection {
     expectedCardinality: Cardinality,
     state: Session,
     privilegedMode = false,
+    language: Language = Language.EDGEQL,
   ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
+    if (
+      language !== Language.EDGEQL &&
+      versionGreaterThan([3, 0], this.protocolVersion)
+    ) {
+      throw new errors.UnsupportedFeatureError(
+        `the server does not support SQL queries, upgrade to 6.0 or newer`,
+      );
+    }
+
     if (this.isLegacyProtocol && outputFormat === OutputFormat.NONE) {
       if (args != null) {
         throw new errors.InterfaceError(
@@ -1255,6 +1281,7 @@ export class BaseRawConnection {
       query,
       outputFormat,
       expectedCardinality,
+      language,
     );
     const ret: any[] = [];
     // @ts-ignore
@@ -1273,6 +1300,7 @@ export class BaseRawConnection {
         (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
       ) {
         [card, inCodec, outCodec, _, _, _, warnings] = await this._parse(
+          language,
           query,
           outputFormat,
           expectedCardinality,
@@ -1284,6 +1312,7 @@ export class BaseRawConnection {
 
       try {
         warnings = await this._executeFlow(
+          language,
           query,
           args,
           outputFormat,
@@ -1298,6 +1327,7 @@ export class BaseRawConnection {
         if (e instanceof errors.ParameterTypeMismatchError) {
           [card, inCodec, outCodec] = this.queryCodecCache.get(key)!;
           warnings = await this._executeFlow(
+            language,
             query,
             args,
             outputFormat,

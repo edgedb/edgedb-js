@@ -34,11 +34,19 @@ export enum Cardinality {
   AT_LEAST_ONE = chars.$M,
 }
 
+export enum Language {
+  EDGEQL = chars.$E,
+  SQL = chars.$S,
+}
+
 export type QueryArgs = Record<string, unknown> | unknown[] | null;
+export type SQLQueryArgs = unknown[] | null;
 
 export interface Executor {
   execute(query: string, args?: QueryArgs): Promise<void>;
+  executeSQL(query: string, args?: SQLQueryArgs): Promise<void>;
   query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]>;
+  querySQL<T = unknown>(query: string, args?: SQLQueryArgs): Promise<T[]>;
   queryJSON(query: string, args?: QueryArgs): Promise<string>;
   querySingle<T = unknown>(query: string, args?: QueryArgs): Promise<T | null>;
   querySingleJSON(query: string, args?: QueryArgs): Promise<string>;

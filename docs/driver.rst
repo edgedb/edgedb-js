@@ -410,6 +410,11 @@ The ``transaction()`` API guarantees that:
 3. If any other, non-retryable error occurs, the transaction is rolled
    back and the ``transaction()`` block throws.
 
+The *transaction* object exposes ``query()``, ``execute()``, ``querySQL()``,
+``executeSQL()``, and other ``query*()`` methods that *clients* expose, with
+the only difference that queries will run within the current transaction
+and can be retried automatically.
+
 The key implication of retrying transactions is that the entire
 nested code block can be re-run, including any non-querying
 JavaScript code. Here is an example:

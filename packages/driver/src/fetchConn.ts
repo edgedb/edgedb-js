@@ -26,10 +26,15 @@ import { NULL_CODEC } from "./codecs/codecs";
 import type { ICodec } from "./codecs/ifaces";
 import type { CodecsRegistry } from "./codecs/registry";
 import type { NormalizedConnectConfig } from "./conUtils";
-import { InternalClientError, ProtocolError } from "./errors";
+import {
+  BinaryProtocolError,
+  InternalClientError,
+  ProtocolError,
+} from "./errors";
 import type { HttpSCRAMAuth } from "./httpScram";
 import {
   Cardinality,
+  type Language,
   OutputFormat,
   type ProtocolVersion,
   type QueryArgs,
@@ -39,7 +44,11 @@ import type { Session } from "./options";
 import { WriteBuffer } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
-import { type AuthenticatedFetch, getAuthenticatedFetch } from "./utils";
+import {
+  type AuthenticatedFetch,
+  getAuthenticatedFetch,
+  versionEqual,
+} from "./utils";
 
 const PROTO_MIME = `application/x.edgedb.v_${PROTO_VER[0]}_${PROTO_VER[1]}.binary'`;
 const PROTO_MIME_RE = /application\/x\.edgedb\.v_(\d+)_(\d+)\.binary/;
@@ -136,6 +145,29 @@ class BaseFetchConnection extends BaseRawConnection {
     this.__sendData(data);
   }
 
+  async fetch(...args: Parameters<BaseRawConnection["fetch"]>) {
+    // In protocol v3 the format of the parse/execute messages depend on the
+    // protocol version. In the fetch conn we don't know the server's supported
+    // proto version until after the first message is sent, so the first
+    // message may be sent with a format the server doesn't support.
+    // As a workaround we just retry sending the message (using the now known
+    // proto ver) if the supported protocol version returned by the server is
+    // different to the protocol version used to send the message, and this
+    // caused a BinaryProtocolError.
+    const protoVer = this.protocolVersion;
+    try {
+      return await super.fetch(...args);
+    } catch (err: unknown) {
+      if (
+        err instanceof BinaryProtocolError &&
+        !versionEqual(protoVer, this.protocolVersion)
+      ) {
+        return await super.fetch(...args);
+      }
+      throw err;
+    }
+  }
+
   static create<T extends typeof BaseFetchConnection>(
     this: T,
     fetch: AuthenticatedFetch,
@@ -153,8 +185,29 @@ class BaseFetchConnection extends BaseRawConnection {
 export class AdminUIFetchConnection extends BaseFetchConnection {
   adminUIMode = true;
 
+  static create<T extends typeof BaseFetchConnection>(
+    this: T,
+    fetch: AuthenticatedFetch,
+    registry: CodecsRegistry,
+    knownServerVersion?: [number, number],
+  ): InstanceType<T> {
+    const conn = super.create(fetch, registry);
+
+    // This class is only used by the UI, and the UI already knows the version
+    // of the server (either it's bundled with the local server, or known from
+    // the cloud api). So we can pre set the protocol version we know the
+    // server supports, instead of doing the retry strategy of
+    // BaseFetchConn.fetch in the raw methods below.
+    if (knownServerVersion && knownServerVersion[0] < 6) {
+      conn.protocolVersion = [2, 0];
+    }
+
+    return conn as InstanceType<T>;
+  }
+
   // These methods are exposed for use by EdgeDB Studio
   public async rawParse(
+    language: Language,
     query: string,
     state: Session,
     options?: QueryOptions,
@@ -165,6 +218,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
     this.abortSignal = abortSignal ?? null;
 
     const result = (await this._parse(
+      language,
       query,
       OutputFormat.BINARY,
       Cardinality.MANY,
@@ -183,6 +237,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   }
 
   public async rawExecute(
+    language: Language,
     query: string,
     state: Session,
     outCodec?: ICodec,
@@ -195,6 +250,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
 
     const result = new WriteBuffer();
     await this._executeFlow(
+      language,
       query,
       args,
       outCodec ? OutputFormat.BINARY : OutputFormat.NONE,
