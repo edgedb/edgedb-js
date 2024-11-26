@@ -1255,7 +1255,7 @@ export class BaseRawConnection {
       versionGreaterThan([3, 0], this.protocolVersion)
     ) {
       throw new errors.UnsupportedFeatureError(
-        `the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer`,
+        `the server does not support SQL queries, upgrade to 6.0 or newer`,
       );
     }
 
