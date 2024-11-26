@@ -2431,7 +2431,7 @@ if (getEdgeDBVersion().major >= 6) {
 
     try {
       const unsupportedError = new UnsupportedFeatureError(
-        "the server does not support SQL queries, upgrade to EdgeDB 6.0 or newer",
+        "the server does not support SQL queries, upgrade to 6.0 or newer",
       );
 
       await expect(client.querySQL("select 1")).rejects.toThrow(
