@@ -2425,6 +2425,30 @@ if (getEdgeDBVersion().major >= 6) {
       await client.close();
     }
   });
+
+  test("querySQL std::pg:: types", async () => {
+    let client = getClient();
+
+    const pgTypes: [string, any][] = [
+      ["json", [{ abc: 123 }, "test", 456]],
+      ["timestamptz", new Date()],
+      ["timestamp", new LocalDateTime(2024, 11, 15, 16, 20, 1, 2, 3)],
+      ["date", new LocalDate(2024, 11, 15)],
+      ["interval", new RelativeDuration(1, 2, 3, 4, 5, 6, 7, 8, 9)],
+    ];
+
+    try {
+      for (const [typename, val] of pgTypes) {
+        const res = await client.querySQL<{ val: any }>(
+          `select $1::${typename} as "val"`,
+          [val],
+        );
+        expect(JSON.stringify(res[0].val)).toEqual(JSON.stringify(val));
+      }
+    } finally {
+      await client.close();
+    }
+  });
 } else {
   test("SQL methods should fail nicely if proto v3 not supported", async () => {
     let client = getClient();

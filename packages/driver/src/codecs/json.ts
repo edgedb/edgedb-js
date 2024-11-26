@@ -27,6 +27,8 @@ import { InvalidArgumentError, ProtocolError } from "../errors";
 export class JSONCodec extends ScalarCodec implements ICodec {
   tsType = "unknown";
 
+  readonly jsonFormat: number | null = 1;
+
   encode(buf: WriteBuffer, object: any): void {
     let val: string;
     try {
@@ -45,37 +47,59 @@ export class JSONCodec extends ScalarCodec implements ICodec {
     }
 
     const strbuf = utf8Encoder.encode(val);
-    buf.writeInt32(strbuf.length + 1);
-    buf.writeChar(1); // JSON format version
+    if (this.jsonFormat !== null) {
+      buf.writeInt32(strbuf.length + 1);
+      buf.writeChar(this.jsonFormat);
+    } else {
+      buf.writeInt32(strbuf.length);
+    }
     buf.writeBuffer(strbuf);
   }
 
   decode(buf: ReadBuffer): any {
-    const format = buf.readUInt8();
-    if (format !== 1) {
-      throw new ProtocolError(`unexpected JSON format ${format}`);
+    if (this.jsonFormat !== null) {
+      const format = buf.readUInt8();
+      if (format !== this.jsonFormat) {
+        throw new ProtocolError(`unexpected JSON format ${format}`);
+      }
     }
     return JSON.parse(buf.consumeAsString());
   }
 }
 
+export class PgTextJSONCodec extends JSONCodec {
+  readonly jsonFormat = null;
+}
+
 export class JSONStringCodec extends ScalarCodec implements ICodec {
+  readonly jsonFormat: number | null = 1;
+
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
     const strbuf = utf8Encoder.encode(object);
-    buf.writeInt32(strbuf.length + 1);
-    buf.writeChar(1); // JSON format version
+    if (this.jsonFormat !== null) {
+      buf.writeInt32(strbuf.length + 1);
+      buf.writeChar(this.jsonFormat);
+    } else {
+      buf.writeInt32(strbuf.length);
+    }
     buf.writeBuffer(strbuf);
   }
 
   decode(buf: ReadBuffer): any {
-    const format = buf.readUInt8();
-    if (format !== 1) {
-      throw new ProtocolError(`unexpected JSON format ${format}`);
+    if (this.jsonFormat !== null) {
+      const format = buf.readUInt8();
+      if (format !== this.jsonFormat) {
+        throw new ProtocolError(`unexpected JSON format ${format}`);
+      }
     }
     return buf.consumeAsString();
   }
+}
+
+export class PgTextJSONStringCodec extends JSONStringCodec {
+  readonly jsonFormat = null;
 }
