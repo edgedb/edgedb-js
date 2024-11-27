@@ -899,6 +899,9 @@ export class BaseRawConnection {
     options: QueryOptions | undefined,
     language: Language,
   ) {
+    if (state.annotations.size >= 1 << 16) {
+      throw new errors.InternalClientError("too many annotations");
+    }
     wb.writeUInt16(state.annotations.size);
     for (const [name, value] of state.annotations) {
       wb.writeString(name);
