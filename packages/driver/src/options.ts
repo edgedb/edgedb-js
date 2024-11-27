@@ -142,7 +142,11 @@ export class Session {
   readonly globals: Record<string, any>;
 
   /** @internal */
-  annotations: Record<string, string> = {};
+  annotations = new Map<string, string>();
+
+  get tag(): string | null {
+    return this.annotations.get(TAG_ANNOTATION_KEY) ?? null;
+  }
 
   constructor({
     module = "default",
@@ -186,21 +190,23 @@ export class Session {
     });
   }
 
-  withTag(tag: string): Session {
-    if (tag.startsWith("edgedb/")) {
-      throw new errors.InterfaceError("reserved tag: edgedb/*");
-    }
-    if (tag.startsWith("gel/")) {
-      throw new errors.InterfaceError("reserved tag: gel/*");
-    }
-    if (utf8Encoder.encode(tag).length > 128) {
-      throw new errors.InterfaceError("tag too long (> 128 bytes)");
-    }
+  withTag(tag: string | null): Session {
     const session = new Session({ ...this });
-    session.annotations = {
-      ...this.annotations,
-      [TAG_ANNOTATION_KEY]: tag,
-    };
+    session.annotations = new Map(this.annotations);
+    if (tag != null) {
+      if (tag.startsWith("edgedb/")) {
+        throw new errors.InterfaceError("reserved tag: edgedb/*");
+      }
+      if (tag.startsWith("gel/")) {
+        throw new errors.InterfaceError("reserved tag: gel/*");
+      }
+      if (utf8Encoder.encode(tag).length > 128) {
+        throw new errors.InterfaceError("tag too long (> 128 bytes)");
+      }
+      session.annotations.set(TAG_ANNOTATION_KEY, tag);
+    } else {
+      session.annotations.delete(TAG_ANNOTATION_KEY);
+    }
     return session;
   }
 

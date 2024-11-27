@@ -899,9 +899,8 @@ export class BaseRawConnection {
     options: QueryOptions | undefined,
     language: Language,
   ) {
-    const annotations = Object.entries(state.annotations);
-    wb.writeUInt16(annotations.length);
-    for (const [name, value] of annotations) {
+    wb.writeUInt16(state.annotations.size);
+    for (const [name, value] of state.annotations) {
       wb.writeString(name);
       wb.writeString(value);
     }
