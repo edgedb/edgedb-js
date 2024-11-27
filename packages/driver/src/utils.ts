@@ -76,8 +76,8 @@ export interface CryptoUtils {
 const _tokens = new WeakMap<ResolvedConnectConfigReadonly, string>();
 
 export type AuthenticatedFetch = (
-  path: string,
-  init: RequestInit,
+  path: RequestInfo | URL,
+  init?: RequestInit,
 ) => Promise<Response>;
 
 export async function getAuthenticatedFetch(
@@ -98,10 +98,18 @@ export async function getAuthenticatedFetch(
     _tokens.set(config, token);
   }
 
-  return (path: string, init: RequestInit) => {
+  return (input: RequestInfo | URL, init?: RequestInit) => {
+    let path: string;
+
+    if (typeof input === "string") {
+      path = input;
+    } else if (input instanceof Request) {
+      path = input.url;
+    } else path = input.toString();
+
     const url = new URL(path, databaseUrl);
 
-    const headers = new Headers(init.headers);
+    const headers = new Headers(init?.headers);
 
     if (config.user !== undefined) {
       headers.append("X-EdgeDB-User", config.user);

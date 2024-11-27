@@ -1,22 +1,21 @@
 import type { Client } from "edgedb";
-import {
-  EventSourceParserStream,
-  type ParsedEvent,
-} from "eventsource-parser/stream";
+import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-import type {
-  AIOptions,
-  QueryContext,
-  RAGRequest,
-  StreamingMessage,
+import {
+  type AIOptions,
+  type QueryContext,
+  type StreamingMessage,
+  type RagRequest,
+  isPromptRequest,
 } from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
+import { extractMessageFromParsedEvent, handleResponseError } from "./utils.js";
 
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
@@ -68,10 +67,28 @@ export class EdgeDBAI {
     });
   }
 
-  private async fetchRag(request: Omit<RAGRequest, "model" | "prompt">) {
+  private async fetchRag(request: RagRequest, context: QueryContext) {
     const headers = request.stream
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
+
+    if (request.prompt && request.initialMessages)
+      throw new Error(
+        "You can provide either a prompt or a messages array, not both.",
+      );
+
+    const messages = isPromptRequest(request)
+      ? [
+          {
+            role: "user" as const,
+            content: [{ type: "text", text: request.prompt }],
+          },
+        ]
+      : request.messages ?? [];
+
+    const providedPrompt =
+      this.options.prompt &&
+      ("name" in this.options.prompt || "id" in this.options.prompt);
 
     const response = await (
       await this.authenticatedFetch
@@ -80,25 +97,40 @@ export class EdgeDBAI {
       headers,
       body: JSON.stringify({
         ...request,
+        context,
         model: this.options.model,
-        prompt: this.options.prompt,
+        prompt: {
+          ...this.options.prompt,
+          // if user provides prompt.custom without id/name it is his choice
+          // to not include default prompt msgs, but if user provides messages
+          // and doesn't provide prompt.custom, since we add messages to the
+          // prompt.custom we also have to include default prompt messages
+          ...(!this.options.prompt?.custom &&
+            !providedPrompt && {
+              name: "builtin::rag-default",
+            }),
+          custom: [...(this.options.prompt?.custom || []), ...messages],
+        },
+        query: [...messages].reverse().find((msg) => msg.role === "user")!
+          .content[0].text,
       }),
     });
 
     if (!response.ok) {
-      const bodyText = await response.text();
-      throw new Error(bodyText);
+      handleResponseError(response);
     }
 
     return response;
   }
 
-  async queryRag(query: string, context = this.context): Promise<string> {
-    const res = await this.fetchRag({
+  async queryRag(request: RagRequest, context = this.context): Promise<string> {
+    const res = await this.fetchRag(
+      {
+        ...request,
+        stream: false,
+      },
       context,
-      query,
-      stream: false,
-    });
+    );
 
     if (!res.headers.get("content-type")?.includes("application/json")) {
       throw new Error(
@@ -114,28 +146,27 @@ export class EdgeDBAI {
       typeof data.response !== "string"
     ) {
       throw new Error(
-        "Expected response to be object with response key of type string",
+        "Expected response to be an object with response key of type string",
       );
     }
-
     return data.response;
   }
 
   streamRag(
-    query: string,
+    request: RagRequest,
     context = this.context,
   ): AsyncIterable<StreamingMessage> & PromiseLike<Response> {
     const fetchRag = this.fetchRag.bind(this);
 
-    const ragOptions = {
-      context,
-      query,
-      stream: true,
-    };
-
     return {
       async *[Symbol.asyncIterator]() {
-        const res = await fetchRag(ragOptions);
+        const res = await fetchRag(
+          {
+            ...request,
+            stream: true,
+          },
+          context,
+        );
 
         if (!res.body) {
           throw new Error("Expected response to include a body");
@@ -167,7 +198,13 @@ export class EdgeDBAI {
           | undefined
           | null,
       ): Promise<TResult1 | TResult2> {
-        return fetchRag(ragOptions).then(onfulfilled, onrejected);
+        return fetchRag(
+          {
+            ...request,
+            stream: true,
+          },
+          context,
+        ).then(onfulfilled, onrejected);
       },
     };
   }
@@ -194,14 +231,4 @@ export class EdgeDBAI {
     const data: { data: { embedding: number[] }[] } = await response.json();
     return data.data[0].embedding;
   }
-}
-
-function extractMessageFromParsedEvent(
-  parsedEvent: ParsedEvent,
-): StreamingMessage {
-  const { data } = parsedEvent;
-  if (!data) {
-    throw new Error("Expected SSE message to include a data payload");
-  }
-  return JSON.parse(data) as StreamingMessage;
 }

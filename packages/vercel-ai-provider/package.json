@@ -1,0 +1,54 @@
+{
+  "name": "@edgedb/vercel-ai-provider",
+  "description": "Provider for the Vercel AI SDK",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "test": "jest --detectOpenHandles --passWithNoTests",
+    "build": "tsc --project tsconfig.json",
+    "lint": "eslint --quiet",
+    "lint:fix": "eslint --fix"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "^1.0.0",
+    "@ai-sdk/provider-utils": "^2.0.0"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "*",
+    "@types/node": "^18",
+    "tsup": "^8",
+    "typescript": "5.5.4",
+    "zod": "3.23.8",
+    "edgedb": "*"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0",
+    "edgedb": "^1.5.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "ai"
+  ]
+}
