@@ -38,7 +38,7 @@ export function prepareTools(
   const toolWarnings: LanguageModelV1CallWarning[] = [];
 
   if (tools == null) {
-    return { tools: undefined, tool_choice: undefined, toolWarnings };
+    return { toolWarnings };
   }
 
   const edgedbOpenAILikeTools: OpenAILikeTool[] = [];
@@ -84,7 +84,6 @@ export function prepareTools(
   if (toolChoice == null) {
     return {
       tools: edgedbTools,
-      tool_choice: undefined,
       toolWarnings,
     };
   }
@@ -101,7 +100,7 @@ export function prepareTools(
       };
     case "none":
       return isAnthropic
-        ? { tools: undefined, tool_choice: undefined, toolWarnings }
+        ? { toolWarnings }
         : { tools: edgedbTools, tool_choice: type, toolWarnings };
     case "required":
       return {

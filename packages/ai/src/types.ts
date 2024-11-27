@@ -24,9 +24,21 @@ interface RagRequestBase {
   [key: string]: unknown;
 }
 
-export type RagRequest =
-  | (RagRequestBase & { messages: EdgeDBMessage[]; prompt?: undefined })
-  | (RagRequestBase & { prompt: string; messages?: undefined });
+export type RagRequestPrompt = RagRequestBase & {
+  prompt: string;
+};
+
+export type RagRequestMessages = RagRequestBase & {
+  messages: EdgeDBMessage[];
+};
+
+export type RagRequest = RagRequestPrompt | RagRequestMessages;
+
+export function isPromptRequest(
+  request: RagRequest,
+): request is RagRequestPrompt {
+  return "prompt" in request;
+}
 
 export type EdgeDBMessage =
   | EdgeDBSystemMessage

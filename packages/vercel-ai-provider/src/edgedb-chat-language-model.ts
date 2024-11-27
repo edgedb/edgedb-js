@@ -18,6 +18,7 @@ import {
   type EdgeDBChatConfig,
   type EdgeDBChatModelId,
   type EdgeDBChatSettings,
+  type EdgeDBMessage,
   isAnthropicModel,
 } from "./edgedb-chat-settings";
 import { edgedbFailedResponseHandler } from "./edgedb-error";
@@ -185,15 +186,35 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
     }
   }
 
+  private buildPrompt(messages: EdgeDBMessage[]) {
+    const providedPromptId =
+      this.settings.prompt &&
+      ("name" in this.settings.prompt || "id" in this.settings.prompt);
+
+    return {
+      ...this.settings.prompt,
+      // if user provides prompt.custom without id/name it is his choice
+      // to not include default prompt msgs, but if user provides messages
+      // and doesn't provide prompt.custom, since we add messages to the
+      // prompt.custom we also have to include default prompt messages
+      ...(!this.settings.prompt?.custom &&
+        !providedPromptId && {
+          name: "builtin::rag-default",
+        }),
+      custom: [...(this.settings.prompt?.custom || []), ...messages],
+    };
+  }
+
+  private buildQuery(messages: EdgeDBMessage[]) {
+    return [...messages].reverse().find((msg) => msg.role === "user")!
+      .content[0].text;
+  }
+
   async doGenerate(
     options: Parameters<LanguageModelV1["doGenerate"]>[0],
   ): Promise<Awaited<ReturnType<LanguageModelV1["doGenerate"]>>> {
     const { args, warnings } = this.getArgs(options);
     const { messages } = args;
-
-    const providedPromptId =
-      this.settings.prompt &&
-      ("name" in this.settings.prompt || "id" in this.settings.prompt);
 
     const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
@@ -201,20 +222,8 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
       body: {
         ...args,
         context: this.settings.context,
-        prompt: {
-          ...this.settings.prompt,
-          // if user provides prompt.custom without id/name it is his choice
-          // to not include default prompt msgs, but if user provides messages
-          // and doesn't provide prompt.custom, since we add messages to the
-          // prompt.custom we also have to include default prompt messages
-          ...(!this.settings.prompt?.custom &&
-            !providedPromptId && {
-              name: "builtin::rag-default",
-            }),
-          custom: [...(this.settings.prompt?.custom || []), ...messages],
-        },
-        query: [...messages].reverse().find((msg) => msg.role === "user")!
-          .content[0].text,
+        prompt: this.buildPrompt(messages),
+        query: this.buildQuery(messages),
         stream: false,
       },
       failedResponseHandler: edgedbFailedResponseHandler,
@@ -256,30 +265,14 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
     const { args, warnings } = this.getArgs(options);
     const { messages } = args;
 
-    const providedPromptId =
-      this.settings.prompt &&
-      ("name" in this.settings.prompt || "id" in this.settings.prompt);
-
     const { responseHeaders, value: response } = await postJsonToApi({
       url: `rag`,
       headers: options.headers,
       body: {
         ...args,
         context: this.settings.context,
-        prompt: {
-          ...this.settings.prompt,
-          // if user provides prompt.custom without id/name it is his choice
-          // to not include default prompt msgs, but if user provides messages
-          // and doesn't provide prompt.custom, since we add messages to the
-          // prompt.custom we also have to include default prompt messages
-          ...(!this.settings.prompt?.custom &&
-            !providedPromptId && {
-              name: "builtin::rag-default",
-            }),
-          custom: [...(this.settings.prompt?.custom || []), ...messages],
-        },
-        query: [...messages].reverse().find((msg) => msg.role === "user")!
-          .content[0].text,
+        prompt: this.buildPrompt(messages),
+        query: this.buildQuery(messages),
         stream: true,
       },
       failedResponseHandler: edgedbFailedResponseHandler,

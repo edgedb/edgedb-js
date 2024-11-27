@@ -1,23 +1,21 @@
 import type { Client } from "edgedb";
-import {
-  EventSourceParserStream,
-  type ParsedEvent,
-} from "eventsource-parser/stream";
+import { EventSourceParserStream } from "eventsource-parser/stream";
 
 import type { ResolvedConnectConfig } from "edgedb/dist/conUtils.js";
 import {
   getAuthenticatedFetch,
   type AuthenticatedFetch,
 } from "edgedb/dist/utils.js";
-import type {
-  AIOptions,
-  QueryContext,
-  StreamingMessage,
-  RagRequest,
-  EdgeDBMessage,
+import {
+  type AIOptions,
+  type QueryContext,
+  type StreamingMessage,
+  type RagRequest,
+  isPromptRequest,
 } from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
 import { cryptoUtils } from "edgedb/dist/browserCrypto.js";
+import { extractMessageFromParsedEvent, handleResponseError } from "./utils.js";
 
 export function createAI(client: Client, options: AIOptions) {
   return new EdgeDBAI(client, options);
@@ -74,16 +72,19 @@ export class EdgeDBAI {
       ? { Accept: "text/event-stream", "Content-Type": "application/json" }
       : { Accept: "application/json", "Content-Type": "application/json" };
 
-    const { messages: initialMessages, prompt } = request;
-
-    if (prompt && initialMessages)
+    if (request.prompt && request.initialMessages)
       throw new Error(
         "You can provide either a prompt or a messages array, not both.",
       );
 
-    const messages: EdgeDBMessage[] = prompt
-      ? [{ role: "user" as const, content: [{ type: "text", text: prompt }] }]
-      : initialMessages ?? [];
+    const messages = isPromptRequest(request)
+      ? [
+          {
+            role: "user" as const,
+            content: [{ type: "text", text: request.prompt }],
+          },
+        ]
+      : request.messages ?? [];
 
     const providedPrompt =
       this.options.prompt &&
@@ -116,17 +117,7 @@ export class EdgeDBAI {
     });
 
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
-      let errorMessage: string;
-
-      if (contentType && contentType.includes("application/json")) {
-        const json = await response.json();
-        errorMessage = json.message || "An error occurred";
-      } else {
-        const bodyText = await response.text();
-        errorMessage = bodyText || "An unknown error occurred";
-      }
-      throw new Error(errorMessage);
+      handleResponseError(response);
     }
 
     return response;
@@ -240,14 +231,4 @@ export class EdgeDBAI {
     const data: { data: { embedding: number[] }[] } = await response.json();
     return data.data[0].embedding;
   }
-}
-
-function extractMessageFromParsedEvent(
-  parsedEvent: ParsedEvent,
-): StreamingMessage {
-  const { data } = parsedEvent;
-  if (!data) {
-    throw new Error("Expected SSE message to include a data payload");
-  }
-  return JSON.parse(data) as StreamingMessage;
 }
