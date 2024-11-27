@@ -1,7 +1,6 @@
 import { type Client } from "edgedb";
 import {
   Auth,
-  builtinOAuthProviderNames,
   type BuiltinOAuthProviderNames,
   type TokenData,
   ConfigurationError,
@@ -20,7 +19,7 @@ import {
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export { type BuiltinProviderNames, NextAuthHelpers, type NextAuthOptions };
 
@@ -145,6 +144,107 @@ export abstract class NextAuth extends NextAuthHelpers {
     });
   }
 
+  public oAuth = {
+    /**
+     * Start the OAuth flow by getting the OAuth configuration from the request
+     * URL search parameters and redirecting to the auth extension server's
+     * authorize endpoint.
+     *
+     * @param {NextRequest} req The incoming request.
+     * @param {string=} req.nextUrl.searchParams.provider_name The name of the
+     * OAuth provider to use.
+     * @param {string=} req.nextUrl.searchParams.authorize_url The URL to
+     * redirect to to start the OAuth flow. If not provided, will default to
+     * the auth extension server's authorize endpoint.
+     * @param {string=} req.nextUrl.searchParams.callback_url The URL to
+     * redirect to within the OAuth flow once the user has authorized the OAuth
+     * client.
+     */
+    handleOAuth: async (req: NextRequest): Promise<NextResponse> => {
+      const providerName = req.nextUrl.searchParams.get("provider_name");
+      if (!providerName) {
+        throw new InvalidDataError("Missing provider_name in request");
+      }
+
+      const callbackUrl = req.nextUrl.searchParams.get("callback_url");
+
+      const authBasePath = this._authRoute.endsWith("/")
+        ? this._authRoute
+        : `${this._authRoute}/`;
+      const redirectTo = new URL("oauth/callback", authBasePath);
+      const redirectToOnSignup = new URL(redirectTo);
+      redirectToOnSignup.searchParams.set("isSignUp", "true");
+
+      const authorizeUrl =
+        req.nextUrl.searchParams.get("authorize_url") ??
+        new URL("authorize", this.options.baseUrl).toString();
+
+      const pkceSession = await (await this.core).createPKCESession();
+      await this.setVerifierCookie(pkceSession.verifier);
+
+      const location = pkceSession.addOAuthParamsToUrl(authorizeUrl, {
+        providerName,
+        redirectTo: redirectTo.toString(),
+        redirectToOnSignup: redirectToOnSignup.toString(),
+        ...(callbackUrl ? { callbackUrl } : {}),
+      });
+      console.log(`Redirecting to ${location}`);
+      return NextResponse.redirect(location);
+    },
+
+    /**
+     * When implementing your own OAuth flow, you should call this method in
+     * your OAuth authorize route. It will call the auth extension server's
+     * authorize endpoint, copying the relevant search parameters from the
+     * incoming request to the auth extension server's authorize endpoint.
+     *
+     * You would pass the URL to the endpoint that calls this method as the
+     * `authorize_url` parameter in the call to the endpoint that calls the
+     * `handleOAuth` method.
+     *
+     * @param {NextRequest} req The incoming request.
+     * @param {string} req.nextUrl.searchParams.provider_name The name of the
+     * OAuth provider to use.
+     * @param {string=} req.nextUrl.searchParams.callback_url The URL to
+     * redirect to within the OAuth flow once the user has authorized the OAuth
+     * client.
+     * @param {string} req.nextUrl.searchParams.redirect_to The URL to
+     * redirect to after the OAuth flow is complete.
+     * @param {string=} req.nextUrl.searchParams.redirect_to_on_signup The URL
+     * to redirect to after the OAuth flow is complete if the user is signing
+     * up.
+     */
+    handleAuthorize: async (req: NextRequest): Promise<NextResponse> => {
+      const location = await (
+        await this.core
+      ).handleOAuthAuthorize(req.nextUrl.searchParams);
+
+      return NextResponse.redirect(location);
+    },
+
+    /**
+     * When implementing your own OAuth flow, you should call this method in
+     * your OAuth callback route, which will handle the callback from the
+     * Identity Provider containing the authorization code. This method will
+     * then call the auth extension server's callback endpoint, passing along
+     * the relevant search parameters from the incoming request.
+     *
+     * You would pass the URL to the endpoint that calls this method as the
+     * `callback_url` parameter in th ecall to th eendpoint that calls the
+     * `handleOAuth` method.
+     *
+     * @param {NextRequest} req
+     * @returns
+     */
+    handleCallback: async (req: NextRequest): Promise<NextResponse> => {
+      const location = await (
+        await this.core
+      ).handleOAuthCallback(req.nextUrl.searchParams);
+
+      return NextResponse.redirect(location);
+    },
+  };
+
   createAuthRouteHandlers({
     onOAuthCallback,
     onEmailPasswordSignIn,
@@ -170,24 +270,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 `'onOAuthCallback' auth route handler not configured`,
               );
             }
-            const provider = req.nextUrl.searchParams.get(
-              "provider_name",
-            ) as BuiltinOAuthProviderNames | null;
-            if (!provider || !builtinOAuthProviderNames.includes(provider)) {
-              throw new InvalidDataError(`invalid provider_name: ${provider}`);
-            }
-            const redirectUrl = `${this._authRoute}/oauth/callback`;
-            const pkceSession = await this.core.then((core) =>
-              core.createPKCESession(),
-            );
-            await this.setVerifierCookie(pkceSession.verifier);
-            return redirect(
-              pkceSession.getOAuthUrl(
-                provider,
-                redirectUrl,
-                `${redirectUrl}?isSignUp=true`,
-              ),
-            );
+            return this.oAuth.handleOAuth(req);
           }
           case "oauth/callback": {
             if (!onOAuthCallback) {
