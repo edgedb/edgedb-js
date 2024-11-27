@@ -36,6 +36,10 @@ export function sleep(durationMillis: number): Promise<void> {
   });
 }
 
+export function versionEqual(left: ProtocolVersion, right: ProtocolVersion) {
+  return left[0] === right[0] && left[1] === right[1];
+}
+
 export function versionGreaterThan(
   left: ProtocolVersion,
   right: ProtocolVersion,

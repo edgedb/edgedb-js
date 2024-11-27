@@ -23,6 +23,8 @@ import {
   type QueryArgs,
   Cardinality,
   OutputFormat,
+  Language,
+  type SQLQueryArgs,
 } from "./ifaces";
 
 export enum TransactionState {
@@ -181,6 +183,19 @@ export class Transaction implements Executor {
     );
   }
 
+  async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
+    await this._runFetchOp(
+      "execute",
+      query,
+      args,
+      OutputFormat.NONE,
+      Cardinality.NO_RESULT,
+      this._holder.options.session,
+      false /* privilegedMode */,
+      Language.SQL,
+    );
+  }
+
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     return this._runFetchOp(
       "query",
@@ -189,6 +204,22 @@ export class Transaction implements Executor {
       OutputFormat.BINARY,
       Cardinality.MANY,
       this._holder.options.session,
+    );
+  }
+
+  async querySQL<T = unknown>(
+    query: string,
+    args?: SQLQueryArgs,
+  ): Promise<T[]> {
+    return this._runFetchOp(
+      "query",
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      this._holder.options.session,
+      false /* privilegedMode */,
+      Language.SQL,
     );
   }
 

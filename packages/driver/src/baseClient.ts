@@ -30,6 +30,8 @@ import {
   type QueryArgs,
   Cardinality,
   OutputFormat,
+  Language,
+  type SQLQueryArgs,
 } from "./ifaces";
 import type {
   RetryOptions,
@@ -178,6 +180,7 @@ export class ClientConnectionHolder {
     args: QueryArgs | undefined,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
+    language: Language = Language.EDGEQL,
   ): Promise<any> {
     for (let iteration = 0; ; ++iteration) {
       const conn = await this._getConnection();
@@ -188,6 +191,8 @@ export class ClientConnectionHolder {
           outputFormat,
           expectedCardinality,
           this.options.session,
+          false /* privilegedMode */,
+          language,
         );
         if (warnings.length) {
           this.options.warningHandler(warnings);
@@ -226,12 +231,32 @@ export class ClientConnectionHolder {
     );
   }
 
+  async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
+    await this.retryingFetch(
+      query,
+      args,
+      OutputFormat.NONE,
+      Cardinality.NO_RESULT,
+      Language.SQL,
+    );
+  }
+
   async query(query: string, args?: QueryArgs): Promise<any> {
     return this.retryingFetch(
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
+    );
+  }
+
+  async querySQL(query: string, args?: SQLQueryArgs): Promise<any> {
+    return this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      Language.SQL,
     );
   }
 
@@ -629,10 +654,31 @@ export class Client implements Executor {
     }
   }
 
+  async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      return await holder.executeSQL(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.query(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
+  async querySQL<T = unknown>(
+    query: string,
+    args?: SQLQueryArgs,
+  ): Promise<T[]> {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      return await holder.querySQL(query, args);
     } finally {
       await holder.release();
     }
@@ -718,6 +764,7 @@ export class Client implements Executor {
     try {
       const cxn = await holder._getConnection();
       const result = await cxn._parse(
+        Language.EDGEQL,
         query,
         OutputFormat.BINARY,
         Cardinality.MANY,

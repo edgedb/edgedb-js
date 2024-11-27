@@ -24,7 +24,7 @@ import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
 import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";
 import * as numbers from "./numbers";
 import * as datecodecs from "./datetime";
-import { JSONStringCodec } from "./json";
+import { JSONStringCodec, PgTextJSONStringCodec } from "./json";
 import { ArrayCodec } from "./array";
 import { NamedTupleCodec } from "./namedtuple";
 import { EnumCodec } from "./enum";
@@ -57,11 +57,15 @@ export interface CustomCodecSpec {
   int64_bigint?: boolean;
   datetime_localDatetime?: boolean;
   json_string?: boolean;
+  pg_json_string?: boolean;
+  pg_timestamptz_localDatetime?: boolean;
 }
 
 const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
 const DATETIME_TYPEID = KNOWN_TYPENAMES.get("std::datetime")!;
 const JSON_TYPEID = KNOWN_TYPENAMES.get("std::json")!;
+const PG_JSON_TYPEID = KNOWN_TYPENAMES.get("std::pg::json")!;
+const PG_TIMESTAMPTZ_TYPEID = KNOWN_TYPENAMES.get("std::pg::timestamptz")!;
 
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
@@ -78,6 +82,8 @@ export class CodecsRegistry {
     int64_bigint,
     datetime_localDatetime,
     json_string,
+    pg_json_string,
+    pg_timestamptz_localDatetime,
   }: CustomCodecSpec = {}): void {
     // This is a private API and it will change in the future.
 
@@ -106,6 +112,27 @@ export class CodecsRegistry {
       );
     } else {
       this.customScalarCodecs.delete(JSON_TYPEID);
+    }
+
+    if (pg_json_string) {
+      this.customScalarCodecs.set(
+        PG_JSON_TYPEID,
+        new PgTextJSONStringCodec(PG_JSON_TYPEID, "std::pg::json"),
+      );
+    } else {
+      this.customScalarCodecs.delete(PG_JSON_TYPEID);
+    }
+
+    if (pg_timestamptz_localDatetime) {
+      this.customScalarCodecs.set(
+        PG_TIMESTAMPTZ_TYPEID,
+        new datecodecs.LocalDateTimeCodec(
+          PG_TIMESTAMPTZ_TYPEID,
+          "std::pg::timestamptz",
+        ),
+      );
+    } else {
+      this.customScalarCodecs.delete(PG_TIMESTAMPTZ_TYPEID);
     }
   }
 

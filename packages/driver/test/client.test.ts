@@ -42,6 +42,7 @@ import {
   InvalidArgumentError,
   InvalidValueError,
   SparseVector,
+  UnsupportedFeatureError,
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
@@ -58,6 +59,7 @@ import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/adapter.crypto.node";
 import { getAuthenticatedFetch } from "../src/utils";
+import { Language } from "../src/ifaces";
 
 function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
   // @ts-ignore
@@ -2301,12 +2303,14 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       tlsSecurity: "insecure",
     });
 
+    const edgedbVer = getEdgeDBVersion();
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
         getHTTPSCRAMAuth(cryptoUtils),
       ),
       codecsRegistry,
+      [edgedbVer.major, edgedbVer.minor],
     );
 
     const query = `SELECT Function { name }`;
@@ -2316,8 +2320,14 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
       implicitLimit: BigInt(5),
     } as const;
 
-    const [_, outCodec] = await fetchConn.rawParse(query, state, options);
+    const [_, outCodec] = await fetchConn.rawParse(
+      Language.EDGEQL,
+      query,
+      state,
+      options,
+    );
     const resultData = await fetchConn.rawExecute(
+      Language.EDGEQL,
       query,
       state,
       outCodec,
@@ -2345,7 +2355,122 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     );
 
     await expect(
-      fetchConn.rawParse(`select 1`, Session.defaults()),
-    ).rejects.toThrowError(AuthenticationError);
+      fetchConn.rawParse(Language.EDGEQL, `select 1`, Session.defaults()),
+    ).rejects.toThrow(AuthenticationError);
+  });
+}
+
+if (getEdgeDBVersion().major >= 6) {
+  test("querySQL", async () => {
+    let client = getClient();
+
+    try {
+      let res = await client.querySQL("select 1");
+      expect(JSON.stringify(res)).toEqual('[{"col~1":1}]');
+
+      res = await client.querySQL("select 1 AS foo, 2 AS bar");
+      expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
+
+      res = await client.querySQL("select 1 + $1::int8", [41]);
+      expect(JSON.stringify(res)).toEqual('[{"col~1":42}]');
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("executeSQL", async () => {
+    let client = getClient();
+
+    try {
+      // just test that it doesn't crash
+      await client.executeSQL("select 1");
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("transaction.SQL", async () => {
+    const typename = "ExecuteSQL_01";
+    const query = `SELECT ${typename}.prop1 LIMIT 1`;
+    const client = getClient();
+    try {
+      await client.transaction(async (tx) => {
+        await tx.execute(`
+        CREATE TYPE ${typename} {
+          CREATE REQUIRED PROPERTY prop1 -> std::str;
+        };
+      `);
+
+        await tx.executeSQL(`
+        INSERT INTO "${typename}" (prop1) VALUES (123);
+      `);
+
+        let res = await tx.querySingle(query);
+        expect(res).toBe("123");
+
+        await tx.querySQL(`
+        UPDATE "${typename}" SET prop1 = '345';
+      `);
+
+        res = await tx.querySingle(query);
+        expect(res).toBe("345");
+
+        throw new CancelTransaction();
+      });
+    } catch (e) {
+      if (!(e instanceof CancelTransaction)) {
+        throw e;
+      }
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("querySQL std::pg:: types", async () => {
+    let client = getClient();
+
+    const pgTypes: [string, any][] = [
+      ["json", [{ abc: 123 }, "test", 456]],
+      ["timestamptz", new Date()],
+      ["timestamp", new LocalDateTime(2024, 11, 15, 16, 20, 1, 2, 3)],
+      ["date", new LocalDate(2024, 11, 15)],
+      ["interval", new RelativeDuration(1, 2, 3, 4, 5, 6, 7, 8, 9)],
+    ];
+
+    try {
+      for (const [typename, val] of pgTypes) {
+        const res = await client.querySQL<{ val: any }>(
+          `select $1::${typename} as "val"`,
+          [val],
+        );
+        expect(JSON.stringify(res[0].val)).toEqual(JSON.stringify(val));
+      }
+    } finally {
+      await client.close();
+    }
+  });
+} else {
+  test("SQL methods should fail nicely if proto v3 not supported", async () => {
+    let client = getClient();
+
+    try {
+      const unsupportedError = new UnsupportedFeatureError(
+        "the server does not support SQL queries, upgrade to 6.0 or newer",
+      );
+
+      await expect(client.querySQL("select 1")).rejects.toThrow(
+        unsupportedError,
+      );
+
+      await expect(client.executeSQL("select 1")).rejects.toThrow(
+        unsupportedError,
+      );
+
+      await expect(
+        client.transaction((tx) => tx.querySQL("select 1")),
+      ).rejects.toThrow(unsupportedError);
+    } finally {
+      await client.close();
+    }
   });
 }
