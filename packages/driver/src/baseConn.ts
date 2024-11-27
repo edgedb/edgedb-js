@@ -899,13 +899,17 @@ export class BaseRawConnection {
     options: QueryOptions | undefined,
     language: Language,
   ) {
-    if (state.annotations.size >= 1 << 16) {
-      throw new errors.InternalClientError("too many annotations");
-    }
-    wb.writeUInt16(state.annotations.size);
-    for (const [name, value] of state.annotations) {
-      wb.writeString(name);
-      wb.writeString(value);
+    if (versionGreaterThanOrEqual(this.protocolVersion, [3, 0])) {
+      if (state.annotations.size >= 1 << 16) {
+        throw new errors.InternalClientError("too many annotations");
+      }
+      wb.writeUInt16(state.annotations.size);
+      for (const [name, value] of state.annotations) {
+        wb.writeString(name);
+        wb.writeString(value);
+      }
+    } else {
+      wb.writeUInt16(0);
     }
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
