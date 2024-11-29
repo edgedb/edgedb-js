@@ -40,7 +40,8 @@ export class NextAppAuth extends NextAuth {
   createServerActions() {
     return {
       signout: async () => {
-        (await cookies()).delete(this.options.authCookieName);
+        const cookieStore = await cookies();
+        cookieStore.delete(this.options.authCookieName);
       },
       emailPasswordSignIn: async (
         data: FormData | { email: string; password: string },
