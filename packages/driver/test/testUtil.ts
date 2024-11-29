@@ -10,7 +10,7 @@ import type { ConnectConfig } from "../src/conUtils";
 import { Client, createClient } from "../src/index.node";
 import type { EdgeDBVersion } from "./testbase";
 
-export type { EdgeDBVersion };
+export type { EdgeDBVersion, ConnectConfig };
 
 interface ServerInfo {
   port: number;

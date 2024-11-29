@@ -5,6 +5,7 @@ import {
   getServerCommand,
   getWSLPath,
   startServer,
+  ConnectConfig,
 } from "./testUtil";
 
 export default async () => {
@@ -18,14 +19,19 @@ export default async () => {
   console.log(`Starting server...`);
   const { proc, config } = await startServer(args, statusFile);
 
+  const { client, version } = await connectToServer(config);
+
+  const jestConfig: ConnectConfig = {
+    ...config,
+    user: version.major >= 6 ? "admin" : "edgedb",
+  };
+
   // @ts-ignore
   global.edgedbProc = proc;
 
-  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
+  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(jestConfig);
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
-
-  const { client, version } = await connectToServer(config);
 
   // @ts-ignore
   global.edgedbConn = client;
@@ -41,5 +47,5 @@ export default async () => {
     JSON.stringify(availableExtensions);
 
   // tslint:disable-next-line
-  console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
+  console.log(`EdgeDB test cluster is up [port: ${jestConfig.port}]...`);
 };
