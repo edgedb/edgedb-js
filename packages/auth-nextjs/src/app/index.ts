@@ -27,15 +27,13 @@ export {
 };
 
 export class NextAppAuth extends NextAuth {
-  getSession = cache(
-    async () =>
-      new NextAuthSession(
-        this.client,
-        (await cookies())
-          .get(this.options.authCookieName)
-          ?.value.split(";")[0] ?? null,
-      ),
-  );
+  getSession = cache(async () => {
+    const cookieStore = await cookies();
+    return new NextAuthSession(
+      this.client,
+      cookieStore.get(this.options.authCookieName)?.value.split(";")[0] ?? null,
+    );
+  });
 
   createServerActions() {
     return {
