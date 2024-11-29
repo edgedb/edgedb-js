@@ -203,8 +203,6 @@ export class NextAppAuth extends NextAuth {
   }
 }
 
-console.log("aaaaa");
-
 export default function createNextAppAuth(
   client: Client,
   options: NextAuthOptions,

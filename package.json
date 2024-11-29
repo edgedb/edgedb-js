@@ -26,7 +26,6 @@
     "ci:test": "turbo run ci:test"
   },
   "overrides": {
-    "@types/react": "npm:types-react@rc",
-    "@types/react-dom": "npm:types-react-dom@rc"
+    "@types/react": "npm:types-react@rc"
   }
 }
