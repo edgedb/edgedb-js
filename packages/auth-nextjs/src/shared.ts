@@ -18,7 +18,7 @@ import {
   type NextAuthOptions,
 } from "./shared.client";
 
-import { cookies } from "next/headers";
+import { cookies as nextCookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest, NextResponse } from "next/server";
 
@@ -93,6 +93,10 @@ export interface CreateAuthRouteHandlers {
   onSignout(req: NextRequest): Promise<never>;
 }
 
+type ReadonlyRequestCookies = Awaited<ReturnType<typeof nextCookies>>;
+const cookies: () => Promise<ReadonlyRequestCookies> | ReadonlyRequestCookies =
+  nextCookies;
+
 export abstract class NextAuth extends NextAuthHelpers {
   protected readonly core: Promise<Auth>;
 
@@ -113,8 +117,9 @@ export abstract class NextAuth extends NextAuthHelpers {
     return Auth.checkPasswordResetTokenValid(resetToken);
   }
 
-  setVerifierCookie(verifier: string) {
-    cookies().set({
+  async setVerifierCookie(verifier: string) {
+    const cookieStore = await cookies();
+    cookieStore.set({
       name: this.options.pkceVerifierCookieName,
       value: verifier,
       httpOnly: true,
@@ -125,9 +130,10 @@ export abstract class NextAuth extends NextAuthHelpers {
     });
   }
 
-  setAuthCookie(token: string) {
+  async setAuthCookie(token: string) {
+    const cookieStore = await cookies();
     const expirationDate = Auth.getTokenExpiration(token);
-    cookies().set({
+    cookieStore.set({
       name: this.options.authCookieName,
       value: token,
       httpOnly: true,
@@ -153,8 +159,9 @@ export abstract class NextAuth extends NextAuthHelpers {
     return {
       GET: async (
         req: NextRequest,
-        { params }: { params: { auth: string[] } },
+        ctx: { params: Promise<{ auth: string[] }> },
       ) => {
+        const params = await ctx.params;
         switch (params.auth.join("/")) {
           case "oauth": {
             if (!onOAuthCallback) {
@@ -172,7 +179,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession(),
             );
-            this.setVerifierCookie(pkceSession.verifier);
+            await this.setVerifierCookie(pkceSession.verifier);
             return redirect(
               pkceSession.getOAuthUrl(
                 provider,
@@ -232,8 +239,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req,
               );
             }
-            this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            await this.setAuthCookie(tokenData.auth_token);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.pkceVerifierCookieName);
 
             return onOAuthCallback(
               {
@@ -289,8 +297,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req,
               );
             }
-            this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            await this.setAuthCookie(tokenData.auth_token);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
           }
@@ -358,8 +367,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req,
               );
             }
-            this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            await this.setAuthCookie(tokenData.auth_token);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.pkceVerifierCookieName);
 
             return onEmailVerify({ error: null, tokenData }, req);
           }
@@ -414,8 +424,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req,
               );
             }
-            this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            await this.setAuthCookie(tokenData.auth_token);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.pkceVerifierCookieName);
 
             return onMagicLinkCallback(
               {
@@ -490,7 +501,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 req,
               );
             }
-            this.setAuthCookie(tokenData.auth_token);
+            await this.setAuthCookie(tokenData.auth_token);
             // n.b. we need to keep the verifier cookie around for the email
             // verification flow which uses the same PKCE session
 
@@ -511,7 +522,7 @@ export abstract class NextAuth extends NextAuthHelpers {
             const pkceSession = await this.core.then((core) =>
               core.createPKCESession(),
             );
-            this.setVerifierCookie(pkceSession.verifier);
+            await this.setVerifierCookie(pkceSession.verifier);
             return redirect(
               params.auth[params.auth.length - 1] === "signup"
                 ? pkceSession.getHostedUISignupUrl()
@@ -524,7 +535,8 @@ export abstract class NextAuth extends NextAuthHelpers {
                 `'onSignout' auth route handler not configured`,
               );
             }
-            cookies().delete(this.options.authCookieName);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.authCookieName);
             return onSignout(req);
           }
           default:
@@ -535,8 +547,9 @@ export abstract class NextAuth extends NextAuthHelpers {
       },
       POST: async (
         req: NextRequest,
-        { params }: { params: { auth: string[] } },
+        ctx: { params: Promise<{ auth: string[] }> },
       ) => {
+        const params = await ctx.params;
         switch (params.auth.join("/")) {
           case "emailpassword/signin": {
             const data = await _getReqBody(req);
@@ -562,7 +575,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordSignIn({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            this.setAuthCookie(tokenData.auth_token);
+            await this.setAuthCookie(tokenData.auth_token);
             return _wrapResponse(
               onEmailPasswordSignIn?.({ error: null, tokenData }, req),
               isAction,
@@ -598,9 +611,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordSignUp({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            this.setVerifierCookie(result.verifier);
+            await this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              this.setAuthCookie(result.tokenData.auth_token);
+              await this.setAuthCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onEmailPasswordSignUp?.(
                   {
@@ -640,7 +653,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl,
               ).toString(),
             );
-            this.setVerifierCookie(verifier);
+            await this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
@@ -676,8 +689,9 @@ export abstract class NextAuth extends NextAuthHelpers {
                 ? _wrapResponse(onEmailPasswordReset({ error }, req), isAction)
                 : Response.json(_wrapError(error));
             }
-            this.setAuthCookie(tokenData.auth_token);
-            cookies().delete(this.options.pkceVerifierCookieName);
+            await this.setAuthCookie(tokenData.auth_token);
+            const cookieStore = await cookies();
+            cookieStore.delete(this.options.pkceVerifierCookieName);
             return _wrapResponse(
               onEmailPasswordReset?.({ error: null, tokenData }, req),
               isAction,
@@ -709,7 +723,8 @@ export abstract class NextAuth extends NextAuthHelpers {
                 email.toString(),
                 `${this._authRoute}/emailpassword/verify`,
               );
-              cookies().set({
+              const cookieStore = await cookies();
+              cookieStore.set({
                 name: this.options.pkceVerifierCookieName,
                 value: verifier,
                 httpOnly: true,
@@ -745,9 +760,9 @@ export abstract class NextAuth extends NextAuthHelpers {
               return _wrapResponse(onWebAuthnSignUp({ error }, req), false);
             }
 
-            this.setVerifierCookie(result.verifier);
+            await this.setVerifierCookie(result.verifier);
             if (result.status === "complete") {
-              this.setAuthCookie(result.tokenData.auth_token);
+              await this.setAuthCookie(result.tokenData.auth_token);
               return _wrapResponse(
                 onWebAuthnSignUp(
                   {
@@ -811,7 +826,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl,
               ).toString(),
             );
-            this.setVerifierCookie(verifier);
+            await this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
@@ -839,7 +854,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 this.options.baseUrl,
               ).toString(),
             );
-            this.setVerifierCookie(verifier);
+            await this.setVerifierCookie(verifier);
             return isAction
               ? Response.json({ _data: null })
               : new Response(null, { status: 204 });
