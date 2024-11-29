@@ -982,10 +982,10 @@ async function parseDSNIntoConfig(
     throw new InterfaceError(`invalid DSN or instance name: '${_dsnString}'`);
   }
 
-  if (parsed.protocol !== "edgedb:") {
+  if (parsed.protocol !== "edgedb:" && parsed.protocol !== "gel:") {
     throw new InterfaceError(
       `invalid DSN: scheme is expected to be ` +
-        `'edgedb', got '${parsed.protocol.slice(0, -1)}'`,
+        `'gel', got '${parsed.protocol.slice(0, -1)}'`,
     );
   }
 
