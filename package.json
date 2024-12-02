@@ -24,5 +24,8 @@
     "format:fix": "prettier --write 'packages/*/(src|test)/**/*.(mts|ts)' 'integration-tests/*/*.(mts|ts)'",
     "ci:typecheck": "turbo run ci:typecheck",
     "ci:test": "turbo run ci:test"
+  },
+  "overrides": {
+    "@types/react": "npm:types-react@rc"
   }
 }
