@@ -3,17 +3,19 @@ import type { FetchFunction } from "@ai-sdk/provider-utils";
 export type OpenAIModelId =
   | "gpt-4o"
   | "gpt-4o-mini"
-  | "gpt-4-turbo-preview"
+  | "o1-preview"
+  | "o1-mini"
   | "gpt-4-turbo"
-  | "gpt-3.5-turbo"
-  | "gpt-4";
+  | "gpt-4-turbo-preview"
+  | "gpt-4"
+  | "gpt-3.5-turbo";
 
 export type MistralModelId =
-  | "ministral-8b-latest"
-  | "ministral-3b-latest"
-  | "mistral-small-latest"
-  | "mistral-medium-latest" // will be deprecated "soon"
   | "mistral-large-latest"
+  | "pixtral-large-latest"
+  | "ministral-3b-latest"
+  | "ministral-8b-latest"
+  | "mistral-small-latest"
   | "codestral-latest"
   | "pixtral-12b-2409" // free model
   | "open-mistral-nemo" // free model
@@ -22,9 +24,9 @@ export type MistralModelId =
 export type AnthropicModelId =
   | "claude-3-5-sonnet-latest"
   | "claude-3-5-haiku-latest"
-  | "claude-3-haiku-20240307"
+  | "claude-3-opus-latest"
   | "claude-3-sonnet-20240229"
-  | "claude-3-opus-20240229";
+  | "claude-3-haiku-20240307";
 
 export type EdgeDBChatModelId =
   | OpenAIModelId
