@@ -18,7 +18,7 @@ import {
   type NextAuthOptions,
 } from "./shared.client";
 
-import { cookies as nextCookies } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest, NextResponse } from "next/server";
 
@@ -93,10 +93,6 @@ export interface CreateAuthRouteHandlers {
   onSignout(req: NextRequest): Promise<never>;
 }
 
-type ReadonlyRequestCookies = Awaited<ReturnType<typeof nextCookies>>;
-const cookies: () => Promise<ReadonlyRequestCookies> | ReadonlyRequestCookies =
-  nextCookies;
-
 export abstract class NextAuth extends NextAuthHelpers {
   protected readonly core: Promise<Auth>;
 
@@ -128,6 +124,11 @@ export abstract class NextAuth extends NextAuthHelpers {
       secure: this.isSecure,
       expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // In 7 days
     });
+  }
+
+  async deleteVerifierCookie() {
+    const cookieStore = await cookies();
+    cookieStore.delete(this.options.pkceVerifierCookieName);
   }
 
   async setAuthCookie(token: string) {
@@ -240,8 +241,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             await this.setAuthCookie(tokenData.auth_token);
-            const cookieStore = await cookies();
-            cookieStore.delete(this.options.pkceVerifierCookieName);
+            await this.deleteVerifierCookie();
 
             return onOAuthCallback(
               {
@@ -298,8 +298,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             await this.setAuthCookie(tokenData.auth_token);
-            const cookieStore = await cookies();
-            cookieStore.delete(this.options.pkceVerifierCookieName);
+            await this.deleteVerifierCookie();
 
             return onEmailVerify({ error: null, tokenData }, req);
           }
@@ -368,8 +367,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             await this.setAuthCookie(tokenData.auth_token);
-            const cookieStore = await cookies();
-            cookieStore.delete(this.options.pkceVerifierCookieName);
+            await this.deleteVerifierCookie();
 
             return onEmailVerify({ error: null, tokenData }, req);
           }
@@ -425,8 +423,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               );
             }
             await this.setAuthCookie(tokenData.auth_token);
-            const cookieStore = await cookies();
-            cookieStore.delete(this.options.pkceVerifierCookieName);
+            await this.deleteVerifierCookie();
 
             return onMagicLinkCallback(
               {
@@ -690,8 +687,7 @@ export abstract class NextAuth extends NextAuthHelpers {
                 : Response.json(_wrapError(error));
             }
             await this.setAuthCookie(tokenData.auth_token);
-            const cookieStore = await cookies();
-            cookieStore.delete(this.options.pkceVerifierCookieName);
+            await this.deleteVerifierCookie();
             return _wrapResponse(
               onEmailPasswordReset?.({ error: null, tokenData }, req),
               isAction,
