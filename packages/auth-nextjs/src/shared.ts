@@ -188,7 +188,6 @@ export abstract class NextAuth extends NextAuthHelpers {
         redirectToOnSignup: redirectToOnSignup.toString(),
         ...(callbackUrl ? { callbackUrl } : {}),
       });
-      console.log(`Redirecting to ${location}`);
       return NextResponse.redirect(location);
     },
 
