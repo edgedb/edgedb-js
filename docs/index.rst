@@ -210,8 +210,10 @@ Iron Man 2:
   async function main() {
     const result = await client.querySingle(`
       select Movie {
+        id,
         title,
         actors: {
+          id,
           name,
         }
       } filter .title = "Iron Man 2"
@@ -241,29 +243,32 @@ equivalent TypeScript interfaces.
 
 Now we can annotate our query since we are selecting the whole ``Movie`` type:
 
-.. code-block:: typescript
+.. code-block:: typescript-diff
   :caption: query.ts
 
-  import * as edgedb from "edgedb";
-  import { Movie } from "./dbschema/interfaces"
+    import * as edgedb from "edgedb";
+    import { Movie } from "./dbschema/interfaces"
 
-  const client = edgedb.createClient();
+    const client = edgedb.createClient();
 
-  async function main() {
-    // result will be inferred as Movie | null
-    const result = await client.querySingle<Movie>(`
-      select Movie {
-        title,
-        actors: {
-          name,
-        }
-      } filter .title = "Iron Man 2"
-    `);
+    async function main() {
+      // result will be inferred as Movie | null
+  -   const result = await client.querySingle(`
+  +   const result = await client.querySingle<Movie>(`
+        select Movie {
+          id,
+          title,
+          actors: {
+            id,
+            name,
+          }
+        } filter .title = "Iron Man 2"
+      `);
 
-    console.log(JSON.stringify(result, null, 2));
-  }
+      console.log(JSON.stringify(result, null, 2));
+    }
 
-  main();
+    main();
 
 You can now run the script with ``tsx``:
 
