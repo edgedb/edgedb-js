@@ -26,7 +26,7 @@ currently supported.`);
 `,
     );
   } else {
-    console.log(`Detected project root via edgedb.toml:`);
+    console.log(`Detected project root via project config file:`);
     console.log("   " + params.root);
   }
 
