@@ -107,21 +107,22 @@ a working EdgeDB project. Let's update the schema to make the ``title`` property
 of the ``Movie`` type exclusive. This will help with filtering by
 ``Movie.title`` in our queries.
 
-.. code-block:: sdl
+.. code-block:: sdl-diff
   :caption: dbschema/default.esdl
 
-  module default {
-    type Movie {
-      required title: str {
-        constraint exclusive;
-      };
-      multi actors: Person;
-    }
+    module default {
+      type Person {
+        required name: str;
+      }
 
-    type Person {
-      required name: str;
+      type Movie {
+  -     required title: str;
+  +     required title: str {
+  +       constraint exclusive;
+  +     };
+        multi actors: Person;
+      }
     }
-  }
 
 Generate the new migration and apply them:
 
