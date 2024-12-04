@@ -276,6 +276,75 @@ export class Auth {
     return this.getToken(code, verifier);
   }
 
+  /**
+   * When proxying the OAuth flow through your own server, you can use this
+   * method to get the URL to redirect to that will include the required
+   * parameters. Will throw an error if the auth server returns an error, or if
+   * the response does not contain a location header.
+   *
+   * @param {URLSearchParams} searchParams From the original request. Gets
+   * passed on to the auth server
+   * @returns {string} The URL to redirect to
+   */
+  async handleOAuthAuthorize(searchParams: URLSearchParams): Promise<string> {
+    const serverUrl = new URL("authorize", this.baseUrl);
+    searchParams.forEach((value, key) => {
+      serverUrl.searchParams.append(key, value);
+    });
+
+    const response = await fetch(serverUrl, {
+      redirect: "manual",
+    });
+
+    if (response.status > 399) {
+      throw new Error(
+        `OAuth authorization failed with status ${response.status}: ${await response.text()}`,
+      );
+    }
+
+    const location = response.headers.get("location");
+
+    if (location == null) {
+      throw new Error("OAuth authorization failed: no location header");
+    }
+
+    return location;
+  }
+
+  /**
+   * When proxying the OAuth flow through your own server, you can use this
+   * method to complete the flow, and get the URL to redirect to with the
+   * correct parameters. Will throw an error if the auth server returns an
+   * error, or if the response does not contain a location header.
+   *
+   * @param {URLSearchParams} searchParams From the original request. Gets
+   * passed on to the auth server
+   * @returns {string} The URL to redirect to
+   */
+  async handleOAuthCallback(searchParams: URLSearchParams): Promise<string> {
+    const serverUrl = new URL("callback", this.baseUrl);
+    searchParams.forEach((value, key) => {
+      serverUrl.searchParams.append(key, value);
+    });
+
+    const response = await fetch(serverUrl, {
+      redirect: "manual",
+    });
+
+    if (response.status > 399) {
+      throw new Error(
+        `OAuth callback failed with status ${response.status}: ${await response.text()}`,
+      );
+    }
+
+    const location = response.headers.get("location");
+    if (location == null) {
+      throw new Error("OAuth callback failed: no location header");
+    }
+
+    return location;
+  }
+
   async getProvidersInfo() {
     // TODO: cache this data when we have a way to invalidate on config update
     try {
@@ -313,18 +382,49 @@ export class AuthPCKESession {
     providerName: BuiltinOAuthProviderNames,
     redirectTo: string,
     redirectToOnSignup?: string,
-  ) {
-    const url = new URL("authorize", this.auth.baseUrl);
+  ): string {
+    return this.addOAuthParamsToUrl(new URL("authorize", this.auth.baseUrl), {
+      providerName,
+      redirectTo,
+      redirectToOnSignup,
+    }).toString();
+  }
 
-    url.searchParams.set("provider", providerName);
-    url.searchParams.set("challenge", this.challenge);
-    url.searchParams.set("redirect_to", redirectTo);
+  /**
+   * Build a URL with the required OAuth parameters used to call the OAuth
+   * authorize endpoint.
+   *
+   * @param {URL | string} url If you pass a URL object, it will be mutated
+   * and returned. If you pass a string, a new URL object will be created.
+   * @param {Object} oauthParams
+   * @returns {URL}
+   */
+  addOAuthParamsToUrl(
+    url: string | URL,
+    oauthParams: {
+      providerName: string;
+      redirectTo: string;
+      redirectToOnSignup?: string;
+      callbackUrl?: string;
+    },
+  ): URL {
+    const withParams = typeof url === "string" ? new URL(url) : url;
+    withParams.searchParams.set("provider", oauthParams.providerName);
+    withParams.searchParams.set("challenge", this.challenge);
+    withParams.searchParams.set("redirect_to", oauthParams.redirectTo);
 
-    if (redirectToOnSignup) {
-      url.searchParams.set("redirect_to_on_signup", redirectToOnSignup);
+    if (oauthParams.redirectToOnSignup) {
+      withParams.searchParams.set(
+        "redirect_to_on_signup",
+        oauthParams.redirectToOnSignup,
+      );
     }
 
-    return url.toString();
+    if (oauthParams.callbackUrl) {
+      withParams.searchParams.set("callback_url", oauthParams.callbackUrl);
+    }
+
+    return withParams;
   }
 
   // getEmailPasswordSigninFormActionUrl(
