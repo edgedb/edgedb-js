@@ -21,7 +21,7 @@ currently supported.`);
   const root = params.root ?? adapter.process.cwd();
   if (noRoot) {
     console.warn(
-      `No \`edgedb.toml\` found, using process.cwd() as root directory:
+      `No project config file found, using process.cwd() as root directory:
    ${params.root}
 `,
     );

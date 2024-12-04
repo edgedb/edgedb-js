@@ -58,7 +58,8 @@ export async function generateQueryBuilder(params: {
     outputDir = path.join(root, schemaDir, "edgeql-js");
   } else {
     throw new Error(
-      `No edgedb.toml found. Initialize an EdgeDB project with\n\`edgedb project init\` or specify an output directory with \`--output-dir\``,
+      "No project config file found. Initialize an EdgeDB project with\n" +
+        "'edgedb project init' or specify an output directory with '--output-dir'",
     );
   }
 

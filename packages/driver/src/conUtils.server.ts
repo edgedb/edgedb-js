@@ -24,7 +24,10 @@ async function findProjectDir(required = true): Promise<string | null> {
   let dir = workingDir;
   const cwdDev = (await fs.stat(dir)).dev;
   while (true) {
-    if (await exists(path.join(dir, "edgedb.toml"))) {
+    if (
+      (await exists(path.join(dir, "edgedb.toml"))) ||
+      (await exists(path.join(dir, "gel.toml")))
+    ) {
       projectDirCache.set(workingDir, dir);
       return dir;
     }

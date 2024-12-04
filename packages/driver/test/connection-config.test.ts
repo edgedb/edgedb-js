@@ -155,9 +155,9 @@ async function envWrap(
 const errorMapping: { [key: string]: string | RegExp } = {
   credentials_file_not_found: /^cannot read credentials file/,
   project_not_initialised:
-    /^Found 'edgedb\.toml' but the project is not initialized/,
+    /^Found project config file but the project is not initialized/,
   no_options_or_toml:
-    /^no 'edgedb\.toml' found and no connection options specified either/,
+    /^no project config file found and no connection options specified either/,
   invalid_credentials_file: /^cannot read credentials file/,
   invalid_dsn_or_instance_name: /^invalid DSN or instance name/,
   invalid_instance_name: /^invalid instance name/,
