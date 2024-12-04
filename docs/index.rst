@@ -284,8 +284,23 @@ function that we could call? Good news, that's exactly what the next generator
 does! The :ref:`queries generator <edgedb-js-queries>` scans your project for
 ``*.edgeql`` files and generates a file containing a strongly-typed function.
 
-First, move the query into a separate file called ``getMovie.edgeql``. Next,
-we'll run the ``queries`` generator:
+First, move the query into a separate file called ``getMovie.edgeql``.
+
+.. code-block:: edgeql
+  :caption: getMovie.edgeql
+
+  select Movie {
+    id,
+    title,
+    actors: {
+      id,
+      name,
+    }
+  };
+
+
+Next, we'll run the ``queries`` generator, specifying the ``--file`` option
+which will compile all the queries it finds into a single TypeScript module:
 
 .. code-block:: bash
 
@@ -294,22 +309,33 @@ we'll run the ``queries`` generator:
 Now, let's update our query script to call the generated function, which will
 provide us with type-safe querying.
 
-.. code-block:: typescript
+.. code-block:: typescript-diff
   :caption: query.ts
 
-  import * as edgedb from "edgedb";
-  import { getMovie } from "./dbschema/queries"
+    import * as edgedb from "edgedb";
+ -  import { Movie } from "./dbschema/interfaces"
+ +  import { getMovie } from "./dbschema/queries"
 
-  const client = edgedb.createClient();
+    const client = edgedb.createClient();
 
-  async function main() {
-    // result will be inferred as Movie | null
-    const result = await getMovie(client);
+    async function main() {
+      // result will be inferred as Movie | null
+  -   const result = await client.querySingle<Movie>(`
+  -     select Movie {
+  -       id,
+  -       title,
+  -       actors: {
+  -         id,
+  -         name,
+  -       }
+  -     } filter .title = "Iron Man 2"
+  -   `);
+  +   const result = await getMovie(client);
 
-    console.log(JSON.stringify(result, null, 2));
-  }
+      console.log(JSON.stringify(result, null, 2));
+    }
 
-  main();
+    main();
 
 Now, if you change the query to return different data, or take parameters, and
 run the queries generator again, the type of the newly generated function will
@@ -344,28 +370,32 @@ First, we'll run the query builder generator:
 Now, we can import the generated query builder and express our query completely
 in TypeScript, getting editor completion, type checking, and type inferrence:
 
-.. code-block:: typescript
+.. code-block:: typescript-diff
   :caption: query.ts
 
-  import * as edgedb from "edgedb";
-  import e from "./dbschema/edgeql-js";
+    import * as edgedb from "edgedb";
+  - import { getMovie } from "./dbschema/queries";
+  + import e from "./dbschema/edgeql-js";
 
-  const client = edgedb.createClient();
+    const client = edgedb.createClient();
 
-  async function main() {
-    // result will be inferred based on the query
-    const result = await e
-      .select(e.Movie, () => ({
-        title: true,
-        actors: () => ({ name: true }),
-        filter_single: { title: "Iron Man 2" },
-      }))
-      .run(client);
+    async function main() {
+  -   // result will be inferred as Movie | null
+  +   // result will be inferred based on the query
+  -   const result = await getMovie(client);
+  +   const result = await e
+  +     .select(e.Movie, () => ({
+  +       id: true,
+  +       title: true,
+  +       actors: () => ({ id: true, name: true }),
+  +       filter_single: { title: "Iron Man 2" },
+  +     }))
+  +     .run(client);
 
-    console.log(JSON.stringify(result, null, 2));
-  }
+      console.log(JSON.stringify(result, null, 2));
+    }
 
-  main();
+    main();
 
 What's next
 ===========
