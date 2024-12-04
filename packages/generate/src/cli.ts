@@ -72,11 +72,21 @@ const run = async () => {
   let schemaDir = "dbschema";
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
-    if (await exists(path.join(currentDir, "edgedb.toml"))) {
+    const gelToml = path.join(currentDir, "gel.toml");
+    const edgedbToml = path.join(currentDir, "edgedb.toml");
+    let configFile: string | null = null;
+
+    if (await exists(gelToml)) {
+      configFile = gelToml;
+    } else if (await exists(edgedbToml)) {
+      configFile = edgedbToml;
+    }
+
+    if (configFile) {
       projectRoot = currentDir;
       const config: {
         project?: { "schema-dir"?: string };
-      } = TOML.parse(await readFileUtf8(currentDir, "edgedb.toml"));
+      } = TOML.parse(await readFileUtf8(configFile));
 
       const maybeProjectTable = config.project;
       const maybeSchemaDir =

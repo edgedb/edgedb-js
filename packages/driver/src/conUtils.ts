@@ -55,7 +55,7 @@ export function isValidTlsSecurityValue(
 interface PartiallyNormalizedConfig {
   connectionParams: ResolvedConnectConfig;
 
-  // true if the program is run in a directory with `edgedb.toml`
+  // true if the program is run in a directory with a toml config file
   inProject: () => Promise<boolean>;
   // true if the connection params were initialized from a project
   fromProject: boolean;
@@ -658,17 +658,17 @@ async function parseConnectDsnAndArgs(
     // resolve config from project
     if (!serverUtils) {
       throw new errors.ClientConnectionError(
-        "no connection options specified either by arguments to `createClient` API " +
-          "or environment variables; also cannot resolve from edgedb.toml in browser " +
-          "(or edge runtime) environment",
+        "no connection options specified either by arguments to `createClient` " +
+          "API or environment variables; also cannot resolve from project config " +
+          "file in browser (or edge runtime) environment",
       );
     }
     const projectDir = await serverUtils?.findProjectDir();
     if (!projectDir) {
       throw new errors.ClientConnectionError(
-        "no 'edgedb.toml' found and no connection options specified" +
-          " either via arguments to `createClient()` API or via environment" +
-          " variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN, " +
+        "no project config file found and no connection options " +
+          "specified either via arguments to `createClient()` API or via " +
+          "environment variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN, " +
           "EDGEDB_CREDENTIALS or EDGEDB_CREDENTIALS_FILE",
       );
     }
@@ -721,8 +721,8 @@ async function parseConnectDsnAndArgs(
       fromProject = true;
     } else {
       throw new errors.ClientConnectionError(
-        "Found 'edgedb.toml' but the project is not initialized. " +
-          "Run `edgedb project init`.",
+        "Found project config file but the project is not initialized. " +
+          "Run 'edgedb project init'.",
       );
     }
   }
