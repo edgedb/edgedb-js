@@ -604,10 +604,10 @@ export class Client implements Executor {
     );
   }
 
-  withTag(tag: string | null): Client {
+  withQueryTag(tag: string | null): Client {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withTag(tag)),
+      this.options.withSession(this.options.session.withQueryTag(tag)),
     );
   }
 

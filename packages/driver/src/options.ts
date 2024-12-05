@@ -190,7 +190,7 @@ export class Session {
     });
   }
 
-  withTag(tag: string | null): Session {
+  withQueryTag(tag: string | null): Session {
     const session = new Session({ ...this });
     session.annotations = new Map(this.annotations);
     if (tag != null) {
