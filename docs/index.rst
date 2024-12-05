@@ -313,8 +313,8 @@ provide us with type-safe querying.
   :caption: query.ts
 
     import * as edgedb from "edgedb";
- -  import { Movie } from "./dbschema/interfaces"
- +  import { getMovie } from "./dbschema/queries"
+  - import { Movie } from "./dbschema/interfaces"
+  + import { getMovie } from "./dbschema/queries"
 
     const client = edgedb.createClient();
 
