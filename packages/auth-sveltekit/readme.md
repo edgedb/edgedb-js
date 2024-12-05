@@ -68,6 +68,7 @@ Create the server auth client in a handle hook. Firstly call `serverAuth` passin
 You can now access the server auth in all actions and load functions through `event.locals`.
 
 ```ts
+// src/hooks.server.ts
 import serverAuth, {
   type AuthRouteHandlers,
 } from "@edgedb/auth-sveltekit/server";
