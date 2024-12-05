@@ -13,6 +13,7 @@ import {
   createJsonResponseHandler,
   postJsonToApi,
   generateId,
+  combineHeaders,
 } from "@ai-sdk/provider-utils";
 import {
   type EdgeDBChatConfig,
@@ -30,11 +31,7 @@ import {
 import { convertToEdgeDBMessages } from "./convert-to-edgedb-messages";
 import { prepareTools } from "./edgedb-prepare-tools";
 
-export interface EdgeDBLanguageModel extends LanguageModelV1 {
-  withSettings(settings: Partial<EdgeDBChatSettings>): EdgeDBChatLanguageModel;
-}
-
-export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
+export class EdgeDBChatLanguageModel implements LanguageModelV1 {
   readonly specificationVersion = "v1";
   readonly defaultObjectGenerationMode = "json";
   readonly supportsImageUrls = false;
@@ -56,14 +53,6 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
 
   get provider(): string {
     return this.config.provider;
-  }
-
-  withSettings(settings: Partial<EdgeDBChatSettings>) {
-    return new EdgeDBChatLanguageModel(
-      this.modelId,
-      { ...this.settings, ...settings },
-      this.config,
-    );
   }
 
   private getArgs({
@@ -217,8 +206,8 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
     const { messages } = args;
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: `rag`,
-      headers: options.headers,
+      url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      headers: combineHeaders(this.config.headers(), options.headers),
       body: {
         ...args,
         context: this.settings.context,
@@ -266,8 +255,8 @@ export class EdgeDBChatLanguageModel implements EdgeDBLanguageModel {
     const { messages } = args;
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: `rag`,
-      headers: options.headers,
+      url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      headers: combineHeaders(this.config.headers(), options.headers),
       body: {
         ...args,
         context: this.settings.context,
