@@ -1,4 +1,5 @@
 import * as errors from "./errors";
+import { utf8Encoder } from "./primitives/buffer";
 
 export type BackoffFunction = (n: number) => number;
 
@@ -118,6 +119,8 @@ export class TransactionOptions {
   }
 }
 
+const TAG_ANNOTATION_KEY = "tag";
+
 export interface SessionOptions {
   module?: string;
   moduleAliases?: Record<string, string>;
@@ -138,6 +141,13 @@ export class Session {
   readonly config: Record<string, any>;
   readonly globals: Record<string, any>;
 
+  /** @internal */
+  annotations = new Map<string, string>();
+
+  get tag(): string | null {
+    return this.annotations.get(TAG_ANNOTATION_KEY) ?? null;
+  }
+
   constructor({
     module = "default",
     moduleAliases = {},
@@ -150,31 +160,54 @@ export class Session {
     this.globals = globals;
   }
 
+  private _clone(mergeOptions: SessionOptions) {
+    const session = new Session({ ...this, ...mergeOptions });
+    session.annotations = this.annotations;
+    return session;
+  }
+
   withModuleAliases({
     module,
     ...aliases
   }: {
     [name: string]: string;
   }): Session {
-    return new Session({
-      ...this,
+    return this._clone({
       module: module ?? this.module,
       moduleAliases: { ...this.moduleAliases, ...aliases },
     });
   }
 
   withConfig(config: { [name: string]: any }): Session {
-    return new Session({
-      ...this,
+    return this._clone({
       config: { ...this.config, ...config },
     });
   }
 
   withGlobals(globals: { [name: string]: any }): Session {
-    return new Session({
-      ...this,
+    return this._clone({
       globals: { ...this.globals, ...globals },
     });
+  }
+
+  withQueryTag(tag: string | null): Session {
+    const session = new Session({ ...this });
+    session.annotations = new Map(this.annotations);
+    if (tag != null) {
+      if (tag.startsWith("edgedb/")) {
+        throw new errors.InterfaceError("reserved tag: edgedb/*");
+      }
+      if (tag.startsWith("gel/")) {
+        throw new errors.InterfaceError("reserved tag: gel/*");
+      }
+      if (utf8Encoder.encode(tag).length > 128) {
+        throw new errors.InterfaceError("tag too long (> 128 bytes)");
+      }
+      session.annotations.set(TAG_ANNOTATION_KEY, tag);
+    } else {
+      session.annotations.delete(TAG_ANNOTATION_KEY);
+    }
+    return session;
   }
 
   /** @internal */

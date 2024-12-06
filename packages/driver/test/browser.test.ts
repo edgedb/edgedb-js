@@ -73,9 +73,11 @@ import {
 const brokenConnectOpts = JSON.parse(
   process.env._JEST_EDGEDB_CONNECT_CONFIG || "",
 );
+const edgedbVersion = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
 
 const connectOpts = {
   ...brokenConnectOpts,
+  user: edgedbVersion.major >= 6 ? "admin" : "edgedb",
   tlsCAFile: undefined,
   tlsSecurity: "insecure",
 };

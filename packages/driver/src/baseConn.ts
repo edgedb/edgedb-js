@@ -899,6 +899,18 @@ export class BaseRawConnection {
     options: QueryOptions | undefined,
     language: Language,
   ) {
+    if (versionGreaterThanOrEqual(this.protocolVersion, [3, 0])) {
+      if (state.annotations.size >= 1 << 16) {
+        throw new errors.InternalClientError("too many annotations");
+      }
+      wb.writeUInt16(state.annotations.size);
+      for (const [name, value] of state.annotations) {
+        wb.writeString(name);
+        wb.writeString(value);
+      }
+    } else {
+      wb.writeUInt16(0);
+    }
     wb.writeFlags(0xffff_ffff, capabilitiesFlags);
     wb.writeFlags(
       0,
@@ -953,7 +965,6 @@ export class BaseRawConnection {
   ): Promise<ParseResult> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$P);
-    wb.writeUInt16(0); // no headers
 
     this._encodeParseParams(
       wb,
@@ -1080,7 +1091,6 @@ export class BaseRawConnection {
   ): Promise<errors.EdgeDBError[]> {
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
-    wb.writeUInt16(0); // no headers
 
     this._encodeParseParams(
       wb,
