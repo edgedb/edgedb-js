@@ -70,6 +70,8 @@ export interface QueryContext {
 export interface EdgeDBChatConfig {
   provider: string;
   fetch: FetchFunction;
+  baseURL: string;
+  headers: () => Record<string, string | undefined>;
 }
 
 export interface EdgeDBChatSettings {
