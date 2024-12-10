@@ -41,7 +41,6 @@ export interface EdgeDBProvider extends ProviderV1 {
 export interface EdgeDBProviderSettings {
   /**
 Use a different URL prefix for API calls, e.g. to use proxy servers.
-The default prefix is `https://api.mistral.ai/v1`.
    */
   baseURL?: string;
 
@@ -56,8 +55,9 @@ export async function createEdgeDB(
   options: EdgeDBProviderSettings = {},
 ): Promise<EdgeDBProvider> {
   const connectConfig = await client.resolveConnectionParams();
-  const baseURL = withoutTrailingSlash(options.baseURL) ?? "";
+  const baseURL = withoutTrailingSlash(options.baseURL) ?? null;
 
+  // In case we want to add more things to this in the future
   const getHeaders = () => ({
     ...options.headers,
   });

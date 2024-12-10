@@ -19,7 +19,7 @@ import { edgedbFailedResponseHandler } from "./edgedb-error";
 interface EdgeDBEmbeddingConfig {
   provider: string;
   fetch?: FetchFunction;
-  baseURL: string;
+  baseURL: string | null;
   headers: () => Record<string, string | undefined>;
 }
 
@@ -82,6 +82,7 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
         model: this.modelId,
         input: values,
         encoding_format: "float",
+        // OpenAI props
         dimensions: this.settings.dimensions,
         user: this.settings.user,
       },

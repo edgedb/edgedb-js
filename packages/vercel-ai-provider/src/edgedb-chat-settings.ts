@@ -1,5 +1,3 @@
-import type { FetchFunction } from "@ai-sdk/provider-utils";
-
 export type OpenAIModelId =
   | "gpt-4o"
   | "gpt-4o-mini"
@@ -65,13 +63,6 @@ export interface QueryContext {
   variables?: Record<string, unknown>;
   globals?: Record<string, unknown>;
   max_object_count?: number;
-}
-
-export interface EdgeDBChatConfig {
-  provider: string;
-  fetch: FetchFunction;
-  baseURL: string;
-  headers: () => Record<string, string | undefined>;
 }
 
 export interface EdgeDBChatSettings {

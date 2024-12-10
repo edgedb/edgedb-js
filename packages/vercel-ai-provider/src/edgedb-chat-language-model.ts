@@ -9,6 +9,7 @@ import type {
 } from "@ai-sdk/provider";
 import {
   type ParseResult,
+  type FetchFunction,
   createEventSourceResponseHandler,
   createJsonResponseHandler,
   postJsonToApi,
@@ -16,7 +17,6 @@ import {
   combineHeaders,
 } from "@ai-sdk/provider-utils";
 import {
-  type EdgeDBChatConfig,
   type EdgeDBChatModelId,
   type EdgeDBChatSettings,
   type EdgeDBMessage,
@@ -30,6 +30,13 @@ import {
 } from "./utils";
 import { convertToEdgeDBMessages } from "./convert-to-edgedb-messages";
 import { prepareTools } from "./edgedb-prepare-tools";
+
+export interface EdgeDBChatConfig {
+  provider: string;
+  fetch: FetchFunction;
+  baseURL: string | null;
+  headers: () => Record<string, string | undefined>;
+}
 
 export class EdgeDBChatLanguageModel implements LanguageModelV1 {
   readonly specificationVersion = "v1";
