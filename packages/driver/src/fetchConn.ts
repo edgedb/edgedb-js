@@ -68,7 +68,7 @@ class BaseFetchConnection extends BaseRawConnection {
     this.authenticatedFetch = fetch;
   }
 
-  protected async _waitForMessage(): Promise<void> {
+  protected override async _waitForMessage(): Promise<void> {
     if (this.buffer.takeMessage()) {
       return;
     }
@@ -141,11 +141,11 @@ class BaseFetchConnection extends BaseRawConnection {
     }
   }
 
-  protected _sendData(data: Uint8Array): void {
+  protected override _sendData(data: Uint8Array): void {
     this.__sendData(data);
   }
 
-  async fetch(...args: Parameters<BaseRawConnection["fetch"]>) {
+  override async fetch(...args: Parameters<BaseRawConnection["fetch"]>) {
     // In protocol v3 the format of the parse/execute messages depend on the
     // protocol version. In the fetch conn we don't know the server's supported
     // proto version until after the first message is sent, so the first
@@ -183,9 +183,9 @@ class BaseFetchConnection extends BaseRawConnection {
 }
 
 export class AdminUIFetchConnection extends BaseFetchConnection {
-  adminUIMode = true;
+  override adminUIMode = true;
 
-  static create<T extends typeof BaseFetchConnection>(
+  static override create<T extends typeof BaseFetchConnection>(
     this: T,
     fetch: AuthenticatedFetch,
     registry: CodecsRegistry,

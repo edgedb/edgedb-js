@@ -274,7 +274,7 @@ export class LocalDateTime extends LocalDate {
     return localTimeInstances.get(this)!.nanosecond;
   }
 
-  toString(): string {
+  override toString(): string {
     return `${super.toString()}T${localTimeInstances.get(this)!.toString()}`;
   }
 }

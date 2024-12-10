@@ -21,7 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
-  tsType = "number";
+  override tsType = "number";
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
@@ -50,7 +50,7 @@ export class Int64BigintCodec extends ScalarCodec implements ICodec {
 }
 
 export class Int32Codec extends ScalarCodec implements ICodec {
-  tsType = "number";
+  override tsType = "number";
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
@@ -65,7 +65,7 @@ export class Int32Codec extends ScalarCodec implements ICodec {
 }
 
 export class Int16Codec extends ScalarCodec implements ICodec {
-  tsType = "number";
+  override tsType = "number";
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
@@ -80,7 +80,7 @@ export class Int16Codec extends ScalarCodec implements ICodec {
 }
 
 export class Float32Codec extends ScalarCodec implements ICodec {
-  tsType = "number";
+  override tsType = "number";
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
@@ -95,7 +95,7 @@ export class Float32Codec extends ScalarCodec implements ICodec {
 }
 
 export class Float64Codec extends ScalarCodec implements ICodec {
-  tsType = "number";
+  override tsType = "number";
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);

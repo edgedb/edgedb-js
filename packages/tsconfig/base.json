@@ -14,6 +14,7 @@
     "noImplicitThis": true,
     "removeComments": true,
     "stripInternal": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "useDefineForClassFields": true,

@@ -101,7 +101,7 @@ export abstract class ScalarCodec extends Codec {
   readonly tsType: string = "unknown";
   readonly tsModule: string | null = null;
 
-  getKnownTypeName(): string {
+  override getKnownTypeName(): string {
     if (this.typeName) {
       return this.typeName;
     }

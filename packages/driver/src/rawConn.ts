@@ -194,7 +194,7 @@ export class RawConnection extends BaseRawConnection {
     }
   }
 
-  protected async _waitForMessage(): Promise<void> {
+  protected override async _waitForMessage(): Promise<void> {
     if (this.buffer.takeMessage()) {
       return;
     }
@@ -213,7 +213,7 @@ export class RawConnection extends BaseRawConnection {
     }
   }
 
-  protected _sendData(data: Uint8Array): void {
+  protected override _sendData(data: Uint8Array): void {
     this.sock.write(data);
   }
 
@@ -236,14 +236,14 @@ export class RawConnection extends BaseRawConnection {
     return tls.connect(opts);
   }
 
-  protected _abort(): void {
+  protected override _abort(): void {
     if (this.sock && this.connected) {
       this.sock.destroy();
     }
     super._abort();
   }
 
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     if (this.sock && this.connected) {
       this.sock.write(
         new WriteMessageBuffer().beginMessage(chars.$X).endMessage().unwrap(),

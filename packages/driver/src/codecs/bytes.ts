@@ -21,7 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
 export class BytesCodec extends ScalarCodec implements ICodec {
-  tsType = "Uint8Array";
+  override tsType = "Uint8Array";
 
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Uint8Array)) {

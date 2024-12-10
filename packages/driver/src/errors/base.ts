@@ -22,7 +22,7 @@ export class EdgeDBError extends Error {
     this._message = message ?? "";
   }
 
-  get message() {
+  override get message() {
     return (
       this._message +
       (this._query && this._attrs
@@ -31,7 +31,7 @@ export class EdgeDBError extends Error {
     );
   }
 
-  get name(): string {
+  override get name(): string {
     return this.constructor.name;
   }
 
