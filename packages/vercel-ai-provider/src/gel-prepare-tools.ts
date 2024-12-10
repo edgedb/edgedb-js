@@ -5,10 +5,10 @@ import {
   UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import {
-  type EdgeDBChatModelId,
+  type GelChatModelId,
   isAnthropicModel,
   isOpenAIModel,
-} from "./edgedb-chat-settings";
+} from "./gel-chat-settings";
 
 interface OpenAILikeTool {
   type: "function";
@@ -29,7 +29,7 @@ export function prepareTools(
   mode: Parameters<LanguageModelV1["doGenerate"]>[0]["mode"] & {
     type: "regular";
   },
-  model: EdgeDBChatModelId,
+  model: GelChatModelId,
 ) {
   const isOpenAI = isOpenAIModel(model);
   const isAnthropic = isAnthropicModel(model);
@@ -42,20 +42,20 @@ export function prepareTools(
     return { toolWarnings };
   }
 
-  const edgedbOpenAILikeTools: OpenAILikeTool[] = [];
-  const edgedbAnthropicTools: AnthropicTool[] = [];
+  const gelOpenAILikeTools: OpenAILikeTool[] = [];
+  const gelAnthropicTools: AnthropicTool[] = [];
 
   for (const tool of tools) {
     switch (tool.type) {
       case "function":
         if (isAnthropic) {
-          edgedbAnthropicTools.push({
+          gelAnthropicTools.push({
             name: tool.name,
             description: tool.description,
             input_schema: tool.parameters,
           });
         } else {
-          edgedbOpenAILikeTools.push({
+          gelOpenAILikeTools.push({
             type: "function",
             function: {
               name: tool.name,
@@ -78,13 +78,11 @@ export function prepareTools(
   }
 
   const toolChoice = mode.toolChoice;
-  const edgedbTools = isAnthropic
-    ? edgedbAnthropicTools
-    : edgedbOpenAILikeTools;
+  const gelTools = isAnthropic ? gelAnthropicTools : gelOpenAILikeTools;
 
   if (toolChoice == null) {
     return {
-      tools: edgedbTools,
+      tools: gelTools,
       toolWarnings,
     };
   }
@@ -94,7 +92,7 @@ export function prepareTools(
   switch (type) {
     case "auto":
       return {
-        tools: edgedbTools,
+        tools: gelTools,
         tool_choice: isAnthropic ? { type: "auto" } : "auto",
         toolWarnings,
         // add betas to Anthropic in all cases
@@ -102,10 +100,10 @@ export function prepareTools(
     case "none":
       return isAnthropic
         ? { toolWarnings }
-        : { tools: edgedbTools, tool_choice: type, toolWarnings };
+        : { tools: gelTools, tool_choice: type, toolWarnings };
     case "required":
       return {
-        tools: edgedbTools,
+        tools: gelTools,
         tool_choice: isAnthropic
           ? { type: "any" }
           : isOpenAI
@@ -119,7 +117,7 @@ export function prepareTools(
     case "tool":
       return isAnthropic
         ? {
-            tools: edgedbTools,
+            tools: gelTools,
             tool_choice: {
               type: "tool",
               name: toolChoice.toolName,
@@ -128,7 +126,7 @@ export function prepareTools(
           }
         : isOpenAI
           ? {
-              tools: edgedbTools,
+              tools: gelTools,
               tool_choice: {
                 type: "function",
                 function: {
@@ -138,7 +136,7 @@ export function prepareTools(
               toolWarnings,
             }
           : {
-              tools: (edgedbTools as OpenAILikeTool[]).filter(
+              tools: (gelTools as OpenAILikeTool[]).filter(
                 (tool) => tool.function!.name === toolChoice.toolName,
               ),
               tool_choice: "any",

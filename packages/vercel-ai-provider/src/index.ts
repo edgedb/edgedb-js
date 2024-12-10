@@ -1,2 +1,2 @@
-export { createEdgeDB, edgedb } from "./edgedb-provider";
-export type { EdgeDBProvider } from "./edgedb-provider";
+export { createGel, gel } from "./gel-provider";
+export type { GelProvider } from "./gel-provider";
