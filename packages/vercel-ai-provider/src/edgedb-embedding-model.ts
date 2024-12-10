@@ -19,7 +19,7 @@ import { edgedbFailedResponseHandler } from "./edgedb-error";
 interface EdgeDBEmbeddingConfig {
   provider: string;
   fetch?: FetchFunction;
-  baseURL: string | null;
+  // baseURL: string | null;
   headers: () => Record<string, string | undefined>;
 }
 
@@ -74,9 +74,10 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
     }
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: this.config.baseURL
-        ? `${this.config.baseURL}/embeddings`
-        : "embeddings",
+      // url: this.config.baseURL
+      //   ? `${this.config.baseURL}/embeddings`
+      //   : "embeddings",
+      url: "embeddings",
       headers: combineHeaders(this.config.headers(), headers),
       body: {
         model: this.modelId,

@@ -34,7 +34,7 @@ import { prepareTools } from "./edgedb-prepare-tools";
 export interface EdgeDBChatConfig {
   provider: string;
   fetch: FetchFunction;
-  baseURL: string | null;
+  // baseURL: string | null;
   headers: () => Record<string, string | undefined>;
 }
 
@@ -213,7 +213,8 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     const { messages } = args;
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      // url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      url: "rag",
       headers: combineHeaders(this.config.headers(), options.headers),
       body: {
         ...args,
@@ -262,7 +263,8 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     const { messages } = args;
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      // url: this.config.baseURL ? `${this.config.baseURL}/rag` : "rag",
+      url: "rag",
       headers: combineHeaders(this.config.headers(), options.headers),
       body: {
         ...args,

@@ -7,7 +7,6 @@ import type {
   LanguageModelV1,
   ProviderV1,
 } from "@ai-sdk/provider";
-import { withoutTrailingSlash } from "@ai-sdk/provider-utils";
 import { EdgeDBChatLanguageModel } from "./edgedb-chat-language-model";
 import type {
   EdgeDBChatModelId,
@@ -42,7 +41,7 @@ export interface EdgeDBProviderSettings {
   /**
 Use a different URL prefix for API calls, e.g. to use proxy servers.
    */
-  baseURL?: string;
+  // baseURL?: string;
 
   /**
 Custom headers to include in the requests.
@@ -55,7 +54,7 @@ export async function createEdgeDB(
   options: EdgeDBProviderSettings = {},
 ): Promise<EdgeDBProvider> {
   const connectConfig = await client.resolveConnectionParams();
-  const baseURL = withoutTrailingSlash(options.baseURL) ?? null;
+  // const baseURL = withoutTrailingSlash(options.baseURL) ?? null;
 
   // In case we want to add more things to this in the future
   const getHeaders = () => ({
@@ -75,7 +74,6 @@ export async function createEdgeDB(
     new EdgeDBChatLanguageModel(modelId, settings, {
       provider: "edgedb.chat",
       fetch,
-      baseURL,
       headers: getHeaders,
     });
 
@@ -86,7 +84,6 @@ export async function createEdgeDB(
     return new EdgeDBEmbeddingModel(modelId, settings, {
       provider: "edgedb.embedding",
       fetch,
-      baseURL,
       headers: getHeaders,
     });
   };
