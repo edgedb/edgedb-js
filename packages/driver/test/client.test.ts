@@ -2378,6 +2378,23 @@ if (getEdgeDBVersion().major >= 6) {
     }
   });
 
+  test("querySQLTuple", async () => {
+    let client = getClient();
+
+    try {
+      let res = await client.querySQLTuple("select 1");
+      expect(JSON.stringify(res)).toEqual("[[1]]");
+
+      res = await client.querySQLTuple("select 1 as foo, 2 as bar");
+      expect(JSON.stringify(res)).toEqual("[[1,2]]");
+
+      res = await client.querySQLTuple("select 1 + $1::int8", [41]);
+      expect(JSON.stringify(res)).toEqual("[[42]]");
+    } finally {
+      await client.close();
+    }
+  });
+
   test("executeSQL", async () => {
     let client = getClient();
 
