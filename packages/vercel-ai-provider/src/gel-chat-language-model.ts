@@ -17,41 +17,41 @@ import {
   combineHeaders,
 } from "@ai-sdk/provider-utils";
 import {
-  type EdgeDBChatModelId,
-  type EdgeDBChatSettings,
-  type EdgeDBMessage,
+  type GelChatModelId,
+  type GelChatSettings,
+  type GelMessage,
   isAnthropicModel,
-} from "./edgedb-chat-settings";
-import { edgedbFailedResponseHandler } from "./edgedb-error";
+} from "./gel-chat-settings";
+import { gelFailedResponseHandler } from "./gel-error";
 import {
   mapEdgedbStopReason,
   getResponseMetadata,
   mapOpenAICompletionLogProbs,
 } from "./utils";
-import { convertToEdgeDBMessages } from "./convert-to-edgedb-messages";
-import { prepareTools } from "./edgedb-prepare-tools";
+import { convertToGelMessages } from "./convert-to-gel-messages";
+import { prepareTools } from "./gel-prepare-tools";
 
-export interface EdgeDBChatConfig {
+export interface GelChatConfig {
   provider: string;
   fetch: FetchFunction;
   // baseURL: string | null;
   headers: () => Record<string, string | undefined>;
 }
 
-export class EdgeDBChatLanguageModel implements LanguageModelV1 {
+export class GelChatLanguageModel implements LanguageModelV1 {
   readonly specificationVersion = "v1";
   readonly defaultObjectGenerationMode = "json";
   readonly supportsImageUrls = false;
 
-  readonly modelId: EdgeDBChatModelId;
-  readonly settings: EdgeDBChatSettings;
+  readonly modelId: GelChatModelId;
+  readonly settings: GelChatSettings;
 
-  private readonly config: EdgeDBChatConfig;
+  private readonly config: GelChatConfig;
 
   constructor(
-    modelId: EdgeDBChatModelId,
-    settings: EdgeDBChatSettings,
-    config: EdgeDBChatConfig,
+    modelId: GelChatModelId,
+    settings: GelChatSettings,
+    config: GelChatConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -139,7 +139,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
 
     const baseArgs = {
       model: this.modelId,
-      messages: convertToEdgeDBMessages(prompt),
+      messages: convertToGelMessages(prompt),
       temperature,
       max_tokens: maxTokens,
       top_p: topP,
@@ -182,7 +182,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     }
   }
 
-  private buildPrompt(messages: EdgeDBMessage[]) {
+  private buildPrompt(messages: GelMessage[]) {
     const providedPromptId =
       this.settings.prompt &&
       ("name" in this.settings.prompt || "id" in this.settings.prompt);
@@ -201,7 +201,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     };
   }
 
-  private buildQuery(messages: EdgeDBMessage[]) {
+  private buildQuery(messages: GelMessage[]) {
     return [...messages].reverse().find((msg) => msg.role === "user")!
       .content[0].text;
   }
@@ -223,10 +223,9 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
         query: this.buildQuery(messages),
         stream: false,
       },
-      failedResponseHandler: edgedbFailedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(
-        edgedbRagResponseSchema,
-      ),
+      failedResponseHandler: gelFailedResponseHandler,
+      successfulResponseHandler:
+        createJsonResponseHandler(gelRagResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
@@ -273,9 +272,9 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
         query: this.buildQuery(messages),
         stream: true,
       },
-      failedResponseHandler: edgedbFailedResponseHandler,
+      failedResponseHandler: gelFailedResponseHandler,
       successfulResponseHandler:
-        createEventSourceResponseHandler(edgedbRagChunkSchema),
+        createEventSourceResponseHandler(gelRagChunkSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
@@ -304,7 +303,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     return {
       stream: response.pipeThrough(
         new TransformStream<
-          ParseResult<z.infer<typeof edgedbRagChunkSchema>>,
+          ParseResult<z.infer<typeof gelRagChunkSchema>>,
           LanguageModelV1StreamPart
         >({
           transform(chunk, controller) {
@@ -461,7 +460,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
   }
 }
 
-const edgedbRagResponseSchema = z.object({
+const gelRagResponseSchema = z.object({
   id: z.string().nullish(),
   model: z.string().nullish(),
   created: z.number().nullish(),
@@ -490,7 +489,7 @@ const edgedbRagResponseSchema = z.object({
     .nullish(),
 });
 
-const edgedbRagChunkSchema = z.discriminatedUnion("type", [
+const gelRagChunkSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("message_start"),
     message: z.object({

@@ -1,7 +1,7 @@
 import { createJsonErrorResponseHandler } from "@ai-sdk/provider-utils";
 import { z } from "zod";
 
-const edgedbErrorDataSchema = z.object({
+const gelErrorDataSchema = z.object({
   object: z.literal("error"),
   message: z.string(),
   type: z.string(),
@@ -9,11 +9,11 @@ const edgedbErrorDataSchema = z.object({
   code: z.string().nullable(),
 });
 
-export type EdgedDBErrorData = z.infer<typeof edgedbErrorDataSchema>;
+export type EdgedDBErrorData = z.infer<typeof gelErrorDataSchema>;
 
-export const edgedbFailedResponseHandler: ReturnType<
+export const gelFailedResponseHandler: ReturnType<
   typeof createJsonErrorResponseHandler
 > = createJsonErrorResponseHandler({
-  errorSchema: edgedbErrorDataSchema,
+  errorSchema: gelErrorDataSchema,
   errorToMessage: (data) => data.message,
 });
