@@ -11,29 +11,29 @@ import {
 import { z } from "zod";
 import {
   isMistralEmbeddingModel,
-  type EdgeDBEmbeddingModelId,
-  type EdgeDBEmbeddingSettings,
-} from "./edgedb-embedding-settings";
-import { edgedbFailedResponseHandler } from "./edgedb-error";
+  type GelEmbeddingModelId,
+  type GelEmbeddingSettings,
+} from "./gel-embedding-settings";
+import { gelFailedResponseHandler } from "./gel-error";
 
-interface EdgeDBEmbeddingConfig {
+interface GelEmbeddingConfig {
   provider: string;
   fetch?: FetchFunction;
   // baseURL: string | null;
   headers: () => Record<string, string | undefined>;
 }
 
-export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
+export class GelEmbeddingModel implements EmbeddingModelV1<string> {
   readonly specificationVersion = "v1";
-  readonly modelId: EdgeDBEmbeddingModelId;
+  readonly modelId: GelEmbeddingModelId;
 
-  private readonly config: EdgeDBEmbeddingConfig;
-  private readonly settings: EdgeDBEmbeddingSettings;
+  private readonly config: GelEmbeddingConfig;
+  private readonly settings: GelEmbeddingSettings;
 
   constructor(
-    modelId: EdgeDBEmbeddingModelId,
-    settings: EdgeDBEmbeddingSettings,
-    config: EdgeDBEmbeddingConfig,
+    modelId: GelEmbeddingModelId,
+    settings: GelEmbeddingSettings,
+    config: GelEmbeddingConfig,
   ) {
     this.modelId = modelId;
     this.settings = settings;
@@ -87,9 +87,9 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
         dimensions: this.settings.dimensions,
         user: this.settings.user,
       },
-      failedResponseHandler: edgedbFailedResponseHandler,
+      failedResponseHandler: gelFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        EdgeDBTextEmbeddingResponseSchema,
+        GelTextEmbeddingResponseSchema,
       ),
       abortSignal,
       fetch: this.config.fetch,
@@ -105,7 +105,7 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
   }
 }
 
-const EdgeDBTextEmbeddingResponseSchema = z.object({
+const GelTextEmbeddingResponseSchema = z.object({
   data: z.array(z.object({ embedding: z.array(z.number()) })),
   usage: z.object({ prompt_tokens: z.number() }).nullish(),
 });

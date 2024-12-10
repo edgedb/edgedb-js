@@ -26,13 +26,13 @@ export type AnthropicModelId =
   | "claude-3-sonnet-20240229"
   | "claude-3-haiku-20240307";
 
-export type EdgeDBChatModelId =
+export type GelChatModelId =
   | OpenAIModelId
   | MistralModelId
   | AnthropicModelId
   | (string & {});
 
-export function isAnthropicModel(model: EdgeDBChatModelId): boolean {
+export function isAnthropicModel(model: GelChatModelId): boolean {
   return (
     model === "claude-3-5-sonnet-latest" ||
     model === "claude-3-5-haiku-latest" ||
@@ -42,7 +42,7 @@ export function isAnthropicModel(model: EdgeDBChatModelId): boolean {
   );
 }
 
-export function isOpenAIModel(model: EdgeDBChatModelId): boolean {
+export function isOpenAIModel(model: GelChatModelId): boolean {
   return (
     model === "gpt-4o" ||
     model === "gpt-4o-mini" ||
@@ -54,9 +54,9 @@ export function isOpenAIModel(model: EdgeDBChatModelId): boolean {
 }
 
 export type Prompt =
-  | { name: string; custom?: EdgeDBMessage[] }
-  | { id: string; custom?: EdgeDBMessage[] }
-  | { custom: EdgeDBMessage[] };
+  | { name: string; custom?: GelMessage[] }
+  | { id: string; custom?: GelMessage[] }
+  | { custom: GelMessage[] };
 
 export interface QueryContext {
   query: string;
@@ -65,7 +65,7 @@ export interface QueryContext {
   max_object_count?: number;
 }
 
-export interface EdgeDBChatSettings {
+export interface GelChatSettings {
   context?: QueryContext;
   prompt?: Prompt;
 
@@ -126,23 +126,23 @@ monitor and detect abuse. Learn more.
   // cacheControl?: boolean;
 }
 
-export type EdgeDBMessage =
-  | EdgeDBSystemMessage
-  | EdgeDBUserMessage
-  | EdgeDBAssistantMessage
-  | EdgeDBToolMessage;
+export type GelMessage =
+  | GelSystemMessage
+  | GelUserMessage
+  | GelAssistantMessage
+  | GelToolMessage;
 
-export interface EdgeDBSystemMessage {
+export interface GelSystemMessage {
   role: "system";
   content: string;
 }
 
-export interface EdgeDBUserMessage {
+export interface GelUserMessage {
   role: "user";
   content: { type: "text"; text: string }[];
 }
 
-export interface EdgeDBAssistantMessage {
+export interface GelAssistantMessage {
   role: "assistant";
   content: string;
   tool_calls?: {
@@ -152,7 +152,7 @@ export interface EdgeDBAssistantMessage {
   }[];
 }
 
-export interface EdgeDBToolMessage {
+export interface GelToolMessage {
   role: "tool";
   content: string;
   tool_call_id: string;
