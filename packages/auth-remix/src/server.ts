@@ -86,7 +86,7 @@ export interface CreateAuthRouteHandlers {
   ): Promise<Response>;
   onEmailVerify(
     params: ParamsOrError<
-      { tokenData: TokenData },
+      { tokenData: TokenData | null },
       { verificationToken?: string }
     >,
   ): Promise<Response>;
@@ -422,9 +422,13 @@ export class RemixServerAuth extends RemixClientAuth {
               });
             }
             if (!verifier) {
+              // End user verified email from a different user agent than
+              // sign-up. This is fine, but the application will need to detect
+              // this and inform the end user that they will need to initiate a
+              // new sign up attempt to complete the flow.
               return cbCall(onEmailVerify, {
-                error: new PKCEError("no pkce verifier cookie found"),
-                verificationToken,
+                error: null,
+                tokenData: null,
               });
             }
             let tokenData: TokenData;

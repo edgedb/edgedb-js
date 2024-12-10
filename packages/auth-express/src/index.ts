@@ -498,8 +498,13 @@ export class ExpressAuth {
           throw new PKCEError("no verification_token in response");
         }
         if (!verifier) {
-          throw new PKCEError("no pkce verifier cookie found");
+          // End user verified email from a different user agent than sign-up.
+          // This is fine, but the application will need to detect this and
+          // inform the end user that they will need to initiate a new sign up
+          // attempt to complete the flow.
+          return next();
         }
+
         const tokenData = await (
           await this.core
         ).verifyEmailPasswordSignup(verificationToken, verifier);
