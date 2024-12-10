@@ -53,6 +53,7 @@ errorMapping.set(0x04_03_00_03, errors.UnknownPropertyError);
 errorMapping.set(0x04_03_00_04, errors.UnknownUserError);
 errorMapping.set(0x04_03_00_05, errors.UnknownDatabaseError);
 errorMapping.set(0x04_03_00_06, errors.UnknownParameterError);
+errorMapping.set(0x04_03_00_07, errors.DeprecatedScopingError);
 errorMapping.set(0x04_04_00_00, errors.SchemaError);
 errorMapping.set(0x04_05_00_00, errors.SchemaDefinitionError);
 errorMapping.set(0x04_05_01_00, errors.InvalidDefinitionError);

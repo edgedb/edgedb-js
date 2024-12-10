@@ -70,7 +70,7 @@ const __filename = new URL("", import.meta.url).pathname;
   mappingBuf.nl();
   mappingBuf.code(copy);
   mappingBuf.nl();
-  mappingBuf.code('import {ErrorType} from "./base";');
+  mappingBuf.code('import type { ErrorType } from "./base";');
   mappingBuf.code('import * as errors from "./index";');
   mappingBuf.nl();
   mappingBuf.nl();
@@ -96,9 +96,13 @@ const __filename = new URL("", import.meta.url).pathname;
     let line = `export class ${err} extends ${base} `;
     line += `{\n`;
     if (tag_items.length > 0) {
-      line += `  protected static tags = {${tag_items.join(", ")}}\n`;
+      line += `  override protected static tags = {${tag_items.join(", ")}}\n`;
     }
-    line += `  get code(): number {\n    return ${code};\n  }\n`;
+    if (base !== "EdgeDBError") {
+      line += `  override get code(): number {\n    return ${code};\n  }\n`;
+    } else {
+      line += `  get code(): number {\n    return ${code};\n  }\n`;
+    }
     line += `}`;
 
     errorsBuf.code(line);
@@ -112,6 +116,6 @@ const __filename = new URL("", import.meta.url).pathname;
   const errors_ts = prettier.format(errorsBuf.render(), prettierOptions);
   const mapping_ts = prettier.format(mappingBuf.render(), prettierOptions);
 
-  fs.writeFileSync(path.join(__dirname, "./src/errors/index.ts"), errors_ts);
-  fs.writeFileSync(path.join(__dirname, "./src/errors/map.ts"), mapping_ts);
+  fs.writeFileSync(path.join(__dirname, "./src/errors/index.ts"), await errors_ts);
+  fs.writeFileSync(path.join(__dirname, "./src/errors/map.ts"), await mapping_ts);
 })();
