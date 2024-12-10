@@ -6,6 +6,7 @@ import {
   createJsonResponseHandler,
   type FetchFunction,
   postJsonToApi,
+  combineHeaders,
 } from "@ai-sdk/provider-utils";
 import { z } from "zod";
 import {
@@ -18,6 +19,8 @@ import { edgedbFailedResponseHandler } from "./edgedb-error";
 interface EdgeDBEmbeddingConfig {
   provider: string;
   fetch?: FetchFunction;
+  // baseURL: string | null;
+  headers: () => Record<string, string | undefined>;
 }
 
 export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
@@ -71,12 +74,16 @@ export class EdgeDBEmbeddingModel implements EmbeddingModelV1<string> {
     }
 
     const { responseHeaders, value: response } = await postJsonToApi({
-      url: `embeddings`,
-      headers,
+      // url: this.config.baseURL
+      //   ? `${this.config.baseURL}/embeddings`
+      //   : "embeddings",
+      url: "embeddings",
+      headers: combineHeaders(this.config.headers(), headers),
       body: {
         model: this.modelId,
         input: values,
         encoding_format: "float",
+        // OpenAI props
         dimensions: this.settings.dimensions,
         user: this.settings.user,
       },

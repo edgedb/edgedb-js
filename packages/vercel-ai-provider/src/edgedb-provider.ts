@@ -7,10 +7,7 @@ import type {
   LanguageModelV1,
   ProviderV1,
 } from "@ai-sdk/provider";
-import {
-  EdgeDBChatLanguageModel,
-  type EdgeDBLanguageModel,
-} from "./edgedb-chat-language-model";
+import { EdgeDBChatLanguageModel } from "./edgedb-chat-language-model";
 import type {
   EdgeDBChatModelId,
   EdgeDBChatSettings,
@@ -24,12 +21,15 @@ import type {
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
 export interface EdgeDBProvider extends ProviderV1 {
-  (modelId: EdgeDBChatModelId | EdgeDBEmbeddingModelId): LanguageModelV1;
+  (
+    modelId: EdgeDBChatModelId | EdgeDBEmbeddingModelId,
+    settings?: EdgeDBChatSettings,
+  ): LanguageModelV1;
 
   languageModel(
     modelId: EdgeDBChatModelId,
     settings?: EdgeDBChatSettings,
-  ): EdgeDBLanguageModel;
+  ): EdgeDBChatLanguageModel;
 
   textEmbeddingModel: (
     modelId: EdgeDBEmbeddingModelId,
@@ -37,8 +37,29 @@ export interface EdgeDBProvider extends ProviderV1 {
   ) => EmbeddingModelV1<string>;
 }
 
-export async function createEdgeDB(client: Client): Promise<EdgeDBProvider> {
+export interface EdgeDBProviderSettings {
+  /**
+Use a different URL prefix for API calls, e.g. to use proxy servers.
+   */
+  // baseURL?: string;
+
+  /**
+Custom headers to include in the requests.
+     */
+  headers?: Record<string, string>;
+}
+
+export async function createEdgeDB(
+  client: Client,
+  options: EdgeDBProviderSettings = {},
+): Promise<EdgeDBProvider> {
   const connectConfig = await client.resolveConnectionParams();
+  // const baseURL = withoutTrailingSlash(options.baseURL) ?? null;
+
+  // In case we want to add more things to this in the future
+  const getHeaders = () => ({
+    ...options.headers,
+  });
 
   const fetch = await getAuthenticatedFetch(
     connectConfig,
@@ -53,6 +74,7 @@ export async function createEdgeDB(client: Client): Promise<EdgeDBProvider> {
     new EdgeDBChatLanguageModel(modelId, settings, {
       provider: "edgedb.chat",
       fetch,
+      headers: getHeaders,
     });
 
   const createEmbeddingModel = (
@@ -62,17 +84,21 @@ export async function createEdgeDB(client: Client): Promise<EdgeDBProvider> {
     return new EdgeDBEmbeddingModel(modelId, settings, {
       provider: "edgedb.embedding",
       fetch,
+      headers: getHeaders,
     });
   };
 
-  const provider = function (modelId: EdgeDBChatModelId) {
+  const provider = function (
+    modelId: EdgeDBChatModelId,
+    settings?: EdgeDBChatSettings,
+  ) {
     if (new.target) {
       throw new Error(
         "The EdgeDB model function cannot be called with the new keyword.",
       );
     }
 
-    return createChatModel(modelId);
+    return createChatModel(modelId, settings);
   };
 
   provider.languageModel = createChatModel;

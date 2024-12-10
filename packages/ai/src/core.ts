@@ -11,6 +11,7 @@ import {
   type QueryContext,
   type StreamingMessage,
   type RagRequest,
+  type EmbeddingRequest,
   isPromptRequest,
 } from "./types.js";
 import { getHTTPSCRAMAuth } from "edgedb/dist/httpScram.js";
@@ -209,7 +210,7 @@ export class EdgeDBAI {
     };
   }
 
-  async generateEmbeddings(inputs: string[], model: string): Promise<number[]> {
+  async generateEmbeddings(request: EmbeddingRequest): Promise<number[]> {
     const response = await (
       await this.authenticatedFetch
     )("embeddings", {
@@ -218,8 +219,8 @@ export class EdgeDBAI {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
-        input: inputs,
+        ...request,
+        input: request.inputs,
       }),
     });
 

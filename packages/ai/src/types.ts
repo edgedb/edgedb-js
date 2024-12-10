@@ -49,18 +49,15 @@ export interface QueryContext {
   max_object_count?: number;
 }
 
-interface RagRequestBase {
-  stream?: boolean;
+export interface RagRequestPrompt {
+  prompt: string;
   [key: string]: unknown;
 }
 
-export type RagRequestPrompt = RagRequestBase & {
-  prompt: string;
-};
-
-export type RagRequestMessages = RagRequestBase & {
+export interface RagRequestMessages {
   messages: EdgeDBMessage[];
-};
+  [key: string]: unknown;
+}
 
 export type RagRequest = RagRequestPrompt | RagRequestMessages;
 
@@ -153,3 +150,10 @@ export type StreamingMessage =
   | MessageDelta
   | MessageStop
   | MessageError;
+
+export interface EmbeddingRequest {
+  inputs: string[];
+  model: string;
+  dimensions?: number;
+  user?: string;
+}
