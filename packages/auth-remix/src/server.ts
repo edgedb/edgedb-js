@@ -1,6 +1,6 @@
 import { redirect, json, type TypedResponse } from "@remix-run/server-runtime";
 import * as cookie from "cookie";
-import type { Client } from "edgedb";
+import type { Client } from "gel";
 import {
   Auth,
   builtinOAuthProviderNames,
@@ -12,14 +12,14 @@ import {
   PKCEError,
   BackendError,
   OAuthProviderFailureError,
-  EdgeDBAuthError,
+  GelAuthError,
   MagicLinkFailureError,
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
-} from "@edgedb/auth-core";
+} from "@gel/auth-core";
 import { type RemixAuthOptions, RemixClientAuth } from "./client.js";
 
-export * from "@edgedb/auth-core/errors";
+export * from "@gel/auth-core/errors";
 export type { TokenData, RemixAuthOptions };
 
 export type BuiltinProviderNames =
@@ -334,7 +334,7 @@ export class RemixServerAuth extends RemixClientAuth {
             if (error) {
               const desc = searchParams.get("error_description");
               return cbCall(onBuiltinUICallback, {
-                error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
+                error: new GelAuthError(error + (desc ? `: ${desc}` : "")),
               });
             }
             const code = searchParams.get("code");
