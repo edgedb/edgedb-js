@@ -358,8 +358,15 @@ export class RemixServerAuth extends RemixClientAuth {
               parseCookies(req)[this.options.pkceVerifierCookieName];
 
             if (!verifier) {
+              // End user verified email from a different user agent than
+              // sign-up. This is fine, but the application will need to detect
+              // this and inform the end user that they will need to initiate a
+              // new sign up attempt to complete the flow.
               return cbCall(onBuiltinUICallback, {
-                error: new PKCEError("no pkce verifier cookie found"),
+                error: null,
+                tokenData: null,
+                provider: null,
+                isSignUp: false,
               });
             }
             const isSignUp = searchParams.get("isSignUp") === "true";

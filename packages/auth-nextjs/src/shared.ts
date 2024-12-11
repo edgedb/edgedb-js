@@ -564,9 +564,16 @@ export abstract class NextAuth extends NextAuthHelpers {
               this.options.pkceVerifierCookieName,
             )?.value;
             if (!verifier) {
+              // End user verified email from a different user agent than
+              // sign-up. This is fine, but the application will need to detect
+              // this and inform the end user that they will need to initiate a
+              // new sign up attempt to complete the flow.
               return onBuiltinUICallback(
                 {
-                  error: new PKCEError("no pkce verifier cookie found"),
+                  error: null,
+                  tokenData: null,
+                  provider: null,
+                  isSignUp: false,
                 },
                 req,
               );
