@@ -250,7 +250,7 @@ export class ClientConnectionHolder {
     );
   }
 
-  async querySQL(query: string, args?: SQLQueryArgs): Promise<any> {
+  async querySQL(query: string, args?: SQLQueryArgs): Promise<any[]> {
     return this.retryingFetch(
       query,
       args,
@@ -258,6 +258,18 @@ export class ClientConnectionHolder {
       Cardinality.MANY,
       Language.SQL,
     );
+  }
+
+  async querySQLTuple(query: string, args?: SQLQueryArgs): Promise<any[]> {
+    const results = await this.retryingFetch(
+      query,
+      args,
+      OutputFormat.BINARY,
+      Cardinality.MANY,
+      Language.SQL,
+    );
+
+    return results.map((r: any) => Object.values(r));
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
@@ -686,6 +698,18 @@ export class Client implements Executor {
     const holder = await this.pool.acquireHolder(this.options);
     try {
       return await holder.querySQL(query, args);
+    } finally {
+      await holder.release();
+    }
+  }
+
+  async querySQLTuple<T = [unknown, ...unknown[]]>(
+    query: string,
+    args?: SQLQueryArgs,
+  ): Promise<T[]> {
+    const holder = await this.pool.acquireHolder(this.options);
+    try {
+      return await holder.querySQLTuple(query, args);
     } finally {
       await holder.release();
     }
