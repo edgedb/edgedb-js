@@ -1,10 +1,10 @@
 import { type LanguageModelV1Prompt } from "@ai-sdk/provider";
-import type { EdgeDBMessage } from "./edgedb-chat-settings";
+import type { GelMessage } from "./gel-chat-settings";
 
-export function convertToEdgeDBMessages(
+export function convertToGelMessages(
   prompt: LanguageModelV1Prompt,
-): EdgeDBMessage[] {
-  const messages: EdgeDBMessage[] = [];
+): GelMessage[] {
+  const messages: GelMessage[] = [];
 
   for (const { role, content } of prompt) {
     switch (role) {
