@@ -157,9 +157,9 @@ export class LineString extends Geometry {
 }
 
 export class CircularString extends LineString {
-  protected static _wktName = "CIRCULARSTRING";
+  protected static override _wktName = "CIRCULARSTRING";
 
-  protected _validate() {
+  protected override _validate() {
     if (
       this.points.length !== 0 &&
       (this.points.length <= 1 || this.points.length % 2 !== 1)
@@ -356,9 +356,9 @@ export class Polygon extends Geometry {
 }
 
 export class Triangle extends Polygon {
-  protected static _wktName = "TRIANGLE";
+  protected static override _wktName = "TRIANGLE";
 
-  protected _validate() {
+  protected override _validate() {
     if (this.rings.length > 1) {
       throw new Error("Triangle can only contain a single ring");
     }
@@ -468,11 +468,11 @@ export class MultiPolygon extends Geometry {
 }
 
 export class PolyhedralSurface extends MultiPolygon {
-  protected static _wktName = "POLYHEDRALSURFACE";
+  protected static override _wktName = "POLYHEDRALSURFACE";
 }
 
 export class TriangulatedIrregularNetwork extends MultiPolygon {
-  protected static _wktName = "TIN";
+  protected static override _wktName = "TIN";
 }
 
 export class MultiSurface extends Geometry {
