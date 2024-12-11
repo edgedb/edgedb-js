@@ -1,4 +1,4 @@
-import { type Client } from "edgedb";
+import { type Client } from "gel";
 import {
   Auth,
   type BuiltinOAuthProviderNames,
@@ -6,10 +6,10 @@ import {
   ConfigurationError,
   InvalidDataError,
   PKCEError,
-  EdgeDBAuthError,
+  GelAuthError,
   OAuthProviderFailureError,
   type SignupResponse,
-} from "@edgedb/auth-core";
+} from "@gel/auth-core";
 
 import {
   type BuiltinProviderNames,
@@ -527,7 +527,7 @@ export abstract class NextAuth extends NextAuthHelpers {
               const desc = req.nextUrl.searchParams.get("error_description");
               return onBuiltinUICallback(
                 {
-                  error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
+                  error: new GelAuthError(error + (desc ? `: ${desc}` : "")),
                 },
                 req,
               );
@@ -1034,7 +1034,7 @@ function _wrapResponse(res: Promise<Response> | undefined, isAction: boolean) {
 function _wrapError(err: Error) {
   return {
     _error: {
-      type: err instanceof EdgeDBAuthError ? err.type : null,
+      type: err instanceof GelAuthError ? err.type : null,
       message: err instanceof Error ? err.message : String(err),
     },
   };
