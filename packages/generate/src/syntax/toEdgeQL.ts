@@ -278,6 +278,8 @@ export function $toEdgeQL(this: any) {
       // check all references and aliases are within this block
       const validScopes = new Set([
         withBlock,
+        // expressions already explictly bound to with block are also valid scopes
+        ...(withBlocks.get(withBlock) ?? []),
         ...walkExprCtx.seen.get(withBlock)!.childExprs,
       ]);
       for (const scope of [
