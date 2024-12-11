@@ -101,7 +101,7 @@ describe("update", () => {
         },
       }));
 
-      return e.with([updateChar, updateProfile], movie);
+      return e.with([updateChar, updateProfile], e.select(movie));
     }).toEdgeQL();
   });
 
