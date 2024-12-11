@@ -4,7 +4,7 @@ import {
   type RequestEvent,
   type Handle,
 } from "@sveltejs/kit";
-import type { Client } from "edgedb";
+import type { Client } from "gel";
 import {
   Auth,
   builtinOAuthProviderNames,
@@ -16,11 +16,11 @@ import {
   PKCEError,
   InvalidDataError,
   OAuthProviderFailureError,
-  EdgeDBAuthError,
+  GelAuthError,
   MagicLinkFailureError,
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
-} from "@edgedb/auth-core";
+} from "@gel/auth-core";
 import {
   ClientAuth,
   getConfig,
@@ -28,7 +28,7 @@ import {
   type AuthOptions,
 } from "./client.js";
 
-export * from "@edgedb/auth-core/errors";
+export * from "@gel/auth-core/errors";
 export type { TokenData, AuthOptions, Client };
 
 export type BuiltinProviderNames =
@@ -574,7 +574,7 @@ async function handleAuthRoutes(
       if (error) {
         const desc = searchParams.get("error_description");
         return onBuiltinUICallback({
-          error: new EdgeDBAuthError(error + (desc ? `: ${desc}` : "")),
+          error: new GelAuthError(error + (desc ? `: ${desc}` : "")),
         });
       }
       const code = searchParams.get("code");
