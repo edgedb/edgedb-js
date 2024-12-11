@@ -95,7 +95,7 @@ export class PostgisBox3dCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Box3D)) {
       throw new InvalidArgumentError(
-        `a Box2D object was expected, got "${object}"`,
+        `a Box3D object was expected, got "${object}"`,
       );
     }
 
@@ -148,7 +148,7 @@ export class PostgisBox3dCodec extends ScalarCodec implements ICodec {
       return new Box3D([min.x, min.y, min.z ?? 0], [max.x, max.y, max.z ?? 0]);
     }
 
-    throw new InternalClientError(`failed to decode ext::postgis::box2d type`);
+    throw new InternalClientError(`failed to decode ext::postgis::box3d type`);
   }
 }
 
