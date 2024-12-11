@@ -83,6 +83,28 @@ describe("update", () => {
     })).toEdgeQL();
   });
 
+  test("nested update and explicit with", async () => {
+    e.params({ movieId: e.uuid }, (params) => {
+      const movie = e.select(e.Movie, (m) => ({
+        filter: e.op(m.id, "=", params.movieId),
+      }));
+
+      const updateChar = e.update(movie.characters, (c) => ({
+        set: {
+          name: e.str_lower(c.name),
+        },
+      }));
+
+      const updateProfile = e.update(movie.profile, (p) => ({
+        set: {
+          a: e.str_upper(p.a),
+        },
+      }));
+
+      return e.with([updateChar, updateProfile], e.select(movie));
+    }).toEdgeQL();
+  });
+
   test("scoped update", async () => {
     const query = e.update(e.Hero, (hero) => ({
       filter_single: e.op(hero.name, "=", data.spidey.name),

@@ -278,6 +278,8 @@ export function $toEdgeQL(this: any) {
       // check all references and aliases are within this block
       const validScopes = new Set([
         withBlock,
+        // expressions already explictly bound to with block are also valid scopes
+        ...(withBlocks.get(withBlock) ?? []),
         ...walkExprCtx.seen.get(withBlock)!.childExprs,
       ]);
       for (const scope of [
@@ -432,6 +434,13 @@ function walkExprTree(
       for (const refExpr of expr.__refs__) {
         walkExprTree(refExpr, expr.__expr__, ctx);
         const seenRef = ctx.seen.get(refExpr as any)!;
+        if (seenRef.childExprs.includes(expr.__expr__)) {
+          throw new Error(
+            `Ref expressions in with() cannot reference the expression to ` +
+              `which the 'WITH' block is being attached. ` +
+              `Consider wrapping the expression in a select.`,
+          );
+        }
         if (seenRef.boundScope) {
           throw new Error(`Expression bound to multiple 'WITH' blocks`);
         }
