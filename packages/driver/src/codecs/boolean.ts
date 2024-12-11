@@ -21,7 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 
 export class BoolCodec extends ScalarCodec implements ICodec {
-  tsType = "boolean";
+  override tsType = "boolean";
 
   encode(buf: WriteBuffer, object: any): void {
     const typeOf = typeof object;

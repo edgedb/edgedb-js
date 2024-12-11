@@ -25,7 +25,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
-  tsType = "unknown";
+  override tsType = "unknown";
 
   readonly jsonFormat: number | null = 1;
 
@@ -68,7 +68,7 @@ export class JSONCodec extends ScalarCodec implements ICodec {
 }
 
 export class PgTextJSONCodec extends JSONCodec {
-  readonly jsonFormat = null;
+  override readonly jsonFormat = null;
 }
 
 export class JSONStringCodec extends ScalarCodec implements ICodec {
@@ -101,5 +101,5 @@ export class JSONStringCodec extends ScalarCodec implements ICodec {
 }
 
 export class PgTextJSONStringCodec extends JSONStringCodec {
-  readonly jsonFormat = null;
+  override readonly jsonFormat = null;
 }

@@ -21,7 +21,7 @@ export class StrictMap<K, V> extends Map<K, V> {
      error on missing keys instead of returning an undefined.
      This is easier to work with when everything is strictly typed.
   */
-  get(key: K): V {
+  override get(key: K): V {
     if (!this.has(key)) {
       throw new Error(`key "${key}" is not found`);
     }
