@@ -41,7 +41,7 @@ const TIMESHIFT = 946684800000;
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
 
 export class DateTimeCodec extends ScalarCodec implements ICodec {
-  tsType = "Date";
+  override tsType = "Date";
 
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof Date)) {
@@ -66,8 +66,8 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
 }
 
 export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
-  tsType = "LocalDateTime";
-  tsModule = "edgedb";
+  override tsType = "LocalDateTime";
+  override tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDateTime)) {
@@ -123,8 +123,8 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 }
 
 export class LocalDateCodec extends ScalarCodec implements ICodec {
-  tsType = "LocalDate";
-  tsModule = "edgedb";
+  override tsType = "LocalDate";
+  override tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalDate)) {
       throw new InvalidArgumentError(
@@ -142,8 +142,8 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
 }
 
 export class LocalTimeCodec extends ScalarCodec implements ICodec {
-  tsType = "LocalTime";
-  tsModule = "edgedb";
+  override tsType = "LocalTime";
+  override tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof LocalTime)) {
       throw new InvalidArgumentError(
@@ -199,8 +199,8 @@ export function checkValidEdgeDBDuration(duration: Duration): null | string {
 }
 
 export class DurationCodec extends ScalarCodec implements ICodec {
-  tsType = "Duration";
-  tsModule = "edgedb";
+  override tsType = "Duration";
+  override tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof Duration)) {
       throw new InvalidArgumentError(
@@ -283,8 +283,8 @@ export class DurationCodec extends ScalarCodec implements ICodec {
 }
 
 export class RelativeDurationCodec extends ScalarCodec implements ICodec {
-  tsType = "RelativeDuration";
-  tsModule = "edgedb";
+  override tsType = "RelativeDuration";
+  override tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof RelativeDuration)) {
       throw new InvalidArgumentError(`
@@ -350,8 +350,8 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
 }
 
 export class DateDurationCodec extends ScalarCodec implements ICodec {
-  tsType = "DateDuration";
-  tsModule = "edgedb";
+  override tsType = "DateDuration";
+  override tsModule = "edgedb";
   encode(buf: WriteBuffer, object: unknown): void {
     if (!(object instanceof DateDuration)) {
       throw new InvalidArgumentError(`

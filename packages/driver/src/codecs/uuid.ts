@@ -37,7 +37,7 @@ function UUIDBufferFromString(uuid: string): Uint8Array {
 }
 
 export class UUIDCodec extends ScalarCodec implements ICodec {
-  tsType = "string";
+  override tsType = "string";
 
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object === "string") {

@@ -30,7 +30,7 @@ import { SparseVector } from "../datatypes/pgvector";
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 
 export class PgVectorCodec extends ScalarCodec implements ICodec {
-  readonly tsType = "Float32Array";
+  override readonly tsType = "Float32Array";
 
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof Float32Array || Array.isArray(object))) {
@@ -87,8 +87,8 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
 }
 
 export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
-  readonly tsType = "Float16Array";
-  readonly tsModule = "edgedb";
+  override readonly tsType = "Float16Array";
+  override readonly tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: any): void {
     if (!(isFloat16Array(object) || Array.isArray(object))) {
@@ -154,8 +154,8 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
 }
 
 export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
-  readonly tsType = "SparseVector";
-  readonly tsModule = "edgedb";
+  override readonly tsType = "SparseVector";
+  override readonly tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: any): void {
     if (!(object instanceof SparseVector)) {

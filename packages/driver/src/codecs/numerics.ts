@@ -24,7 +24,7 @@ const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;
 
 export class BigIntCodec extends ScalarCodec implements ICodec {
-  tsType = "bigint";
+  override tsType = "bigint";
 
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "bigint") {
@@ -73,7 +73,7 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 }
 
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
-  tsType = "string";
+  override tsType = "string";
 
   encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
