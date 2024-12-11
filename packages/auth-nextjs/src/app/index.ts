@@ -3,8 +3,8 @@ import {
   ConfigurationError,
   PKCEError,
   InvalidDataError,
-} from "@edgedb/auth-core";
-import type { Client } from "edgedb";
+} from "@gel/auth-core";
+import type { Client } from "gel";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
@@ -17,7 +17,7 @@ import {
   _extractParams,
 } from "../shared";
 
-export * from "@edgedb/auth-core/errors";
+export * from "@gel/auth-core/errors";
 export {
   NextAuthSession,
   type NextAuthOptions,
