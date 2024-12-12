@@ -229,7 +229,7 @@ if (getAvailableExtensions().get("postgis")) {
     afterAll(async () => {
       await con.execute("drop extension postgis;");
       await con.close();
-    });
+    }, 30_000);
 
     it("geometry type decode / encode / toWKT / parseWKT", async () => {
       const testcases = [
