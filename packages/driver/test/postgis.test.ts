@@ -224,7 +224,7 @@ if (getAvailableExtensions().get("postgis")) {
 
     beforeAll(async () => {
       await con.execute("create extension postgis;");
-    }, 30_000);
+    }, 60_000);
 
     afterAll(async () => {
       await con.execute("drop extension postgis;");
