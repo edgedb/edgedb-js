@@ -34,7 +34,8 @@ export type CodecKind =
   | "scalar"
   | "sparse_object"
   | "range"
-  | "multirange";
+  | "multirange"
+  | "record";
 
 export interface ICodec {
   readonly tid: uuid;

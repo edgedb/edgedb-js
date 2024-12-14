@@ -77,7 +77,8 @@ export class ObjectCodec extends Codec implements ICodec {
   }
 
   encodeArgs(args: any): Uint8Array {
-    if (this.fields[0].name === "0") {
+    // EdgeQL query parameters start at 0, SQL start at 1.
+    if (this.fields[0].name === "0" || this.fields[0].name === "1") {
       return this._encodePositionalArgs(args);
     }
     return this._encodeNamedArgs(args);
