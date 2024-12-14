@@ -30,6 +30,7 @@ import { NamedTupleCodec } from "./namedtuple";
 import { EnumCodec } from "./enum";
 import { ObjectCodec } from "./object";
 import { SetCodec } from "./set";
+import { RecordCodec } from "./record";
 import { MultiRangeCodec, RangeCodec } from "./range";
 import type { ProtocolVersion } from "../ifaces";
 import { versionGreaterThanOrEqual } from "../utils";
@@ -52,6 +53,7 @@ const CTYPE_RANGE = 9;
 const CTYPE_OBJECT = 10;
 const CTYPE_COMPOUND = 11;
 const CTYPE_MULTIRANGE = 12;
+const CTYPE_RECORD = 13;
 
 export interface CustomCodecSpec {
   int64_bigint?: boolean;
@@ -253,6 +255,15 @@ export class CodecsRegistry {
         }
 
         case CTYPE_NAMEDTUPLE: {
+          const els = frb.readUInt16();
+          for (let i = 0; i < els; i++) {
+            const elm_length = frb.readUInt32();
+            frb.discard(elm_length + 2);
+          }
+          break;
+        }
+
+        case CTYPE_RECORD: {
           const els = frb.readUInt16();
           for (let i = 0; i < els; i++) {
             const elm_length = frb.readUInt32();
@@ -564,6 +575,25 @@ export class CodecsRegistry {
           codecs[i] = subCodec;
         }
         res = new NamedTupleCodec(tid, typeName, codecs, names);
+        break;
+      }
+
+      case CTYPE_RECORD: {
+        const els = frb.readUInt16();
+        const codecs = new Array(els);
+        const names = new Array(els);
+        for (let i = 0; i < els; i++) {
+          names[i] = frb.readString();
+          const pos = frb.readUInt16();
+          const subCodec = cl[pos];
+          if (subCodec == null) {
+            throw new ProtocolError(
+              "could not build record codec: missing subcodec",
+            );
+          }
+          codecs[i] = subCodec;
+        }
+        res = new RecordCodec(tid, codecs, names);
         break;
       }
 
