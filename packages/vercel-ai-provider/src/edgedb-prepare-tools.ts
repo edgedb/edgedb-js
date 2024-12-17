@@ -1,7 +1,8 @@
-import type {
-  JSONSchema7,
-  LanguageModelV1,
-  LanguageModelV1CallWarning,
+import {
+  type JSONSchema7,
+  type LanguageModelV1,
+  type LanguageModelV1CallWarning,
+  UnsupportedFunctionalityError,
 } from "@ai-sdk/provider";
 import {
   type EdgeDBChatModelId,
@@ -110,6 +111,7 @@ export function prepareTools(
           : isOpenAI
             ? "required"
             : "any",
+        toolWarnings,
       };
 
     // mistral does not support tool mode directly,
@@ -121,8 +123,8 @@ export function prepareTools(
             tool_choice: {
               type: "tool",
               name: toolChoice.toolName,
-              toolWarnings,
             },
+            toolWarnings,
           }
         : isOpenAI
           ? {
@@ -145,7 +147,9 @@ export function prepareTools(
 
     default: {
       const _exhaustiveCheck: never = type;
-      throw new Error(`Unsupported tool choice type: ${_exhaustiveCheck}`);
+      throw new UnsupportedFunctionalityError({
+        functionality: `Unsupported tool choice type: ${_exhaustiveCheck}`,
+      });
     }
   }
 }

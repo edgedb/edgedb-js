@@ -78,6 +78,7 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
     // providerMetadata: exists in the Vercel SDK d.ts but none of the providers use it
   }: Parameters<LanguageModelV1["doGenerate"]>[0]) {
     const type = mode.type;
+    const isAnthropic = isAnthropicModel(this.modelId);
 
     const warnings: LanguageModelV1CallWarning[] = [];
 
@@ -102,40 +103,32 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
       });
     }
 
-    if (isAnthropicModel(this.modelId) && seed != null) {
+    if (isAnthropic && seed != null) {
       warnings.push({
         type: "unsupported-setting",
         setting: "seed",
       });
     }
 
-    if (!isAnthropicModel(this.modelId) && topK != null) {
+    if (!isAnthropic && topK != null) {
       warnings.push({
         type: "unsupported-setting",
         setting: "topK",
       });
     }
 
-    if (responseFormat != null && responseFormat.type !== "text") {
+    if (
+      (isAnthropic && responseFormat?.type !== "text") ||
+      (!isAnthropic &&
+        responseFormat?.type === "json" &&
+        responseFormat?.schema)
+    ) {
       warnings.push({
         type: "unsupported-setting",
         setting: "responseFormat",
-        details: "JSON response format is not supported.",
+        details: "JSON response format schema is not supported.",
       });
     }
-
-    // if (
-    //   responseFormat != null &&
-    //   responseFormat.type === "json"
-    //   // && responseFormat.schema != null
-    // ) {
-    //   warnings.push({
-    //     type: "unsupported-setting",
-    //     setting: "responseFormat",
-    //     details: "JSON response is not supported",
-    //     // details: "JSON response format schema is not supported",
-    //   });
-    // }
 
     const baseArgs = {
       model: this.modelId,
@@ -161,17 +154,30 @@ export class EdgeDBChatLanguageModel implements LanguageModelV1 {
 
     switch (type) {
       case "regular": {
+        const { tools, tool_choice, toolWarnings } = prepareTools(
+          mode,
+          this.modelId,
+        );
+
         return {
           args: {
             ...baseArgs,
-            ...prepareTools(mode, this.modelId),
+            tools,
+            tool_choice,
+          },
+          warnings: [...warnings, ...toolWarnings],
+        };
+      }
+
+      case "object-json": {
+        return {
+          args: {
+            ...baseArgs,
+            response_format: { type: "json_object" },
           },
           warnings,
         };
       }
-
-      // case 'object-json': {
-      // }
 
       // case 'object-tool': {
       // }
