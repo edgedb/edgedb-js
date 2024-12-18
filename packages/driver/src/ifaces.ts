@@ -59,6 +59,15 @@ export interface Executor {
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
+interface UserCodec {
+  encode(value: any): any;
+  decode(value: any): any;
+}
+
+export type UserCodecs = {
+  [typeName: string]: UserCodec;
+}
+
 export interface KnownServerSettings {
   suggested_pool_concurrency?: number;
   system_config?: any;

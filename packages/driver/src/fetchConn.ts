@@ -40,7 +40,7 @@ import {
   type QueryArgs,
   type QueryOptions,
 } from "./ifaces";
-import type { Session } from "./options";
+import type { Options } from "./options";
 import { WriteBuffer } from "./primitives/buffer";
 import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
@@ -209,7 +209,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   public async rawParse(
     language: Language,
     query: string,
-    state: Session,
+    state: Options,
     options?: QueryOptions,
     abortSignal?: AbortSignal | null,
   ): Promise<
@@ -239,7 +239,7 @@ export class AdminUIFetchConnection extends BaseFetchConnection {
   public async rawExecute(
     language: Language,
     query: string,
-    state: Session,
+    state: Options,
     outCodec?: ICodec,
     options?: QueryOptions,
     inCodec?: ICodec,

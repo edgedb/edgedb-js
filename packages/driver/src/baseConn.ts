@@ -48,7 +48,7 @@ import * as chars from "./primitives/chars";
 import Event from "./primitives/event";
 import LRU from "./primitives/lru";
 import type { SerializedSessionState } from "./options";
-import { Session } from "./options";
+import { Options } from "./options";
 
 export const PROTO_VER: ProtocolVersion = [3, 0];
 export const PROTO_VER_MIN: ProtocolVersion = [0, 9];
@@ -138,7 +138,7 @@ export class BaseRawConnection {
   isLegacyProtocol = false;
 
   protected stateCodec: ICodec = INVALID_CODEC;
-  protected stateCache = new WeakMap<Session, Uint8Array>();
+  protected stateCache = new WeakMap<Options, Uint8Array>();
   lastStateUpdate: SerializedSessionState | null = null;
 
   protected adminUIMode = false;
@@ -894,7 +894,7 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
-    state: Session,
+    state: Options,
     capabilitiesFlags: number,
     options: QueryOptions | undefined,
     language: Language,
@@ -936,7 +936,7 @@ export class BaseRawConnection {
     );
     wb.writeString(query);
 
-    if (!this.adminUIMode && state === Session.defaults()) {
+    if (!this.adminUIMode && state.isDefaultSession()) {
       wb.writeBuffer(NULL_CODEC.tidBuffer);
       wb.writeInt32(0);
     } else {
@@ -959,7 +959,7 @@ export class BaseRawConnection {
     query: string,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
-    state: Session,
+    state: Options,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
   ): Promise<ParseResult> {
@@ -1082,7 +1082,7 @@ export class BaseRawConnection {
     args: QueryArgs,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
-    state: Session,
+    state: Options,
     inCodec: ICodec,
     outCodec: ICodec,
     result: any[] | WriteBuffer,
@@ -1256,7 +1256,7 @@ export class BaseRawConnection {
     args: QueryArgs = null,
     outputFormat: OutputFormat,
     expectedCardinality: Cardinality,
-    state: Session,
+    state: Options,
     privilegedMode = false,
     language: Language = Language.EDGEQL,
   ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
@@ -1307,7 +1307,7 @@ export class BaseRawConnection {
 
       if (
         (!inCodec && args !== null) ||
-        (this.stateCodec === INVALID_CODEC && state !== Session.defaults())
+        (this.stateCodec === INVALID_CODEC && !state.isDefaultSession())
       ) {
         [card, inCodec, outCodec, _, _, _, warnings] = await this._parse(
           language,
@@ -1353,7 +1353,7 @@ export class BaseRawConnection {
         }
       }
     } else {
-      if (state !== Session.defaults()) {
+      if (!state.isDefaultSession()) {
         throw new errors.InterfaceError(
           `setting session state is not supported in this version of ` +
             `EdgeDB. Upgrade to EdgeDB 2.0 or newer.`,
@@ -1491,7 +1491,7 @@ export class BaseRawConnection {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
-          Session.defaults(),
+          Options.defaults(),
           true,
         );
       } catch {

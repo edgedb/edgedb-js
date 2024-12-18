@@ -1,4 +1,4 @@
-import * as errors from "./errors";
+import * as errors from "./errors/index";
 import { utf8Encoder } from "./primitives/buffer";
 
 export type BackoffFunction = (n: number) => number;
@@ -54,8 +54,10 @@ export function logWarnings(warnings: errors.EdgeDBError[]) {
 }
 
 export class RetryOptions {
+  // This type is immutable.
+
   readonly default: RetryRule;
-  private overrides: Map<RetryCondition, RetryRule>;
+  private overrides: ReadonlyMap<RetryCondition, RetryRule>;
 
   constructor(attempts = 3, backoff: BackoffFunction = defaultBackoff) {
     this.default = new RetryRule(attempts, backoff);
@@ -90,9 +92,11 @@ export class RetryOptions {
   }
 
   static defaults(): RetryOptions {
-    return new RetryOptions();
+    return _retryOptionsDefault;
   }
 }
+
+const _retryOptionsDefault = new RetryOptions();
 
 export interface SimpleTransactionOptions {
   isolation?: IsolationLevel;
@@ -101,6 +105,8 @@ export interface SimpleTransactionOptions {
 }
 
 export class TransactionOptions {
+  // This type is immutable.
+
   readonly isolation: IsolationLevel;
   readonly readonly: boolean;
   readonly deferrable: boolean;
@@ -115,18 +121,13 @@ export class TransactionOptions {
   }
 
   static defaults(): TransactionOptions {
-    return new TransactionOptions();
+    return _defaultTransactionOptions;
   }
 }
 
-const TAG_ANNOTATION_KEY = "tag";
+const _defaultTransactionOptions = new TransactionOptions();
 
-export interface SessionOptions {
-  module?: string;
-  moduleAliases?: Record<string, string>;
-  config?: Record<string, any>;
-  globals?: Record<string, any>;
-}
+const TAG_ANNOTATION_KEY = "tag";
 
 export interface SerializedSessionState {
   module?: string;
@@ -135,35 +136,115 @@ export interface SerializedSessionState {
   globals?: { [name: string]: unknown };
 }
 
-export class Session {
+export interface OptionsList {
+  module?: string;
+  moduleAliases?: Record<string, string>;
+  config?: Record<string, any>;
+  globals?: Record<string, any>;
+  retryOptions?: RetryOptions;
+  transactionOptions?: TransactionOptions;
+  warningHandler?: WarningHandler;
+}
+
+type Mutable<T> = {
+  -readonly [K in keyof T]: T[K]
+}
+
+export class Options {
+  // This type is immutable.
+
   readonly module: string;
-  readonly moduleAliases: Record<string, string>;
-  readonly config: Record<string, any>;
-  readonly globals: Record<string, any>;
+  readonly moduleAliases: ReadonlyMap<string, string>;
+  readonly config: ReadonlyMap<string, any>;
+  readonly globals: ReadonlyMap<string, any>;
+  readonly retryOptions: RetryOptions;
+  readonly transactionOptions: TransactionOptions;
+  readonly warningHandler: WarningHandler;
 
   /** @internal */
-  annotations = new Map<string, string>();
+  readonly annotations: ReadonlyMap<string, string> = new Map<string, string>();
 
   get tag(): string | null {
     return this.annotations.get(TAG_ANNOTATION_KEY) ?? null;
   }
 
   constructor({
+    retryOptions = RetryOptions.defaults(),
+    transactionOptions = TransactionOptions.defaults(),
+    warningHandler = logWarnings,
     module = "default",
     moduleAliases = {},
     config = {},
     globals = {},
-  }: SessionOptions = {}) {
+  }: OptionsList = {}) {
+    this.retryOptions = retryOptions;
+    this.transactionOptions = transactionOptions;
+    this.warningHandler = warningHandler;
     this.module = module;
-    this.moduleAliases = moduleAliases;
-    this.config = config;
-    this.globals = globals;
+    this.moduleAliases = new Map(Object.entries(moduleAliases));
+    this.config = new Map(Object.entries(config));
+    this.globals = new Map(Object.entries(globals));
   }
 
-  private _clone(mergeOptions: SessionOptions) {
-    const session = new Session({ ...this, ...mergeOptions });
-    session.annotations = this.annotations;
-    return session;
+  private _cloneWith(mergeOptions: OptionsList) {
+    const clone: Mutable<Options> = Object.create(Options.prototype);
+
+    clone.annotations = this.annotations;
+
+    clone.retryOptions = mergeOptions.retryOptions ?? this.retryOptions;
+    clone.transactionOptions =
+      mergeOptions.transactionOptions ?? this.transactionOptions;
+    clone.warningHandler = mergeOptions.warningHandler ?? this.warningHandler;
+
+    if (mergeOptions.config != null) {
+      clone.config = new Map(
+        [...this.config, ...Object.entries(mergeOptions.config)]
+      );
+    } else {
+      clone.config = this.config;
+    }
+
+    if (mergeOptions.globals != null) {
+      clone.globals = new Map(
+        [...this.globals, ...Object.entries(mergeOptions.globals)]
+      );
+    } else {
+      clone.globals = this.globals;
+    }
+
+    if (mergeOptions.moduleAliases != null) {
+      clone.moduleAliases = new Map(
+        [...this.moduleAliases, ...Object.entries(mergeOptions.moduleAliases)]
+      );
+    } else {
+      clone.moduleAliases = this.moduleAliases;
+    }
+
+    clone.module = mergeOptions.module ?? this.module;
+
+    return clone as Options;
+  }
+
+  /** @internal */
+  _serialise() {
+    const state: SerializedSessionState = {};
+    if (this.module !== "default") {
+      state.module = this.module;
+    }
+    if (this.moduleAliases.size) {
+      state.aliases = Array.from(this.moduleAliases.entries());
+    }
+    if (this.config.size) {
+      state.config = Object.fromEntries(this.config.entries());
+    }
+    if (this.globals.size) {
+      const globs: Record<string, any> = {};
+      for (let [key, val] of this.globals.entries()) {
+        globs[key.includes("::") ? key : `${this.module}::${key}`] = val;
+      }
+      state.globals = globs;
+    }
+    return state;
   }
 
   withModuleAliases({
@@ -171,28 +252,25 @@ export class Session {
     ...aliases
   }: {
     [name: string]: string;
-  }): Session {
-    return this._clone({
+  }): Options {
+    return this._cloneWith({
       module: module ?? this.module,
-      moduleAliases: { ...this.moduleAliases, ...aliases },
+      moduleAliases: aliases,
     });
   }
 
-  withConfig(config: { [name: string]: any }): Session {
-    return this._clone({
-      config: { ...this.config, ...config },
-    });
+  withConfig(config: Record<string, any>): Options {
+    return this._cloneWith({config});
   }
 
-  withGlobals(globals: { [name: string]: any }): Session {
-    return this._clone({
+  withGlobals(globals: Record<string, any>): Options {
+    return this._cloneWith({
       globals: { ...this.globals, ...globals },
     });
   }
 
-  withQueryTag(tag: string | null): Session {
-    const session = new Session({ ...this });
-    session.annotations = new Map(this.annotations);
+  withQueryTag(tag: string | null): Options {
+    const annos = new Map(this.annotations);
     if (tag != null) {
       if (tag.startsWith("edgedb/")) {
         throw new errors.InterfaceError("reserved tag: edgedb/*");
@@ -203,82 +281,28 @@ export class Session {
       if (utf8Encoder.encode(tag).length > 128) {
         throw new errors.InterfaceError("tag too long (> 128 bytes)");
       }
-      session.annotations.set(TAG_ANNOTATION_KEY, tag);
+      annos.set(TAG_ANNOTATION_KEY, tag);
     } else {
-      session.annotations.delete(TAG_ANNOTATION_KEY);
+      annos.delete(TAG_ANNOTATION_KEY);
     }
-    return session;
-  }
 
-  /** @internal */
-  _serialise() {
-    const state: SerializedSessionState = {};
-    if (this.module !== "default") {
-      state.module = this.module;
-    }
-    const _aliases = Object.entries(this.moduleAliases);
-    if (_aliases.length) {
-      state.aliases = _aliases;
-    }
-    if (Object.keys(this.config).length) {
-      state.config = this.config;
-    }
-    const _globals = Object.entries(this.globals);
-    if (_globals.length) {
-      state.globals = _globals.reduce(
-        (globals, [key, val]) => {
-          globals[key.includes("::") ? key : `${this.module}::${key}`] = val;
-          return globals;
-        },
-        {} as { [key: string]: any },
-      );
-    }
-    return state;
-  }
+    const clone: Mutable<Options> = this._cloneWith({});
+    clone.annotations = annos;
 
-  static defaults(): Session {
-    return defaultSession;
-  }
-}
-
-const defaultSession = new Session();
-
-export class Options {
-  readonly retryOptions: RetryOptions;
-  readonly transactionOptions: TransactionOptions;
-  readonly session: Session;
-  readonly warningHandler: WarningHandler;
-
-  constructor({
-    retryOptions = RetryOptions.defaults(),
-    transactionOptions = TransactionOptions.defaults(),
-    session = Session.defaults(),
-    warningHandler = logWarnings,
-  }: {
-    retryOptions?: RetryOptions;
-    transactionOptions?: TransactionOptions;
-    session?: Session;
-    warningHandler?: WarningHandler;
-  } = {}) {
-    this.retryOptions = retryOptions;
-    this.transactionOptions = transactionOptions;
-    this.session = session;
-    this.warningHandler = warningHandler;
+    return clone as Options;
   }
 
   withTransactionOptions(
     opt: TransactionOptions | SimpleTransactionOptions,
   ): Options {
-    return new Options({
-      ...this,
+    return this._cloneWith({
       transactionOptions:
         opt instanceof TransactionOptions ? opt : new TransactionOptions(opt),
     });
   }
 
   withRetryOptions(opt: RetryOptions | SimpleRetryOptions): Options {
-    return new Options({
-      ...this,
+    return this._cloneWith({
       retryOptions:
         opt instanceof RetryOptions
           ? opt
@@ -286,18 +310,23 @@ export class Options {
     });
   }
 
-  withSession(opt: Session): Options {
-    return new Options({
-      ...this,
-      session: opt,
-    });
+  withWarningHandler(handler: WarningHandler): Options {
+    return this._cloneWith({ warningHandler: handler });
   }
 
-  withWarningHandler(handler: WarningHandler): Options {
-    return new Options({ ...this, warningHandler: handler });
+  isDefaultSession() {
+    return (
+      this.config.size === 0 &&
+      this.globals.size === 0 &&
+      this.moduleAliases.size === 0 &&
+      this.module === 'default'
+    )
   }
 
   static defaults(): Options {
-    return new Options();
+    return _defaultOptions;
   }
 }
+
+
+const _defaultOptions = new Options();
