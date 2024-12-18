@@ -34,7 +34,7 @@ import {
   QueryArgumentError,
   _CodecsRegistry,
   _ReadBuffer,
-  Session,
+  Options,
   AuthenticationError,
   InvalidReferenceError,
   throwWarnings,
@@ -2314,7 +2314,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     );
 
     const query = `SELECT Function { name }`;
-    const state = new Session({ module: "schema" });
+    const state = new Options({ module: "schema" });
     const options = {
       injectTypenames: true,
       implicitLimit: BigInt(5),
@@ -2355,7 +2355,7 @@ if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
     );
 
     await expect(
-      fetchConn.rawParse(Language.EDGEQL, `select 1`, Session.defaults()),
+      fetchConn.rawParse(Language.EDGEQL, `select 1`, Options.defaults()),
     ).rejects.toThrow(AuthenticationError);
   });
 }
