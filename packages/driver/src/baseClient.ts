@@ -35,7 +35,6 @@ import {
 } from "./ifaces";
 import type {
   RetryOptions,
-  Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
@@ -190,7 +189,7 @@ export class ClientConnectionHolder {
           args,
           outputFormat,
           expectedCardinality,
-          this.options.session,
+          this.options,
           false /* privilegedMode */,
           language,
         );
@@ -581,33 +580,28 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withRetryOptions(opts));
   }
 
-  withSession(session: Session): Client {
-    return new Client(this.pool, this.options.withSession(session));
-  }
-
   withModuleAliases(aliases: Record<string, string>) {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withModuleAliases(aliases)),
+      this.options.withModuleAliases(aliases),
     );
   }
 
   withConfig(config: SimpleConfig): Client {
-    const newConfig = this.options.session.withConfig(config);
-    return new Client(this.pool, this.options.withSession(newConfig));
+    return new Client(this.pool, this.options.withConfig(config));
   }
 
   withGlobals(globals: Record<string, any>): Client {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withGlobals(globals)),
+      this.options.withGlobals(globals),
     );
   }
 
   withQueryTag(tag: string | null): Client {
     return new Client(
       this.pool,
-      this.options.withSession(this.options.session.withQueryTag(tag)),
+      this.options.withQueryTag(tag),
     );
   }
 
@@ -775,7 +769,7 @@ export class Client implements Executor {
         query,
         OutputFormat.BINARY,
         Cardinality.MANY,
-        this.options.session,
+        this.options,
       );
       const cardinality = util.parseCardinality(result[0]);
 

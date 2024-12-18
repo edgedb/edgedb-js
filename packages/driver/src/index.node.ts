@@ -31,7 +31,7 @@ export {
   IsolationLevel,
   RetryCondition,
   RetryOptions,
-  Session,
+  Options,
 } from "./options";
 export { defaultBackoff, logWarnings, throwWarnings } from "./options";
 export type { BackoffFunction } from "./options";
