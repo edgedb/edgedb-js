@@ -82,10 +82,16 @@ jobs:
         with:
           instance-name: test
           server-version: ${{ matrix.edgedb-version }}
+          cli-version: ${{ matrix.edgedb-version == 'nightly' && 'nightly' || 'stable' }}
 
       - name: Show actual EdgeDB server version
         run: |
           echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
+
+      - name: Install postgis extension
+        if: ${{ matrix.edgedb-version == 'nightly' }}
+        run: |
+          edgedb extension install -E postgis -I test --slot 6-alpha-3
 
       - name: Run package tests
         run: |
