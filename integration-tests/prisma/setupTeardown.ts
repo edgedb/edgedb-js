@@ -65,7 +65,7 @@ export async function setupTests() {
 }
 
 async function cleanupData(client: Client) {
-  await client.execute('delete Object');
+  await client.execute("delete Object");
 }
 
 export async function teardownTests(client: Client) {

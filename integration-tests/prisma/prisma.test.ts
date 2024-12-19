@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import path from "path";
 import { adapter, Client, createClient } from "edgedb";
 import { execSync } from "child_process";
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from "@prisma/client";
 
 import { setupTests, teardownTests, testIfVersionGTE } from "./setupTeardown";
 
@@ -19,15 +19,18 @@ describe("prisma", () => {
 
     // the postgres DSN that prisma needs is nearly identical to the EdgeDB
     // DSN, so we'll use it as the baseline
-    const dsn = spawnSync(
-      'gel',
-      ['instance', 'credentials', '-I', 'prisma', '--insecure-dsn']
-    ).stdout.toString();
+    const dsn = spawnSync("gel", [
+      "instance",
+      "credentials",
+      "-I",
+      "prisma",
+      "--insecure-dsn",
+    ]).stdout.toString();
 
     prisma = new PrismaClient({
       datasources: {
         db: {
-          url: dsn.replace(/^edgedb:/, 'postgresql:'),
+          url: dsn.replace(/^edgedb:/, "postgresql:"),
         },
       },
     });
@@ -38,46 +41,53 @@ describe("prisma", () => {
   });
 
   testIfVersionGTE(6)("check read models 01", async () => {
-    const res = await prisma.user.findMany({orderBy: {name: 'asc'}})
+    const res = await prisma.user.findMany({ orderBy: { name: "asc" } });
     assert.deepEqual(
-      res.map((rec) => rec['name']),
-      ['Alice', 'Billie', 'Cameron', 'Dana', 'Elsa', 'Zoe'],
-    )
+      res.map((rec) => rec["name"]),
+      ["Alice", "Billie", "Cameron", "Dana", "Elsa", "Zoe"],
+    );
   });
 
   testIfVersionGTE(6)("check read models 02", async () => {
-    const res = await prisma.userGroup.findMany({orderBy: {name: 'asc'}})
+    const res = await prisma.userGroup.findMany({ orderBy: { name: "asc" } });
     assert.deepEqual(
-      res.map((rec) => rec['name']),
-      ['blue', 'green', 'red'],
-    )
+      res.map((rec) => rec["name"]),
+      ["blue", "green", "red"],
+    );
   });
 
   testIfVersionGTE(6)("check read models 03", async () => {
-    const res = await prisma.gameSession.findMany({orderBy: {num: 'asc'}})
+    const res = await prisma.gameSession.findMany({ orderBy: { num: "asc" } });
     assert.deepEqual(
-      res.map((rec) => rec['num']),
+      res.map((rec) => rec["num"]),
       [123, 456],
-    )
+    );
   });
 
   testIfVersionGTE(6)("check read models 04", async () => {
-    const res = await prisma.post.findMany({orderBy: {body: 'asc'}})
+    const res = await prisma.post.findMany({ orderBy: { body: "asc" } });
     assert.deepEqual(
-      res.map((rec) => rec['body']),
-      ['*magic stuff*', 'Hello', "I'm Alice", "I'm Cameron"],
-    )
+      res.map((rec) => rec["body"]),
+      ["*magic stuff*", "Hello", "I'm Alice", "I'm Cameron"],
+    );
   });
 
   testIfVersionGTE(6)("check read models 05", async () => {
-    const res = await prisma.named.findMany({orderBy: {name: 'asc'}})
+    const res = await prisma.named.findMany({ orderBy: { name: "asc" } });
     assert.deepEqual(
-      res.map((rec) => rec['name']),
+      res.map((rec) => rec["name"]),
       [
-        'Alice', 'Billie', 'Cameron', 'Dana', 'Elsa', 'Zoe',
-        'blue', 'green', 'red',
+        "Alice",
+        "Billie",
+        "Cameron",
+        "Dana",
+        "Elsa",
+        "Zoe",
+        "blue",
+        "green",
+        "red",
       ],
-    )
+    );
   });
 
   testIfVersionGTE(6)("check read models 06", async () => {
@@ -87,20 +97,17 @@ describe("prisma", () => {
         author: {
           select: {
             name: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: {body: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {body: '*magic stuff*', author: {name: 'Elsa'}},
-        {body: 'Hello', author: {name: 'Alice'}},
-        {body: "I'm Alice", author: {name: 'Alice'}},
-        {body: "I'm Cameron", author: {name: 'Cameron'}},
-      ],
-    )
+      orderBy: { body: "asc" },
+    });
+    assert.deepEqual(res, [
+      { body: "*magic stuff*", author: { name: "Elsa" } },
+      { body: "Hello", author: { name: "Alice" } },
+      { body: "I'm Alice", author: { name: "Alice" } },
+      { body: "I'm Cameron", author: { name: "Cameron" } },
+    ]);
   });
 
   testIfVersionGTE(6)("check read models 07", async () => {
@@ -110,46 +117,37 @@ describe("prisma", () => {
         backlink_via_author: {
           select: {
             body: true,
-          }
+          },
         },
       },
-      orderBy: {name: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {
-          name: 'Alice',
-          backlink_via_author: [
-            {body: "Hello"}, {body: "I'm Alice"},
-          ],
-        },
-        {
-          name: 'Billie',
-          backlink_via_author: [],
-        },
-        {
-          name: 'Cameron',
-          backlink_via_author: [
-            {body: "I'm Cameron"},
-          ],
-        },
-        {
-          name: 'Dana',
-          backlink_via_author: [],
-        },
-        {
-          name: 'Elsa',
-          backlink_via_author: [
-            {body: "*magic stuff*"},
-          ],
-        },
-        {
-          name: 'Zoe',
-          backlink_via_author: [],
-        },
-      ],
-    )
+      orderBy: { name: "asc" },
+    });
+    assert.deepEqual(res, [
+      {
+        name: "Alice",
+        backlink_via_author: [{ body: "Hello" }, { body: "I'm Alice" }],
+      },
+      {
+        name: "Billie",
+        backlink_via_author: [],
+      },
+      {
+        name: "Cameron",
+        backlink_via_author: [{ body: "I'm Cameron" }],
+      },
+      {
+        name: "Dana",
+        backlink_via_author: [],
+      },
+      {
+        name: "Elsa",
+        backlink_via_author: [{ body: "*magic stuff*" }],
+      },
+      {
+        name: "Zoe",
+        backlink_via_author: [],
+      },
+    ]);
   });
 
   testIfVersionGTE(6)("check read models 08", async () => {
@@ -162,30 +160,25 @@ describe("prisma", () => {
               select: {
                 name: true,
               },
-            }
+            },
           },
         },
       },
-      orderBy: {num: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {
-          num: 123,
-          players: [
-            {target: {name: 'Alice'}},
-            {target: {name: 'Billie'}},
-          ],
-        },
-        {
-          num: 456,
-          players: [
-            {target: {name: 'Dana'}},
-          ],
-        },
-      ],
-    )
+      orderBy: { num: "asc" },
+    });
+    assert.deepEqual(res, [
+      {
+        num: 123,
+        players: [
+          { target: { name: "Alice" } },
+          { target: { name: "Billie" } },
+        ],
+      },
+      {
+        num: 456,
+        players: [{ target: { name: "Dana" } }],
+      },
+    ]);
   });
 
   testIfVersionGTE(6)("check read models 09", async () => {
@@ -197,42 +190,39 @@ describe("prisma", () => {
             source: {
               select: {
                 num: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
-      orderBy: {name: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {
-          name: 'Alice',
-          backlink_via_players: [{source: {num: 123}}],
-        },
-        {
-          name: 'Billie',
-          backlink_via_players: [{source: {num: 123}}],
-        },
-        {
-          name: 'Cameron',
-          backlink_via_players: [],
-        },
-        {
-          name: 'Dana',
-          backlink_via_players: [{source: {num: 456}}],
-        },
-        {
-          name: 'Elsa',
-          backlink_via_players: [],
-        },
-        {
-          name: 'Zoe',
-          backlink_via_players: [],
-        },
-      ],
-    )
+      orderBy: { name: "asc" },
+    });
+    assert.deepEqual(res, [
+      {
+        name: "Alice",
+        backlink_via_players: [{ source: { num: 123 } }],
+      },
+      {
+        name: "Billie",
+        backlink_via_players: [{ source: { num: 123 } }],
+      },
+      {
+        name: "Cameron",
+        backlink_via_players: [],
+      },
+      {
+        name: "Dana",
+        backlink_via_players: [{ source: { num: 456 } }],
+      },
+      {
+        name: "Elsa",
+        backlink_via_players: [],
+      },
+      {
+        name: "Zoe",
+        backlink_via_players: [],
+      },
+    ]);
   });
 
   testIfVersionGTE(6)("check read models 10", async () => {
@@ -244,38 +234,32 @@ describe("prisma", () => {
             target: {
               select: {
                 name: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
-      orderBy: {name: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {
-          name: 'blue',
-          users: [],
-        },
-        {
-          name: 'green',
-          users: [
-            {target: {name: 'Alice'}},
-            {target: {name: 'Billie'}},
-          ],
-        },
-        {
-          name: 'red',
-          users: [
-            {target: {name: 'Alice'}},
-            {target: {name: 'Billie'}},
-            {target: {name: 'Cameron'}},
-            {target: {name: 'Dana'}},
-          ],
-        },
-      ],
-    )
+      orderBy: { name: "asc" },
+    });
+    assert.deepEqual(res, [
+      {
+        name: "blue",
+        users: [],
+      },
+      {
+        name: "green",
+        users: [{ target: { name: "Alice" } }, { target: { name: "Billie" } }],
+      },
+      {
+        name: "red",
+        users: [
+          { target: { name: "Alice" } },
+          { target: { name: "Billie" } },
+          { target: { name: "Cameron" } },
+          { target: { name: "Dana" } },
+        ],
+      },
+    ]);
   });
 
   testIfVersionGTE(6)("check read models 11", async () => {
@@ -287,52 +271,45 @@ describe("prisma", () => {
             source: {
               select: {
                 name: true,
-              }
-            }
-          }
-        }
+              },
+            },
+          },
+        },
       },
-      orderBy: {name: 'asc'},
-    })
-    assert.deepEqual(
-      res,
-      [
-        {
-          name: 'Alice',
-          backlink_via_users: [
-            {source: {name: 'red'}},
-            {source: {name: 'green'}},
-          ],
-        },
-        {
-          name: 'Billie',
-          backlink_via_users: [
-            {source: {name: 'red'}},
-            {source: {name: 'green'}},
-          ],
-        },
-        {
-          name: 'Cameron',
-          backlink_via_users: [
-            {source: {name: 'red'}},
-          ],
-        },
-        {
-          name: 'Dana',
-          backlink_via_users: [
-            {source: {name: 'red'}},
-          ],
-        },
-        {
-          name: 'Elsa',
-          backlink_via_users: [],
-        },
-        {
-          name: 'Zoe',
-          backlink_via_users: [],
-        },
-      ],
-    )
+      orderBy: { name: "asc" },
+    });
+    assert.deepEqual(res, [
+      {
+        name: "Alice",
+        backlink_via_users: [
+          { source: { name: "red" } },
+          { source: { name: "green" } },
+        ],
+      },
+      {
+        name: "Billie",
+        backlink_via_users: [
+          { source: { name: "red" } },
+          { source: { name: "green" } },
+        ],
+      },
+      {
+        name: "Cameron",
+        backlink_via_users: [{ source: { name: "red" } }],
+      },
+      {
+        name: "Dana",
+        backlink_via_users: [{ source: { name: "red" } }],
+      },
+      {
+        name: "Elsa",
+        backlink_via_users: [],
+      },
+      {
+        name: "Zoe",
+        backlink_via_users: [],
+      },
+    ]);
   });
 
   testIfVersionGTE(6)("check create models 01", async () => {
@@ -340,23 +317,23 @@ describe("prisma", () => {
       await prisma.$transaction(async (tx) => {
         await tx.user.create({
           data: {
-            name: 'Yvonne',
+            name: "Yvonne",
           },
-        })
+        });
 
         const res = await tx.user.findFirst({
           where: {
-            name: 'Yvonne'
-          }
-        })
+            name: "Yvonne",
+          },
+        });
 
-        assert.equal(res!.name, 'Yvonne')
-        assert.ok(res!.id)
-        throw new Rollback()
+        assert.equal(res!.name, "Yvonne");
+        assert.ok(res!.id);
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -366,40 +343,40 @@ describe("prisma", () => {
       await prisma.$transaction(async (tx) => {
         await tx.userGroup.create({
           data: {
-            name: 'cyan',
+            name: "cyan",
             users: {
               create: [
-                {target: {create: {name: 'Yvonne'}}},
-                {target: {create: {name: 'Xander'}}},
+                { target: { create: { name: "Yvonne" } } },
+                { target: { create: { name: "Xander" } } },
               ],
-            }
+            },
           },
-        })
+        });
 
-        for (const name of ['Yvonne', 'Xander']) {
+        for (const name of ["Yvonne", "Xander"]) {
           const res = await tx.user.findFirst({
             where: {
-              name: name
+              name: name,
             },
             include: {
               backlink_via_users: {
                 include: {
-                  source: true
-                }
-              }
-            }
-          })
+                  source: true,
+                },
+              },
+            },
+          });
 
-          assert.equal(res!.name, name)
-          assert.equal(res!.backlink_via_users[0].source.name, 'cyan')
-          assert.ok(res!.id)
+          assert.equal(res!.name, name);
+          assert.equal(res!.backlink_via_users[0].source.name, "cyan");
+          assert.ok(res!.id);
         }
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -410,57 +387,57 @@ describe("prisma", () => {
         // create user and then 2 posts
         const user = await tx.user.create({
           data: {
-            name: 'Yvonne',
+            name: "Yvonne",
           },
-        })
+        });
         await tx.post.create({
           data: {
-            body: 'this is a test',
+            body: "this is a test",
             author_id: user.id,
-          }
-        })
+          },
+        });
         await tx.post.create({
           data: {
-            body: 'also a test',
+            body: "also a test",
             author_id: user.id,
-          }
-        })
+          },
+        });
 
         const res = await tx.post.findMany({
           where: {
             author: {
-              name: 'Yvonne',
-            }
+              name: "Yvonne",
+            },
           },
           select: {
             body: true,
             author: {
               select: {
                 name: true,
-              }
-            }
+              },
+            },
           },
           orderBy: {
-            body: 'asc',
-          }
-        })
+            body: "asc",
+          },
+        });
 
-        assert.deepEqual(
-          res,
-          [{
-            body: 'also a test',
-            author: {name: 'Yvonne'},
-          }, {
-            body: 'this is a test',
-            author: {name: 'Yvonne'},
-          }]
-        )
+        assert.deepEqual(res, [
+          {
+            body: "also a test",
+            author: { name: "Yvonne" },
+          },
+          {
+            body: "this is a test",
+            author: { name: "Yvonne" },
+          },
+        ]);
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -470,30 +447,30 @@ describe("prisma", () => {
       await prisma.$transaction(async (tx) => {
         const user = await tx.user.findFirst({
           where: {
-            name: 'Zoe',
+            name: "Zoe",
           },
-        })
-        assert.ok(user?.id)
+        });
+        assert.ok(user?.id);
 
         // name is not unique so deleteMany is used
         await tx.user.deleteMany({
           where: {
-            name: 'Zoe',
+            name: "Zoe",
           },
-        })
+        });
 
         const res = await tx.user.findMany({
           where: {
-            name: 'Zoe',
+            name: "Zoe",
           },
-        })
-        assert.deepEqual(res, [])
+        });
+        assert.deepEqual(res, []);
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -504,42 +481,39 @@ describe("prisma", () => {
         const posts = await tx.post.findMany({
           where: {
             author: {
-              name: 'Elsa',
+              name: "Elsa",
             },
           },
-        })
-        assert.equal(posts.length, 1)
-        assert.ok(posts[0]?.id)
+        });
+        assert.equal(posts.length, 1);
+        assert.ok(posts[0]?.id);
 
         // name is not unique so deleteMany is used
         await tx.post.delete({
           where: {
             id: posts[0].id,
           },
-        })
+        });
 
         const res = await tx.user.findFirst({
           where: {
-            name: 'Elsa',
+            name: "Elsa",
           },
           select: {
             name: true,
             backlink_via_author: true,
           },
-        })
-        assert.deepEqual(
-          res,
-          {
-            name: 'Elsa',
-            backlink_via_author: [],
-          },
-        )
+        });
+        assert.deepEqual(res, {
+          name: "Elsa",
+          backlink_via_author: [],
+        });
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -549,27 +523,24 @@ describe("prisma", () => {
       await prisma.$transaction(async (tx) => {
         const red = await tx.userGroup.findFirst({
           where: {
-            name: 'red',
+            name: "red",
           },
           include: {
             users: {
               include: {
-                target: true
-              }
-            }
+                target: true,
+              },
+            },
           },
-        })
+        });
         assert.deepEqual(
-          red!.users.map((rec) => rec['target']['name']),
-          ['Alice', 'Billie', 'Cameron', 'Dana'],
-        )
+          red!.users.map((rec) => rec["target"]["name"]),
+          ["Alice", "Billie", "Cameron", "Dana"],
+        );
 
         // drop Billie and Cameron from the group
         for (const link of red!.users) {
-          if (
-            link.target.name === 'Billie' ||
-            link.target.name === 'Cameron'
-          ) {
+          if (link.target.name === "Billie" || link.target.name === "Cameron") {
             await tx.userGroup_users.delete({
               where: {
                 source_id_target_id: {
@@ -577,32 +548,32 @@ describe("prisma", () => {
                   target_id: link.target_id,
                 },
               },
-            })
+            });
           }
         }
 
         const res = await tx.userGroup.findFirst({
           where: {
-            name: 'red',
+            name: "red",
           },
           include: {
             users: {
               include: {
-                target: true
-              }
-            }
+                target: true,
+              },
+            },
           },
-        })
+        });
         assert.deepEqual(
-          res!.users.map((rec) => rec['target']['name']),
-          ['Alice', 'Dana'],
-        )
+          res!.users.map((rec) => rec["target"]["name"]),
+          ["Alice", "Dana"],
+        );
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
@@ -614,12 +585,12 @@ describe("prisma", () => {
       await prisma.$transaction(async (tx) => {
         const user = await tx.user.findFirst({
           where: {
-            name: 'Alice',
+            name: "Alice",
           },
-        })
-        const user_id = user!.id
-        assert.ok(user_id)
-        assert.equal(user?.name, 'Alice')
+        });
+        const user_id = user!.id;
+        assert.ok(user_id);
+        assert.equal(user?.name, "Alice");
 
         // name is not unique so deleteMany is used
         await tx.user.update({
@@ -627,31 +598,31 @@ describe("prisma", () => {
             id: user.id,
           },
           data: {
-            name: 'Xander'
+            name: "Xander",
           },
-        })
+        });
 
         let res = await tx.user.findMany({
           where: {
-            name: 'Alice',
+            name: "Alice",
           },
-        })
-        assert.deepEqual(res, [])
+        });
+        assert.deepEqual(res, []);
 
         res = await tx.user.findMany({
           where: {
-            name: 'Xander',
+            name: "Xander",
           },
-        })
-        assert.equal(res.length, 1)
-        assert.equal(res[0]?.name, 'Xander')
-        assert.equal(res[0]?.id, user_id)
+        });
+        assert.equal(res.length, 1);
+        assert.equal(res[0]?.name, "Xander");
+        assert.equal(res[0]?.id, user_id);
 
-        throw new Rollback()
+        throw new Rollback();
       });
     } catch (err) {
       if (!(err instanceof Rollback)) {
-        throw err
+        throw err;
       }
     }
   });
