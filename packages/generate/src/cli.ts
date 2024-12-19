@@ -18,6 +18,7 @@ import { generateQueryBuilder } from "./edgeql-js";
 import { runInterfacesGenerator } from "./interfaces";
 import { type Target, exitWithError } from "./genutil";
 import { generateQueryFiles } from "./queries";
+import { runGelPrismaGenerator } from "./gel-prisma";
 
 const { path, readFileUtf8, exists } = adapter;
 
@@ -25,6 +26,7 @@ enum Generator {
   QueryBuilder = "edgeql-js",
   Queries = "queries",
   Interfaces = "interfaces",
+  GelPrisma = "prisma",
 }
 
 const availableGeneratorsHelp = `
@@ -64,6 +66,8 @@ const run = async () => {
       break;
     case Generator.Interfaces:
       options.target = "ts";
+      break;
+    case Generator.GelPrisma:
       break;
   }
 
@@ -190,7 +194,10 @@ const run = async () => {
         options.useHttpClient = true;
         break;
       case "--target": {
-        if (generator === Generator.Interfaces) {
+        if (
+          generator === Generator.Interfaces ||
+          generator === Generator.GelPrisma
+        ) {
           exitWithError(
             `--target is not supported for generator "${generator}"`,
           );
@@ -220,7 +227,10 @@ const run = async () => {
         options.out = getVal();
         break;
       case "--file":
-        if (generator === Generator.Interfaces) {
+        if (
+          generator === Generator.Interfaces ||
+          generator === Generator.GelPrisma
+        ) {
           options.file = getVal();
         } else if (generator === Generator.Queries) {
           if (args.length > 0 && args[0][0] !== "-") {
@@ -290,9 +300,13 @@ const run = async () => {
     case Generator.Interfaces:
       console.log(`Generating TS interfaces from schema...`);
       break;
+    case Generator.GelPrisma:
+      console.log(`Generating Prisma schema from database...`);
+      break;
   }
 
-  if (!options.target) {
+  // don't need to do any of that for the prisma schema generator
+  if (!options.target && generator !== Generator.GelPrisma) {
     if (!projectRoot) {
       throw new Error(
         `Failed to detect project root.
@@ -411,6 +425,12 @@ Run this command inside an EdgeDB project directory or specify the desired targe
           schemaDir,
         });
         break;
+      case Generator.GelPrisma:
+        await runGelPrismaGenerator({
+          options,
+          client,
+        });
+        break;
     }
   } catch (e) {
     exitWithError((e as Error).message);
@@ -432,6 +452,7 @@ COMMANDS:
     queries         Generate typed functions from .edgeql files
     edgeql-js       Generate query builder
     interfaces      Generate TS interfaces for schema types
+    prisma          Generate a Prisma schema for an existing database instance
 
 
 CONNECTION OPTIONS:
@@ -460,7 +481,7 @@ OPTIONS:
         Change the output directory the querybuilder files are generated into
         (Only valid for 'edgeql-js' generator)
     --file <path>
-        Change the output filepath of the 'queries' and 'interfaces' generators
+        Change the output filepath of the 'queries', 'interfaces', and 'prisma' generators
         When used with the 'queries' generator, also changes output to single-file mode
     --force-overwrite
         Overwrite <path> contents without confirmation
