@@ -7,12 +7,11 @@
   },
   "devDependencies": {
     "@edgedb/generate": "0.x",
-    "@typescript-eslint/eslint-plugin": "6.x",
-    "@typescript-eslint/parser": "6.x",
-    "@eslint/eslintrc": "2.x",
-    "eslint": "8.x",
+    "@eslint/js": "9.x",
+    "eslint": "9.x",
     "eslint-config-prettier": "9.x",
     "prettier": "3.x",
-    "typescript": "5.x"
+    "typescript": "5.x",
+    "typescript-eslint": "7.x"
   }
 }
