@@ -24,7 +24,7 @@ import {
   getFloat16,
   isFloat16Array,
   setFloat16,
-} from "../adapter.shared.node";
+} from "../adapter.shared";
 import { SparseVector } from "../datatypes/pgvector";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;

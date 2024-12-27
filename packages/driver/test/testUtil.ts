@@ -1,10 +1,10 @@
-import { spawn } from "child_process";
-import * as process from "process";
-import * as child_process from "child_process";
-import * as path from "path";
-import * as os from "os";
-import * as fs from "fs";
-import * as readline from "readline";
+import { spawn } from "node:child_process";
+import * as process from "node:process";
+import * as child_process from "node:child_process";
+import * as path from "node:path";
+import * as os from "node:os";
+import * as fs from "node:fs";
+import * as readline from "node:readline";
 import type { ConnectConfig } from "../src/conUtils";
 
 import { Client, createClient } from "../src/index.node";

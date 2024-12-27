@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
 import { TransactionConflictError, InterfaceError } from "../src/index.node";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";

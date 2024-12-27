@@ -1,30 +1,47 @@
 {
-  "version": "3",
-  "packages": {
-    "specifiers": {
-      "npm:@types/node": "npm:@types/node@18.16.19",
-      "npm:fast-check": "npm:fast-check@3.20.0",
-      "npm:typescript": "npm:typescript@5.5.4"
+  "version": "4",
+  "specifiers": {
+    "jsr:@std/assert@*": "1.0.10",
+    "jsr:@std/assert@^1.0.10": "1.0.10",
+    "jsr:@std/expect@*": "1.0.10",
+    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "npm:@types/node@*": "18.16.19",
+    "npm:fast-check@*": "3.20.0",
+    "npm:typescript@*": "5.5.4"
+  },
+  "jsr": {
+    "@std/assert@1.0.10": {
+      "integrity": "59b5cbac5bd55459a19045d95cc7c2ff787b4f8527c0dd195078ff6f9481fbb3",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
     },
-    "npm": {
-      "@types/node@18.16.19": {
-        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
-        "dependencies": {}
-      },
-      "fast-check@3.20.0": {
-        "integrity": "sha512-pZIjqLpOZgdSLecec4GKC3Zq5702MZ34upMKxojnNVSWA0K64V3pXOBT1Wdsrc3AphLtzRBbsi8bRWF4TUGmUg==",
-        "dependencies": {
-          "pure-rand": "pure-rand@6.1.0"
-        }
-      },
-      "pure-rand@6.1.0": {
-        "integrity": "sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==",
-        "dependencies": {}
-      },
-      "typescript@5.5.4": {
-        "integrity": "sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==",
-        "dependencies": {}
-      }
+    "@std/expect@1.0.10": {
+      "integrity": "7659b640447887cd1735f866962e10e434f12443b13595b149970c806e6f08db",
+      "dependencies": [
+        "jsr:@std/assert@^1.0.10",
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.5": {
+      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
+    }
+  },
+  "npm": {
+    "@types/node@18.16.19": {
+      "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA=="
+    },
+    "fast-check@3.20.0": {
+      "integrity": "sha512-pZIjqLpOZgdSLecec4GKC3Zq5702MZ34upMKxojnNVSWA0K64V3pXOBT1Wdsrc3AphLtzRBbsi8bRWF4TUGmUg==",
+      "dependencies": [
+        "pure-rand"
+      ]
+    },
+    "pure-rand@6.1.0": {
+      "integrity": "sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA=="
+    },
+    "typescript@5.5.4": {
+      "integrity": "sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q=="
     }
   },
   "redirects": {
@@ -117,7 +134,7 @@
     "https://deno.land/std@0.177.0/node/internal_binding/async_wrap.ts": "0dc5ae64eea2c9e57ab17887ef1573922245167ffe38e3685c28d636f487f1b7",
     "https://deno.land/std@0.177.0/node/internal_binding/buffer.ts": "31729e0537921d6c730ad0afea44a7e8a0a1044d070ade8368226cb6f7390c8b",
     "https://deno.land/std@0.177.0/node/internal_binding/cares_wrap.ts": "9b7247772167f8ed56acd0244a232d9d50e8d7c9cfc379f77f3d54cecc2f32ab",
-    "https://deno.land/std@0.177.0/node/internal_binding/config.ts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
+    "https://deno.land/std@0.177.0/node/internal_binding/config.mts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
     "https://deno.land/std@0.177.0/node/internal_binding/connection_wrap.ts": "7dd089ea46de38e4992d0f43a09b586e4cf04878fb06863c1cb8cb2ece7da521",
     "https://deno.land/std@0.177.0/node/internal_binding/constants.ts": "21ff9d1ee71d0a2086541083a7711842fc6ae25e264dbf45c73815aadce06f4c",
     "https://deno.land/std@0.177.0/node/internal_binding/contextify.ts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
@@ -181,6 +198,39 @@
     "https://deno.land/std@0.177.0/streams/write_all.ts": "3b2e1ce44913f966348ce353d02fa5369e94115181037cd8b602510853ec3033",
     "https://deno.land/std@0.177.0/testing/_test_suite.ts": "30f018feeb3835f12ab198d8a518f9089b1bcb2e8c838a8b615ab10d5005465c",
     "https://deno.land/std@0.177.0/testing/bdd.ts": "c5ca6d85940dbcc19b4d2bc3608d49ab65d81470aa91306d5efa4b0d5c945731",
+    "https://deno.land/std@0.201.0/assert/_constants.ts": "8a9da298c26750b28b326b297316cdde860bc237533b07e1337c021379e6b2a9",
+    "https://deno.land/std@0.201.0/assert/_diff.ts": "1a3c044aedf77647d6cac86b798c6417603361b66b54c53331b312caeb447aea",
+    "https://deno.land/std@0.201.0/assert/_format.ts": "a69126e8a469009adf4cf2a50af889aca364c349797e63174884a52ff75cf4c7",
+    "https://deno.land/std@0.201.0/assert/assert.ts": "9a97dad6d98c238938e7540736b826440ad8c1c1e54430ca4c4e623e585607ee",
+    "https://deno.land/std@0.201.0/assert/assert_almost_equals.ts": "e15ca1f34d0d5e0afae63b3f5d975cbd18335a132e42b0c747d282f62ad2cd6c",
+    "https://deno.land/std@0.201.0/assert/assert_array_includes.ts": "6856d7f2c3544bc6e62fb4646dfefa3d1df5ff14744d1bca19f0cbaf3b0d66c9",
+    "https://deno.land/std@0.201.0/assert/assert_equals.ts": "d8ec8a22447fbaf2fc9d7c3ed2e66790fdb74beae3e482855d75782218d68227",
+    "https://deno.land/std@0.201.0/assert/assert_exists.ts": "407cb6b9fb23a835cd8d5ad804e2e2edbbbf3870e322d53f79e1c7a512e2efd7",
+    "https://deno.land/std@0.201.0/assert/assert_false.ts": "a9962749f4bf5844e3fa494257f1de73d69e4fe0e82c34d0099287552163a2dc",
+    "https://deno.land/std@0.201.0/assert/assert_greater.ts": "ae2158a2d19313bf675bf7251d31c6dc52973edb12ac64ac8fc7064152af3e63",
+    "https://deno.land/std@0.201.0/assert/assert_greater_or_equal.ts": "1439da5ebbe20855446cac50097ac78b9742abe8e9a43e7de1ce1426d556e89c",
+    "https://deno.land/std@0.201.0/assert/assert_instance_of.ts": "3aedb3d8186e120812d2b3a5dea66a6e42bf8c57a8bd927645770bd21eea554c",
+    "https://deno.land/std@0.201.0/assert/assert_is_error.ts": "c21113094a51a296ffaf036767d616a78a2ae5f9f7bbd464cd0197476498b94b",
+    "https://deno.land/std@0.201.0/assert/assert_less.ts": "aec695db57db42ec3e2b62e97e1e93db0063f5a6ec133326cc290ff4b71b47e4",
+    "https://deno.land/std@0.201.0/assert/assert_less_or_equal.ts": "5fa8b6a3ffa20fd0a05032fe7257bf985d207b85685fdbcd23651b70f928c848",
+    "https://deno.land/std@0.201.0/assert/assert_match.ts": "c4083f80600bc190309903c95e397a7c9257ff8b5ae5c7ef91e834704e672e9b",
+    "https://deno.land/std@0.201.0/assert/assert_not_equals.ts": "9f1acab95bd1f5fc9a1b17b8027d894509a745d91bac1718fdab51dc76831754",
+    "https://deno.land/std@0.201.0/assert/assert_not_instance_of.ts": "0c14d3dfd9ab7a5276ed8ed0b18c703d79a3d106102077ec437bfe7ed912bd22",
+    "https://deno.land/std@0.201.0/assert/assert_not_match.ts": "3796a5b0c57a1ce6c1c57883dd4286be13a26f715ea662318ab43a8491a13ab0",
+    "https://deno.land/std@0.201.0/assert/assert_not_strict_equals.ts": "ca6c6d645e95fbc873d25320efeb8c4c6089a9a5e09f92d7c1c4b6e935c2a6ad",
+    "https://deno.land/std@0.201.0/assert/assert_object_match.ts": "d8fc2867cfd92eeacf9cea621e10336b666de1874a6767b5ec48988838370b54",
+    "https://deno.land/std@0.201.0/assert/assert_rejects.ts": "45c59724de2701e3b1f67c391d6c71c392363635aad3f68a1b3408f9efca0057",
+    "https://deno.land/std@0.201.0/assert/assert_strict_equals.ts": "b1f538a7ea5f8348aeca261d4f9ca603127c665e0f2bbfeb91fa272787c87265",
+    "https://deno.land/std@0.201.0/assert/assert_string_includes.ts": "b821d39ebf5cb0200a348863c86d8c4c4b398e02012ce74ad15666fc4b631b0c",
+    "https://deno.land/std@0.201.0/assert/assert_throws.ts": "63784e951475cb7bdfd59878cd25a0931e18f6dc32a6077c454b2cd94f4f4bcd",
+    "https://deno.land/std@0.201.0/assert/assertion_error.ts": "4d0bde9b374dfbcbe8ac23f54f567b77024fb67dbb1906a852d67fe050d42f56",
+    "https://deno.land/std@0.201.0/assert/equal.ts": "9f1a46d5993966d2596c44e5858eec821859b45f783a5ee2f7a695dfc12d8ece",
+    "https://deno.land/std@0.201.0/assert/fail.ts": "c36353d7ae6e1f7933d45f8ea51e358c8c4b67d7e7502028598fe1fea062e278",
+    "https://deno.land/std@0.201.0/assert/mod.ts": "37c49a26aae2b254bbe25723434dc28cd7532e444cf0b481a97c045d110ec085",
+    "https://deno.land/std@0.201.0/assert/unimplemented.ts": "d56fbeecb1f108331a380f72e3e010a1f161baa6956fd0f7cf3e095ae1a4c75a",
+    "https://deno.land/std@0.201.0/assert/unreachable.ts": "4600dc0baf7d9c15a7f7d234f00c23bca8f3eba8b140286aaca7aa998cf9a536",
+    "https://deno.land/std@0.201.0/fmt/colors.ts": "87544aa2bc91087bb37f9c077970c85bfb041b48e4c37356129d7b450a415b6f",
+    "https://deno.land/std@0.201.0/testing/asserts.ts": "b4e4b1359393aeff09e853e27901a982c685cb630df30426ed75496961931946",
     "https://deno.land/std@0.208.0/assert/assert.ts": "9a97dad6d98c238938e7540736b826440ad8c1c1e54430ca4c4e623e585607ee",
     "https://deno.land/std@0.208.0/assert/assertion_error.ts": "4d0bde9b374dfbcbe8ac23f54f567b77024fb67dbb1906a852d67fe050d42f56",
     "https://deno.land/std@0.208.0/collections/_utils.ts": "5114abc026ddef71207a79609b984614e66a63a4bda17d819d56b0e72c51527e",
@@ -315,12 +365,12 @@
       "integration-tests/legacy": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/generate",
+            "npm:@edgedb/generate@*",
             "npm:@tsconfig/node-lts@^20.1.3",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:conditional-type-checks@^1.0.6",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:jest@^29.7.0",
             "npm:ts-jest@^29.1.4",
             "npm:typescript@^5.5.2"
@@ -330,13 +380,13 @@
       "integration-tests/lts": {
         "packageJson": {
           "dependencies": [
-            "npm:@arktype/attest@^0.7.8",
-            "npm:@edgedb/generate",
+            "npm:@arktype/attest@~0.7.8",
+            "npm:@edgedb/generate@*",
             "npm:@tsconfig/node-lts@^20.1.3",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:conditional-type-checks@^1.0.6",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:fast-check@^3.19.0",
             "npm:jest@^29.7.0",
             "npm:superjson@1.13.3",
@@ -348,12 +398,12 @@
       "integration-tests/nightly": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/generate",
+            "npm:@edgedb/generate@*",
             "npm:@tsconfig/node-lts@^20.1.3",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:conditional-type-checks@^1.0.6",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:jest@^29.7.0",
             "npm:ts-jest@^29.1.4",
             "npm:typescript@^5.5.2"
@@ -363,12 +413,12 @@
       "integration-tests/stable": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/generate",
+            "npm:@edgedb/generate@*",
             "npm:@tsconfig/node-lts@^20.1.3",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:conditional-type-checks@^1.0.6",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:jest@^29.7.0",
             "npm:ts-jest@^29.1.4",
             "npm:typescript@^5.5.2"
@@ -378,10 +428,10 @@
       "packages/ai": {
         "packageJson": {
           "dependencies": [
-            "npm:@repo/tsconfig",
+            "npm:@repo/tsconfig@*",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:eventsource-parser@^1.1.2",
             "npm:jest@29.7.0",
             "npm:ts-jest@29.1.4",
@@ -392,12 +442,12 @@
       "packages/auth-core": {
         "packageJson": {
           "dependencies": [
-            "npm:@repo/tsconfig",
+            "npm:@repo/tsconfig@*",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:jest@29.7.0",
-            "npm:jwt-decode@^4.0.0",
+            "npm:jwt-decode@4",
             "npm:ts-jest@29.1.4",
             "npm:typescript@^5.5.2"
           ]
@@ -406,11 +456,11 @@
       "packages/auth-express": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core@^0.2.1",
-            "npm:@repo/tsconfig",
+            "npm:@edgedb/auth-core@~0.2.1",
+            "npm:@repo/tsconfig@*",
             "npm:@types/express@^4.17.21",
             "npm:@types/node@^20.12.13",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:express@^4.19.2",
             "npm:typescript@^5.5.2"
           ]
@@ -420,12 +470,12 @@
         "packageJson": {
           "dependencies": [
             "npm:@edgedb/auth-core@0.2.1",
-            "npm:@repo/tsconfig",
+            "npm:@repo/tsconfig@*",
             "npm:@types/node@^20.12.13",
-            "npm:@types/react@^18.3.3",
-            "npm:edgedb",
-            "npm:next@14.2.3",
-            "npm:react@^18.3.1",
+            "npm:edgedb@*",
+            "npm:next@15.0.3",
+            "npm:react@19.0.0-rc-b01722d5-20241114",
+            "npm:types-react@rc",
             "npm:typescript@^5.5.2"
           ]
         }
@@ -433,12 +483,12 @@
       "packages/auth-remix": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core@^0.2.1",
+            "npm:@edgedb/auth-core@~0.2.1",
             "npm:@remix-run/server-runtime@^2.9.2",
-            "npm:@repo/tsconfig",
+            "npm:@repo/tsconfig@*",
             "npm:@types/node@^20.12.13",
-            "npm:cookie@^0.6.0",
-            "npm:edgedb",
+            "npm:cookie@0.6",
+            "npm:edgedb@*",
             "npm:typescript@^5.5.2"
           ]
         }
@@ -446,11 +496,11 @@
       "packages/auth-sveltekit": {
         "packageJson": {
           "dependencies": [
-            "npm:@edgedb/auth-core@^0.2.1",
-            "npm:@repo/tsconfig",
+            "npm:@edgedb/auth-core@~0.2.1",
+            "npm:@repo/tsconfig@*",
             "npm:@sveltejs/kit@^2.5.10",
             "npm:@types/node@^20.12.13",
-            "npm:edgedb",
+            "npm:edgedb@*",
             "npm:svelte@^4.2.17",
             "npm:typescript@^5.5.2",
             "npm:vite@^5.2.12"
@@ -460,7 +510,7 @@
       "packages/create": {
         "packageJson": {
           "dependencies": [
-            "npm:@clack/prompts@^0.7.0",
+            "npm:@clack/prompts@0.7",
             "npm:@types/debug@^4.1.12",
             "npm:@types/node@^20.12.13",
             "npm:debug@^4.3.4",
@@ -476,15 +526,17 @@
         "packageJson": {
           "dependencies": [
             "npm:@js-temporal/polyfill@0.4.3",
-            "npm:@repo/tsconfig",
+            "npm:@petamoriken/float16@^3.8.7",
+            "npm:@repo/tsconfig@*",
             "npm:@types/jest@^29.5.12",
+            "npm:@types/node@^22.10.2",
             "npm:@types/semver@^7.5.8",
             "npm:@types/shell-quote@^1.7.5",
             "npm:@types/which@^3.0.3",
             "npm:debug@^4.3.4",
-            "npm:env-paths@^3.0.0",
+            "npm:env-paths@3",
             "npm:fast-check@^3.19.0",
-            "npm:get-stdin@^9.0.0",
+            "npm:get-stdin@9",
             "npm:globby@^14.0.1",
             "npm:jest-environment-jsdom@^29.7.0",
             "npm:jest@29.7.0",
@@ -493,7 +545,7 @@
             "npm:ts-jest@29.1.4",
             "npm:tsx@^4.11.0",
             "npm:typescript@^5.5.2",
-            "npm:which@^4.0.0"
+            "npm:which@4"
           ]
         }
       },
@@ -501,17 +553,31 @@
         "packageJson": {
           "dependencies": [
             "npm:@iarna/toml@^2.2.5",
-            "npm:@repo/tsconfig",
+            "npm:@repo/tsconfig@*",
             "npm:@types/jest@^29.5.12",
             "npm:@types/node@^20.12.13",
             "npm:conditional-type-checks@^1.0.6",
             "npm:debug@^4.3.4",
-            "npm:edgedb",
-            "npm:esbuild@^0.21.4",
+            "npm:edgedb@*",
+            "npm:esbuild@~0.21.4",
             "npm:globby@^14.0.1",
             "npm:jest@^29.7.0",
             "npm:ts-jest@^29.1.4",
             "npm:typescript@^5.5.2"
+          ]
+        }
+      },
+      "packages/vercel-ai-provider": {
+        "packageJson": {
+          "dependencies": [
+            "npm:@ai-sdk/provider-utils@2",
+            "npm:@ai-sdk/provider@1",
+            "npm:@repo/tsconfig@*",
+            "npm:@types/node@18",
+            "npm:edgedb@*",
+            "npm:tsup@8",
+            "npm:typescript@5.5.4",
+            "npm:zod@3.23.8"
           ]
         }
       }

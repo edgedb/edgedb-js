@@ -1,4 +1,5 @@
-import * as process from "process";
+import * as process from "node:process";
+import { spawn } from "node:child_process";
 import {
   connectToServer,
   generateStatusFileName,
@@ -7,8 +8,9 @@ import {
   startServer,
   ConnectConfig,
 } from "./testUtil";
+import globalTeardown from "./globalTeardown";
 
-export default async () => {
+(async () => {
   // tslint:disable-next-line
   console.log("\nStarting EdgeDB test cluster...");
 
@@ -27,14 +29,14 @@ export default async () => {
   };
 
   // @ts-ignore
-  global.edgedbProc = proc;
+  globalThis.edgedbProc = proc;
 
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(jestConfig);
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
 
   // @ts-ignore
-  global.edgedbConn = client;
+  globalThis.edgedbConn = client;
   process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
   const availableExtensions = (
@@ -48,4 +50,33 @@ export default async () => {
 
   // tslint:disable-next-line
   console.log(`EdgeDB test cluster is up [port: ${jestConfig.port}]...`);
-};
+
+  // Run Deno tests
+  console.log("Running Deno tests...");
+  const denoTest = spawn(
+    "deno",
+    [
+      "test",
+      "--allow-all",
+      "--unstable-sloppy-imports",
+      "test/client.test.ts",
+      "test/credentials.test.ts",
+    ],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+      },
+    },
+  );
+
+  denoTest.on("close", async (code) => {
+    if (code === 0) {
+      console.log("Deno tests completed successfully.");
+    } else {
+      console.error(`Deno tests failed with exit code ${code}`);
+    }
+  });
+
+  await globalTeardown();
+})();

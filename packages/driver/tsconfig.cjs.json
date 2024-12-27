@@ -1,0 +1,13 @@
+{
+  "extends": "@repo/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist/cjs",
+    "module": "commonjs",
+    "declaration": true,
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/cli.mts", "src/**/*.deno.ts"]
+}

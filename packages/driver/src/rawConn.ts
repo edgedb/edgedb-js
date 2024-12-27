@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { net, tls } from "./adapter.node";
+import { net, tls } from "./adapter";
 import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
 import type { CodecsRegistry } from "./codecs/registry";
 import type {
@@ -27,11 +27,11 @@ import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces";
 import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
-import type char from "./primitives/chars";
+// import type char from "./primitives/chars";
 import * as chars from "./primitives/chars";
 import { getSCRAM } from "./scram";
 import * as errors from "./errors";
-import cryptoUtils from "./adapter.crypto.node";
+import cryptoUtils from "./adapter.crypto";
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,
@@ -561,7 +561,7 @@ export class RawConnection extends BaseRawConnection {
   }
 
   private async _ensureMessage(
-    expectedMtype: char,
+    expectedMtype: number,
     err: string,
   ): Promise<void> {
     if (!this.buffer.takeMessage()) {

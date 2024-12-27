@@ -15,8 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import fc from "fast-check";
+import {
+  describe,
+  test,
+  expect,
+  setTimeout,
+  beforeAll,
+  afterAll,
+} from "./config";
 import { parseConnectArguments } from "../src/conUtils.server";
 import type { Client, Executor, _ICodec } from "../src/index.node";
 import {
@@ -57,7 +64,7 @@ import {
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
-import cryptoUtils from "../src/adapter.crypto.node";
+import cryptoUtils from "../src/adapter.crypto";
 import { getAuthenticatedFetch } from "../src/utils";
 import { Language } from "../src/ifaces";
 
@@ -453,7 +460,7 @@ if (!isDeno && pgvectorVersion != null) {
       await con.close();
     });
 
-    it("valid: Float32Array", async () => {
+    test("valid: Float32Array", async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.float32Array({
@@ -479,7 +486,7 @@ if (!isDeno && pgvectorVersion != null) {
       );
     });
 
-    it("valid: JSON", async () => {
+    test("valid: JSON", async () => {
       await fc.assert(
         fc.asyncProperty(
           fc.float32Array({
@@ -504,14 +511,14 @@ if (!isDeno && pgvectorVersion != null) {
       );
     });
 
-    it("invalid: empty", async () => {
+    test("invalid: empty", async () => {
       const data = new Float32Array([]);
       await expect(
         con.querySingle("select <ext::pgvector::vector>$0;", [data]),
       ).rejects.toThrow();
     });
 
-    it("invalid: invalid argument", async () => {
+    test("invalid: invalid argument", async () => {
       await expect(
         con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
       ).rejects.toThrow();
@@ -535,8 +542,8 @@ if (
       await con.close();
     });
 
-    it("valid: Float16Array", async () => {
-      const val = await con.queryRequiredSingle<Float16Array>(
+    test("valid: Float16Array", async () => {
+      const val = await con.queryRequiredSingle<typeof Float16Array>(
         `
     select <ext::pgvector::halfvec>
         [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000,
@@ -557,7 +564,7 @@ if (
       expect(val[8]).toBeCloseTo(-5.96e-8, 2);
     });
 
-    it("valid: Float16Array arg", async () => {
+    test("valid: Float16Array arg", async () => {
       const val = await con.queryRequiredSingle<number[]>(
         `select <array<float32>><ext::pgvector::halfvec>$0`,
         [
@@ -579,7 +586,7 @@ if (
       expect(val[8]).toBeCloseTo(-5.96e-8, 2);
     });
 
-    it("valid: number[] arg", async () => {
+    test("valid: number[] arg", async () => {
       await expect(
         con.queryRequiredSingle<boolean>(
           `select <ext::pgvector::halfvec>$0 = <ext::pgvector::halfvec>$1`,
@@ -593,7 +600,7 @@ if (
       ).resolves.toBe(true);
     });
 
-    it("invalid: invalid args", async () => {
+    test("invalid: invalid args", async () => {
       await expect(
         con.querySingle(`select <ext::pgvector::halfvec>$0`, [
           [3.0, null, -42.5],
@@ -629,7 +636,7 @@ if (
       await con.close();
     });
 
-    it("valid: SparseVector methods", async () => {
+    test("valid: SparseVector methods", async () => {
       const sparseVec = new SparseVector(7, { 1: 1.5, 2: 2, 4: 3.8 });
 
       const arr: number[] = [];
@@ -642,7 +649,7 @@ if (
       expect(arr).toEqual([...sparseVec]);
     });
 
-    it("valid: SparseVector", async () => {
+    test("valid: SparseVector", async () => {
       const val = await con.queryRequiredSingle<SparseVector>(
         `
       select <ext::pgvector::sparsevec>
@@ -658,7 +665,7 @@ if (
       expect(val[4]).toEqual(0);
     });
 
-    it("valid: SparseVector arg", async () => {
+    test("valid: SparseVector arg", async () => {
       const val = await con.queryRequiredSingle<Float32Array>(
         `
       select <ext::pgvector::vector>
@@ -670,7 +677,7 @@ if (
       expect(val).toEqual(new Float32Array([0, 1.5, 2, 0, 3.8, 0]));
     });
 
-    it("invalid: invalid args", async () => {
+    test("invalid: invalid args", async () => {
       expect(() => new SparseVector(1, { 1: 1.5, 2: 2, 3: 3.8 })).toThrow(
         `length of data cannot be larger than length of sparse vector`,
       );
@@ -1199,7 +1206,7 @@ test("fetch: duration", async () => {
 });
 
 if (!isDeno) {
-  jest.setTimeout(10_000);
+  setTimeout(10_000);
   test("fetch: duration fuzz", async () => {
     // @ts-ignore
     const Temporal = require("@js-temporal/polyfill").Temporal;
@@ -1307,7 +1314,7 @@ test("fetch: relative_duration", async () => {
 });
 
 if (!isDeno) {
-  jest.setTimeout(10_000);
+  setTimeout(10_000);
   test("fetch: relative_duration fuzz", async () => {
     const randint = (min: number, max: number) => {
       const x = Math.round(Math.random() * (max - min) + min);
@@ -1871,7 +1878,7 @@ test("querySingle: arrays", async () => {
   }
 });
 
-jest.setTimeout(60_000);
+setTimeout(60_000);
 
 test("querySingleJSON", async () => {
   const con = getClient();

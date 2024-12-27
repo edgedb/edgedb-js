@@ -1,8 +1,13 @@
-import { readCredentialsFile, validateCredentials } from "../src/credentials";
-import { serverUtils } from "../src/conUtils.server";
+import { test, expect } from "./config.ts";
+import {
+  readCredentialsFile,
+  validateCredentials,
+} from "../src/credentials.ts";
+import { serverUtils } from "../src/conUtils.server.ts";
 
+// Define tests
 test("readCredentialsFile", async () => {
-  let data = await readCredentialsFile("test/credentials1.json", serverUtils);
+  const data = await readCredentialsFile("test/credentials1.json", serverUtils);
   expect(data).toEqual({
     database: "test3n",
     password: "lZTBy1RVCfOpBAOwSCwIyBIR",
@@ -15,7 +20,7 @@ test("emptyCredentials", () => {
   expect(() => validateCredentials({})).toThrow("`user` key is required");
 });
 
-test("port", () => {
+test("port validation", () => {
   expect(() => validateCredentials({ user: "u1", port: "abc" })).toThrow(
     "invalid `port` value",
   );

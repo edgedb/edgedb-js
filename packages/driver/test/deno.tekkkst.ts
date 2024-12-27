@@ -37,7 +37,7 @@ test("run deno test", async () => {
       {
         env: process.env,
         timeout: 120_000,
-        cwd: "../deno",
+        // cwd: "../deno",
       },
       (error, stdout, stderr) => {
         console.log(stdout);
@@ -59,7 +59,7 @@ test("deno check", async () => {
       {
         env: process.env,
         timeout: 60_000,
-        cwd: "../deno",
+        // cwd: "../deno",
       },
       (error, _stdout, stderr) => {
         if (error) {

@@ -17,6 +17,7 @@
  */
 
 import createClient, { Client, ConnectOptions } from "../src/index.node";
+import * as process from "node:process";
 
 export interface EdgeDBVersion {
   major: number;

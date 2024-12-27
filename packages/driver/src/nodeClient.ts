@@ -1,10 +1,10 @@
 import { BaseClientPool, Client, type ConnectOptions } from "./baseClient";
 import { parseConnectArguments } from "./conUtils.server";
-import cryptoUtils from "./adapter.crypto.node";
 import { Options } from "./options";
 import { RawConnection } from "./rawConn";
 import { FetchConnection } from "./fetchConn";
 import { getHTTPSCRAMAuth } from "./httpScram";
+import cryptoUtils from "./adapter.crypto";
 
 class ClientPool extends BaseClientPool {
   isStateless = false;

@@ -21,7 +21,7 @@ export default createClient;
 
 export { createClient, createHttpClient } from "./nodeClient";
 
-import * as adapter from "./adapter.node";
+import * as adapter from "./adapter";
 export { adapter };
 
 export { RawConnection as _RawConnection } from "./rawConn";
@@ -37,4 +37,4 @@ export { defaultBackoff, logWarnings, throwWarnings } from "./options";
 export type { BackoffFunction } from "./options";
 
 export * from "./index.shared";
-export * as $ from "./reflection";
+export * as $ from "./reflection/index";

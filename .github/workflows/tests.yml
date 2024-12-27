@@ -57,9 +57,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Set up Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - name: Install Turbo globally
         run: |
@@ -139,9 +139,9 @@ jobs:
           node-version: 20
 
       - name: Set up Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - name: Install dev deps
         run: |

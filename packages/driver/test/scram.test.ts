@@ -19,7 +19,7 @@
 import { getSCRAM, saslprep } from "../src/scram";
 import { cryptoUtils as nodeCryptoUtils } from "../src/nodeCrypto";
 import { cryptoUtils as browserCryptoUtils } from "../src/browserCrypto";
-import cryptoUtils from "../src/adapter.crypto.node";
+import cryptoUtils from "../src/adapter.crypto";
 
 async function generateScramWith(scram: ReturnType<typeof getSCRAM>) {
   // Test SCRAM-SHA-256 against an example in RFC 7677

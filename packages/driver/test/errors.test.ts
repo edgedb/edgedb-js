@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+import { expect, test } from "@jest/globals";
+
 import * as edgedb from "../src/index.node";
 import { resolveErrorCode } from "../src/errors/resolve";
 

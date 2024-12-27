@@ -5,7 +5,7 @@ import {
   exists,
   hashSHA1toHex,
   hasFSReadPermission,
-} from "./adapter.node";
+} from "./adapter";
 import * as platform from "./platform";
 import { getConnectArgumentsParser } from "./conUtils";
 
