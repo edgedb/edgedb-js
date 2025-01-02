@@ -351,6 +351,7 @@ export class RawConnection extends BaseRawConnection {
     await this.connWaiter.wait();
 
     if (this.sock instanceof tls.TLSSocket) {
+      console.log("DIDI BOZE", this.sock);
       if (this.sock.alpnProtocol !== "edgedb-binary") {
         throw new errors.ClientConnectionFailedError(
           "The server doesn't support the edgedb-binary protocol.",

@@ -150,7 +150,7 @@ export const startServer = async (
 
   const maybeEnvWithDevMode =
     process.env.EDGEDB_SERVER_BIN || process.env.CI
-      ? {}
+      ? { __EDGEDB_DEVMODE: "1" } // we need this when running dev server in test mode
       : {
           __EDGEDB_DEVMODE: "1",
         };
@@ -210,7 +210,8 @@ export const startServer = async (
       port: runtimeData.port,
       user: "edgedb",
       password: "edgedbtest",
-      tlsSecurity: "no_host_verification",
+      // tlsSecurity: "no_host_verification",
+      tlsSecurity: "insecure",
     };
 
     if (typeof runtimeData.tls_cert_file === "string") {

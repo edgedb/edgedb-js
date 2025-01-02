@@ -24,7 +24,7 @@ if (isDeno) {
   beforeAllFn = beforeAll;
   afterAllFn = afterAll;
 } else {
-  const { expect } = await import("expect");
+  const { expect } = require("expect");
 
   testFn = global.test;
   // @ts-ignore

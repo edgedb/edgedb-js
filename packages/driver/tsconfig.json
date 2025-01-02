@@ -2,6 +2,7 @@
   "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "./dist/cjs",
+    "target": "ES2022",
     "module": "commonjs",
     "declaration": true,
     "moduleResolution": "node",

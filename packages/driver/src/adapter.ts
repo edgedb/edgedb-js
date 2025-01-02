@@ -25,9 +25,6 @@ type BufferEncoding =
   | "binary"
   | "hex";
 
-// // @ts-ignore
-// const isDeno = typeof Deno !== "undefined";
-
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
 }
@@ -137,7 +134,9 @@ export function exit(code?: number) {
 export function srcDir() {
   // @ts-ignore
   if (typeof Deno !== "undefined") {
+    // @ts-ignore
     return new URL(".", import.meta.url).pathname;
+    // return ""; // TODO: DIDI
   } else {
     return typeof __dirname !== "undefined" ? __dirname : process.cwd();
   }
