@@ -11,20 +11,13 @@
     "type": "git",
     "url": "https://github.com/edgedb/edgedb-js.git"
   },
-  "main": "./dist/cjs/index.node.js",
-  "module": "dist/esm/index.node.js",
-  "types": "./dist/cjs/index.node.d.ts",
+  "main": "./dist/index.node.js",
+  "types": "./dist/index.node.d.ts",
   "license": "Apache-2.0",
   "sideEffects": false,
   "files": [
     "/dist"
   ],
-  "exports": {
-    ".": {
-      "require": "./dist/cjs/index.node.js",
-      "import": "./dist/esm/index.node.js"
-    }
-  },
   "browser": {
     "./dist/index.node.js": "./dist/index.browser.js"
   },

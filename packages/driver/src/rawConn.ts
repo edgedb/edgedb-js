@@ -262,6 +262,9 @@ export class RawConnection extends BaseRawConnection {
       config.connectionParams.address,
       useTls ? getTlsOptions(config.connectionParams) : undefined,
     );
+
+    console.log("DIDIKA sock", sock);
+    console.log("didika config", config);
     const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
     let timeoutCb = null;
@@ -351,7 +354,6 @@ export class RawConnection extends BaseRawConnection {
     await this.connWaiter.wait();
 
     if (this.sock instanceof tls.TLSSocket) {
-      console.log("DIDI BOZE", this.sock);
       if (this.sock.alpnProtocol !== "edgedb-binary") {
         throw new errors.ClientConnectionFailedError(
           "The server doesn't support the edgedb-binary protocol.",

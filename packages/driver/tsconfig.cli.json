@@ -1,10 +1,8 @@
 {
   "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
-    "outDir": "./dist/esm",
-    "declaration": false,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "outDir": "./dist",
+    "declaration": false
   },
   "include": ["src/cli.mts"]
 }
