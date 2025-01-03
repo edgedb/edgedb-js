@@ -263,8 +263,6 @@ export class RawConnection extends BaseRawConnection {
       useTls ? getTlsOptions(config.connectionParams) : undefined,
     );
 
-    console.log("DIDIKA sock", sock);
-    console.log("didika config", config);
     const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
     let timeoutCb = null;

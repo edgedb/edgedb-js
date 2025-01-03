@@ -134,9 +134,11 @@ export function exit(code?: number) {
 export function srcDir() {
   // @ts-ignore
   if (typeof Deno !== "undefined") {
-    // @ts-ignore
-    return new URL(".", import.meta.url).pathname;
-    // return ""; // TODO: DIDI
+    // TODO: find a better fix?
+    // Jest is using commonjs when testing Node, Deno test runtime is using ESM.
+    // CJS doesn't understand import.meta.url. Since all branches are always
+    // parsed import.meta.url fails when running Node tests in Jest.
+    return new Function("return new URL('.', import.meta.url).pathname")();
   } else {
     return typeof __dirname !== "undefined" ? __dirname : process.cwd();
   }

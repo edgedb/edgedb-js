@@ -8,7 +8,7 @@ import {
   startServer,
   ConnectConfig,
 } from "./testUtil";
-// import globalTeardown from "./globalTeardown";
+import globalTeardown from "./globalTeardown";
 
 (async () => {
   // export default async () => {
@@ -31,7 +31,6 @@ import {
 
   // @ts-ignore
   globalThis.edgedbProc = proc;
-  console.log("DIDI", jestConfig);
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(jestConfig);
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
@@ -53,25 +52,25 @@ import {
   console.log(`EdgeDB test cluster is up [port: ${jestConfig.port}]...`);
 
   // Run Node tests
-  // console.log("Running Node tests...");
-  // const nodeTest = spawn("npx", ["jest", "--detectOpenHandles"], {
-  //   stdio: "inherit",
-  //   env: {
-  //     ...process.env,
-  //     NODE_OPTIONS: "--experimental-global-webcrypto --experimental-vm-modules",
-  //   },
-  // });
+  console.log("Running Node tests...");
+  const nodeTest = spawn("npx", ["jest", "--detectOpenHandles"], {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      NODE_OPTIONS: "--experimental-global-webcrypto --experimental-vm-modules",
+    },
+  });
 
-  // await new Promise((resolve, reject) => {
-  //   nodeTest.on("close", (code) => {
-  //     if (code === 0) {
-  //       console.log("Node tests completed successfully.");
-  //       resolve(null);
-  //     } else {
-  //       reject(new Error(`Node tests failed with exit code ${code}`));
-  //     }
-  //   });
-  // });
+  await new Promise((resolve, reject) => {
+    nodeTest.on("close", (code) => {
+      if (code === 0) {
+        console.log("Node tests completed successfully.");
+        resolve(null);
+      } else {
+        reject(new Error(`Node tests failed with exit code ${code}`));
+      }
+    });
+  });
 
   // Run Deno tests
   console.log("Running Deno tests...");
@@ -104,5 +103,5 @@ import {
     });
   });
 
-  // await globalTeardown();
+  await globalTeardown();
 })();
