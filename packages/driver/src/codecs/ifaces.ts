@@ -68,17 +68,17 @@ export abstract class Codec {
 }
 
 export abstract class ScalarCodec extends Codec {
-  private derivedFromTid: uuid | null = null;
   private typeName: string | null = null;
+  private ancestors: ScalarCodec[] | null;
 
   constructor(
     tid: uuid,
     typeName: string | null,
-    derivedFromTid: uuid | null = null,
+    ancestors: ScalarCodec[] | null = null,
   ) {
     super(tid);
-    this.derivedFromTid = derivedFromTid;
     this.typeName = typeName;
+    this.ancestors = ancestors;
   }
 
   /** @internal */
@@ -88,7 +88,7 @@ export abstract class ScalarCodec extends Codec {
 
   derive(tid: uuid, typeName: string | null): Codec {
     const self = this.constructor;
-    return new (self as any)(tid, this.tid, typeName) as Codec;
+    return new (self as any)(tid, this.tid, typeName, ancestors) as Codec;
   }
 
   getSubcodecs(): ICodec[] {

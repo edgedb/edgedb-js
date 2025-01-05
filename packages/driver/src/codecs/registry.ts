@@ -419,10 +419,12 @@ export class CodecsRegistry {
           frb.readBoolean();
 
           const ancestorCount = frb.readUInt16();
+          console.log('!!>>', typeName, ancestorCount);
           const ancestors: ICodec[] = [];
           for (let i = 0; i < ancestorCount; i++) {
             const ancestorPos = frb.readUInt16();
             const ancestorCodec = cl[ancestorPos];
+            console.log('!!!!', ancestorCodec);
             if (ancestorCodec == null) {
               throw new ProtocolError(
                 "could not build scalar codec: missing a codec for base scalar",

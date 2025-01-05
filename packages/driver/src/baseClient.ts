@@ -39,6 +39,7 @@ import type {
   SimpleTransactionOptions,
   TransactionOptions,
   WarningHandler,
+  CodecSpec,
 } from "./options";
 import { Options } from "./options";
 import Event from "./primitives/event";
@@ -589,6 +590,10 @@ export class Client implements Executor {
 
   withConfig(config: SimpleConfig): Client {
     return new Client(this.pool, this.options.withConfig(config));
+  }
+
+  withCodecs(codecs: Record<string, CodecSpec>): Client {
+    return new Client(this.pool, this.options.withCodecs(codecs));
   }
 
   withGlobals(globals: Record<string, any>): Client {

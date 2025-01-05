@@ -136,6 +136,11 @@ export interface SerializedSessionState {
   globals?: { [name: string]: unknown };
 }
 
+export interface CodecSpec {
+  encode: (data: any) => any;
+  decode: (data: any) => any;
+}
+
 export interface OptionsList {
   module?: string;
   moduleAliases?: Record<string, string>;
@@ -144,6 +149,7 @@ export interface OptionsList {
   retryOptions?: RetryOptions;
   transactionOptions?: TransactionOptions;
   warningHandler?: WarningHandler;
+  codecs?: Record<string, CodecSpec>;
 }
 
 type Mutable<T> = {
@@ -159,6 +165,7 @@ export class Options {
   readonly globals: ReadonlyMap<string, any>;
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
+  readonly codecs: ReadonlyMap<string, CodecSpec>;
   readonly warningHandler: WarningHandler;
 
   /** @internal */
@@ -176,6 +183,7 @@ export class Options {
     moduleAliases = {},
     config = {},
     globals = {},
+    codecs = {},
   }: OptionsList = {}) {
     this.retryOptions = retryOptions;
     this.transactionOptions = transactionOptions;
@@ -184,6 +192,7 @@ export class Options {
     this.moduleAliases = new Map(Object.entries(moduleAliases));
     this.config = new Map(Object.entries(config));
     this.globals = new Map(Object.entries(globals));
+    this.codecs = new Map(Object.entries(codecs));
   }
 
   private _cloneWith(mergeOptions: OptionsList) {
@@ -218,6 +227,14 @@ export class Options {
       );
     } else {
       clone.moduleAliases = this.moduleAliases;
+    }
+
+    if (mergeOptions.codecs != null) {
+      clone.codecs = new Map(
+        [...this.codecs, ...Object.entries(mergeOptions.codecs)]
+      );
+    } else {
+      clone.codecs = this.codecs;
     }
 
     clone.module = mergeOptions.module ?? this.module;
@@ -261,6 +278,10 @@ export class Options {
 
   withConfig(config: Record<string, any>): Options {
     return this._cloneWith({config});
+  }
+
+  withCodecs(codecs: Record<string, CodecSpec>): Options {
+    return this._cloneWith({codecs});
   }
 
   withGlobals(globals: Record<string, any>): Options {
