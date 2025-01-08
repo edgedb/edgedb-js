@@ -9,7 +9,7 @@ import {
 
 export default async () => {
   // tslint:disable-next-line
-  console.log("\nStarting EdgeDB test cluster...");
+  console.log("\nStarting Gel test cluster...");
 
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
@@ -22,7 +22,7 @@ export default async () => {
   const { proc, config } = await startServer(args, statusFile);
 
   // @ts-ignore
-  global.edgedbProc = proc;
+  global.gelProc = proc;
 
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
@@ -31,9 +31,9 @@ export default async () => {
   const { client, version } = await connectToServer(config);
 
   // @ts-ignore
-  global.edgedbConn = client;
+  global.gelConn = client;
   process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
   // tslint:disable-next-line
-  console.log(`EdgeDB test cluster is up [port: ${config.port}]...`);
+  console.log(`Gel test cluster is up [port: ${config.port}]...`);
 };

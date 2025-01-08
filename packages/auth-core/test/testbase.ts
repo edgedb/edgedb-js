@@ -1,4 +1,4 @@
-import { Client, ConnectOptions } from "edgedb";
+import { Client, ConnectOptions } from "gel";
 import * as testbase from "../../driver/test/testbase";
 
 export const getClient = testbase.getClient as unknown as (
