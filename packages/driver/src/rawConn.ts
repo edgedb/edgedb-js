@@ -27,7 +27,7 @@ import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces";
 import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
-// import type char from "./primitives/chars";
+import type char from "./primitives/chars";
 import * as chars from "./primitives/chars";
 import { getSCRAM } from "./scram";
 import * as errors from "./errors";
@@ -262,7 +262,6 @@ export class RawConnection extends BaseRawConnection {
       config.connectionParams.address,
       useTls ? getTlsOptions(config.connectionParams) : undefined,
     );
-
     const conn = new this(sock, config, registry);
     const connPromise = conn.connect();
     let timeoutCb = null;
@@ -562,7 +561,7 @@ export class RawConnection extends BaseRawConnection {
   }
 
   private async _ensureMessage(
-    expectedMtype: number,
+    expectedMtype: char,
     err: string,
   ): Promise<void> {
     if (!this.buffer.takeMessage()) {

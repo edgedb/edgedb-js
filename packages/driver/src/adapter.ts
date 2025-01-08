@@ -11,20 +11,6 @@ import { Writable } from "node:stream";
 
 export { path, net, fs, tls, process };
 
-type BufferEncoding =
-  | "ascii"
-  | "utf8"
-  | "utf-8"
-  | "utf16le"
-  | "utf-16le"
-  | "ucs2"
-  | "ucs-2"
-  | "base64"
-  | "base64url"
-  | "latin1"
-  | "binary"
-  | "hex";
-
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
 }
@@ -101,7 +87,7 @@ export async function input(
     ? new Writable({
         write(
           chunk: any,
-          encoding: BufferEncoding,
+          encoding: NodeJS.BufferEncoding,
           callback: (...args: any) => void,
         ) {
           if (!silent) process.stdout.write(chunk, encoding);
@@ -129,17 +115,11 @@ export function exit(code?: number) {
   process.exit(code);
 }
 
-// const isDeno = typeof Deno !== "undefined";
-
 export function srcDir() {
   // @ts-ignore
-  if (typeof Deno !== "undefined") {
-    // TODO: find a better fix?
-    // Jest is using commonjs when testing Node, Deno test runtime is using ESM.
-    // CJS doesn't understand import.meta.url. Since all branches are always
-    // parsed import.meta.url fails when running Node tests in Jest.
-    return new Function("return new URL('.', import.meta.url).pathname")();
-  } else {
-    return typeof __dirname !== "undefined" ? __dirname : process.cwd();
-  }
+  // if (typeof Deno !== "undefined") {
+  // return new URL(".", import.meta.url).pathname;
+  // } else {
+  return typeof __dirname !== "undefined" ? __dirname : process.cwd();
+  // }
 }

@@ -121,8 +121,6 @@ export const getServerCommand = (
 
   args = [
     ...args,
-    // in Deno2 2 lines below should be commented in order for SSL to work,
-    // but in Node they are needed, kinda weird looking at the comment below
     "--bind-address=127.0.0.1",
     "--bind-address=::1", // deno on some platforms resolves localhost to ::1
     "--temp-dir",
@@ -152,7 +150,7 @@ export const startServer = async (
 
   const maybeEnvWithDevMode =
     process.env.EDGEDB_SERVER_BIN || process.env.CI
-      ? { __EDGEDB_DEVMODE: "1" } // we need this when running dev server in test mode
+      ? {}
       : {
           __EDGEDB_DEVMODE: "1",
         };

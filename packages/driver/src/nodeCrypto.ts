@@ -5,27 +5,25 @@ function makeKey(keyBytes: Uint8Array): Promise<Uint8Array> {
   return Promise.resolve(keyBytes);
 }
 
-function randomBytes(size: number): Uint8Array {
-  return crypto.randomBytes(size) as unknown as Uint8Array;
+function randomBytes(size: number): Buffer {
+  return crypto.randomBytes(size);
 }
 
-async function H(msg: Uint8Array): Promise<Uint8Array> {
+async function H(msg: Uint8Array): Promise<Buffer> {
   const sign = crypto.createHash("sha256");
   sign.update(msg);
-  const h = sign.digest();
-  return h as unknown as Uint8Array;
+  return sign.digest();
 }
 
 async function HMAC(
   key: Uint8Array | CryptoKey,
   msg: Uint8Array,
-): Promise<Uint8Array> {
+): Promise<Buffer> {
   const cryptoKey: Uint8Array | crypto.KeyObject =
     key instanceof Uint8Array ? key : crypto.KeyObject.from(key);
   const hm = crypto.createHmac("sha256", cryptoKey);
   hm.update(msg);
-  const hmac = hm.digest();
-  return hmac as unknown as Uint8Array;
+  return hm.digest();
 }
 
 export const cryptoUtils: CryptoUtils = {

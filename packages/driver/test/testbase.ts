@@ -26,11 +26,6 @@ export interface EdgeDBVersion {
   stage_no: number;
 }
 
-export const isDeno =
-  typeof window !== "undefined" &&
-  // @ts-ignore
-  typeof Deno !== "undefined";
-
 function _getOpts(opts: ConnectOptions): ConnectOptions {
   let config;
   try {

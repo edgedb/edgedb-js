@@ -15,15 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import fc from "fast-check";
-import {
-  describe,
-  test,
-  expect,
-  setTimeout,
-  beforeAll,
-  afterAll,
-} from "./config";
 import { parseConnectArguments } from "../src/conUtils.server";
 import type { Client, Executor, _ICodec } from "../src/index.node";
 import {
@@ -60,7 +53,6 @@ import {
   getClient,
   getConnectOptions,
   getEdgeDBVersion,
-  isDeno,
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
@@ -447,84 +439,82 @@ test("fetch: int64 as bigint", async () => {
 
 const pgvectorVersion = getAvailableExtensions().get("pgvector");
 
-if (!isDeno && pgvectorVersion != null) {
-  describe("fetch: ext::pgvector::vector", () => {
-    const con = getClient();
+describe("fetch: ext::pgvector::vector", () => {
+  const con = getClient();
 
-    beforeAll(async () => {
-      await con.execute("create extension pgvector;");
-    });
-
-    afterAll(async () => {
-      await con.execute("drop extension pgvector;");
-      await con.close();
-    });
-
-    test("valid: Float32Array", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.float32Array({
-            noNaN: true,
-            noDefaultInfinity: true,
-            minLength: 1,
-            maxLength: PG_VECTOR_MAX_DIM,
-          }),
-          async (data) => {
-            const result = await con.querySingle<unknown[]>(
-              "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
-              [data, [...data]],
-            );
-            expect(Array.isArray(result)).toBe(true);
-            expect(result!.length).toBe(2);
-            expect(result![0]).toBeInstanceOf(Float32Array);
-            expect(result![1]).toBeInstanceOf(Float32Array);
-            expect(result![0]).toEqual(data);
-            expect(result![1]).toEqual(data);
-          },
-        ),
-        { numRuns: 1000 },
-      );
-    });
-
-    test("valid: JSON", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.float32Array({
-            noNaN: true,
-            noDefaultInfinity: true,
-            minLength: 1,
-            maxLength: PG_VECTOR_MAX_DIM,
-          }),
-          async (data) => {
-            const result = await con.querySingle<number[]>(
-              "select <json><ext::pgvector::vector>$0;",
-              [data],
-            );
-            const f32JsonResult = new Float32Array(result!);
-            const f32JsonData = new Float32Array(
-              JSON.parse(JSON.stringify(Array.from(data))),
-            );
-            expect(f32JsonResult).toEqual(f32JsonData);
-          },
-        ),
-        { numRuns: 1000 },
-      );
-    });
-
-    test("invalid: empty", async () => {
-      const data = new Float32Array([]);
-      await expect(
-        con.querySingle("select <ext::pgvector::vector>$0;", [data]),
-      ).rejects.toThrow();
-    });
-
-    test("invalid: invalid argument", async () => {
-      await expect(
-        con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
-      ).rejects.toThrow();
-    });
+  beforeAll(async () => {
+    await con.execute("create extension pgvector;");
   });
-}
+
+  afterAll(async () => {
+    await con.execute("drop extension pgvector;");
+    await con.close();
+  });
+
+  test("valid: Float32Array", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.float32Array({
+          noNaN: true,
+          noDefaultInfinity: true,
+          minLength: 1,
+          maxLength: PG_VECTOR_MAX_DIM,
+        }),
+        async (data) => {
+          const result = await con.querySingle<unknown[]>(
+            "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
+            [data, [...data]],
+          );
+          expect(Array.isArray(result)).toBe(true);
+          expect(result!.length).toBe(2);
+          expect(result![0]).toBeInstanceOf(Float32Array);
+          expect(result![1]).toBeInstanceOf(Float32Array);
+          expect(result![0]).toEqual(data);
+          expect(result![1]).toEqual(data);
+        },
+      ),
+      { numRuns: 1000 },
+    );
+  });
+
+  test("valid: JSON", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.float32Array({
+          noNaN: true,
+          noDefaultInfinity: true,
+          minLength: 1,
+          maxLength: PG_VECTOR_MAX_DIM,
+        }),
+        async (data) => {
+          const result = await con.querySingle<number[]>(
+            "select <json><ext::pgvector::vector>$0;",
+            [data],
+          );
+          const f32JsonResult = new Float32Array(result!);
+          const f32JsonData = new Float32Array(
+            JSON.parse(JSON.stringify(Array.from(data))),
+          );
+          expect(f32JsonResult).toEqual(f32JsonData);
+        },
+      ),
+      { numRuns: 1000 },
+    );
+  });
+
+  test("invalid: empty", async () => {
+    const data = new Float32Array([]);
+    await expect(
+      con.querySingle("select <ext::pgvector::vector>$0;", [data]),
+    ).rejects.toThrow();
+  });
+
+  test("invalid: invalid argument", async () => {
+    await expect(
+      con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
+    ).rejects.toThrow();
+  });
+});
 
 if (
   pgvectorVersion != null &&
@@ -543,7 +533,7 @@ if (
     });
 
     test("valid: Float16Array", async () => {
-      const val = await con.queryRequiredSingle<typeof Float16Array>(
+      const val = await con.queryRequiredSingle<Float16Array>(
         `
     select <ext::pgvector::halfvec>
         [1.5, 2.0, 3.8, 0, 3.4575e-3, 65000,
@@ -1205,77 +1195,75 @@ test("fetch: duration", async () => {
   }
 });
 
-if (!isDeno) {
-  setTimeout(10_000);
-  test("fetch: duration fuzz", async () => {
-    // @ts-ignore
-    const Temporal = require("@js-temporal/polyfill").Temporal;
-    const randint = (min: number, max: number) => {
-      const x = Math.round(Math.random() * (max - min) + min);
-      return x === -0 ? 0 : x;
-    };
+jest.setTimeout(10_000);
+test("fetch: duration fuzz", async () => {
+  // @ts-ignore
+  const Temporal = require("@js-temporal/polyfill").Temporal;
+  const randint = (min: number, max: number) => {
+    const x = Math.round(Math.random() * (max - min) + min);
+    return x === -0 ? 0 : x;
+  };
 
-    const durs = [
-      new Duration(),
-      new Duration(0, 0, 0, 0, 0, 0, 0, 1),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -1),
-      new Duration(0, 0, 0, 0, 0, 0, 0, 1),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -1),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -752043),
-      new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
-      new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
-      new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
-    ];
+  const durs = [
+    new Duration(),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -1),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -752043),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 3542924),
+    new Duration(0, 0, 0, 0, 0, 0, 0, 86400000),
+    new Duration(0, 0, 0, 0, 0, 0, 0, -86400000),
+  ];
 
-    // Fuzz it!
-    for (let _i = 0; _i < 5000; _i++) {
-      durs.push(
-        new Duration(
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          randint(-500, 500) * 86400 + randint(-1000, 1000),
-        ),
-      );
-    }
+  // Fuzz it!
+  for (let _i = 0; _i < 5000; _i++) {
+    durs.push(
+      new Duration(
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        randint(-500, 500) * 86400 + randint(-1000, 1000),
+      ),
+    );
+  }
 
-    const con = getClient();
-    try {
-      // Test encode/decode round trip.
-      const dursFromDb = await con.query<any>(
-        `
+  const con = getClient();
+  try {
+    // Test encode/decode round trip.
+    const dursFromDb = await con.query<any>(
+      `
         WITH args := array_unpack(<array<duration>>$0)
         SELECT args;
       `,
-        [durs],
-      );
+      [durs],
+    );
 
-      for (let i = 0; i < durs.length; i++) {
-        const roundedDur = Temporal.Duration.from(durs[i]).round({
-          largestUnit: "hours",
-          smallestUnit: "microseconds",
-        });
-        expect(roundedDur.years).toBe(dursFromDb[i].years);
-        expect(roundedDur.months).toBe(dursFromDb[i].months);
-        expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
-        expect(roundedDur.days).toBe(dursFromDb[i].days);
-        expect(roundedDur.hours).toBe(dursFromDb[i].hours);
-        expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
-        expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
-        expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
-        expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
-        expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
-        expect(roundedDur.sign).toBe(dursFromDb[i].sign);
-      }
-    } finally {
-      await con.close();
+    for (let i = 0; i < durs.length; i++) {
+      const roundedDur = Temporal.Duration.from(durs[i]).round({
+        largestUnit: "hours",
+        smallestUnit: "microseconds",
+      });
+      expect(roundedDur.years).toBe(dursFromDb[i].years);
+      expect(roundedDur.months).toBe(dursFromDb[i].months);
+      expect(roundedDur.weeks).toBe(dursFromDb[i].weeks);
+      expect(roundedDur.days).toBe(dursFromDb[i].days);
+      expect(roundedDur.hours).toBe(dursFromDb[i].hours);
+      expect(roundedDur.minutes).toBe(dursFromDb[i].minutes);
+      expect(roundedDur.seconds).toBe(dursFromDb[i].seconds);
+      expect(roundedDur.milliseconds).toBe(dursFromDb[i].milliseconds);
+      expect(roundedDur.microseconds).toBe(dursFromDb[i].microseconds);
+      expect(roundedDur.nanoseconds).toBe(dursFromDb[i].nanoseconds);
+      expect(roundedDur.sign).toBe(dursFromDb[i].sign);
     }
-  });
-}
+  } finally {
+    await con.close();
+  }
+});
 
 test("fetch: relative_duration", async () => {
   const con = getClient();
@@ -1313,63 +1301,61 @@ test("fetch: relative_duration", async () => {
   }
 });
 
-if (!isDeno) {
-  setTimeout(10_000);
-  test("fetch: relative_duration fuzz", async () => {
-    const randint = (min: number, max: number) => {
-      const x = Math.round(Math.random() * (max - min) + min);
-      return x === -0 ? 0 : x;
-    };
+jest.setTimeout(10_000);
+test("fetch: relative_duration fuzz", async () => {
+  const randint = (min: number, max: number) => {
+    const x = Math.round(Math.random() * (max - min) + min);
+    return x === -0 ? 0 : x;
+  };
 
-    const durs = [
-      new RelativeDuration(),
-      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
-      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
-      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
-      new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
-      new RelativeDuration(0, 0, 0, 0, 0, -12, -32, -43.296),
-      new RelativeDuration(0, 0, 0, 0, 0, 59, 2, 924),
-      new RelativeDuration(0, 0, 0, 0, 24, 0, 0, 0),
-      new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0),
-    ];
+  const durs = [
+    new RelativeDuration(),
+    new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
+    new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
+    new RelativeDuration(0, 0, 0, 0, 0, 0, 0, 1),
+    new RelativeDuration(0, 0, 0, 0, 0, 0, 0, -1),
+    new RelativeDuration(0, 0, 0, 0, 0, -12, -32, -43.296),
+    new RelativeDuration(0, 0, 0, 0, 0, 59, 2, 924),
+    new RelativeDuration(0, 0, 0, 0, 24, 0, 0, 0),
+    new RelativeDuration(0, 0, 0, 0, -24, 0, 0, 0),
+  ];
 
-    // Fuzz it!
-    for (let _i = 0; _i < 5000; _i++) {
-      const sign = [-1, 1][randint(0, 2)];
-      durs.push(
-        new RelativeDuration(
-          sign * randint(0, 100),
-          sign * randint(0, 11),
-          sign * randint(0, 3),
-          sign * randint(0, 6),
-          sign * randint(0, 23),
-          sign * randint(0, 59),
-          sign * randint(0, 59),
-          sign * randint(0, 999),
-          sign * randint(0, 999),
-        ),
-      );
-    }
+  // Fuzz it!
+  for (let _i = 0; _i < 5000; _i++) {
+    const sign = [-1, 1][randint(0, 2)];
+    durs.push(
+      new RelativeDuration(
+        sign * randint(0, 100),
+        sign * randint(0, 11),
+        sign * randint(0, 3),
+        sign * randint(0, 6),
+        sign * randint(0, 23),
+        sign * randint(0, 59),
+        sign * randint(0, 59),
+        sign * randint(0, 999),
+        sign * randint(0, 999),
+      ),
+    );
+  }
 
-    const con = getClient();
-    try {
-      // Test encode/decode round trip.
-      const dursFromDb: any = await con.query(
-        `
+  const con = getClient();
+  try {
+    // Test encode/decode round trip.
+    const dursFromDb: any = await con.query(
+      `
           WITH args := array_unpack(<array<cal::relative_duration>>$0)
           SELECT args;
         `,
-        [durs],
-      );
+      [durs],
+    );
 
-      for (let i = 0; i < durs.length; i++) {
-        expect(durs[i].toString()).toBe(dursFromDb[i].toString());
-      }
-    } finally {
-      await con.close();
+    for (let i = 0; i < durs.length; i++) {
+      expect(durs[i].toString()).toBe(dursFromDb[i].toString());
     }
-  });
-}
+  } finally {
+    await con.close();
+  }
+});
 
 test("fetch: ConfigMemory", async () => {
   const client = getClient();
@@ -1821,10 +1807,7 @@ test("fetch: namedtuple", async () => {
     expect(res["b"]).toEqual("abc");
     expect(JSON.stringify(res)).toEqual(`{"a":1,"b":"abc"}`);
 
-    if (!isDeno) {
-      // @ts-ignore
-      expect(require("util").inspect(res)).toBe("{ a: 1, b: 'abc' }");
-    }
+    expect(require("util").inspect(res)).toBe("{ a: 1, b: 'abc' }");
   } finally {
     await con.close();
   }
@@ -1878,7 +1861,7 @@ test("querySingle: arrays", async () => {
   }
 });
 
-setTimeout(60_000);
+jest.setTimeout(60_000);
 
 test("querySingleJSON", async () => {
   const con = getClient();
@@ -2302,7 +2285,7 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
   return result;
 }
 
-if (!isDeno && getAvailableFeatures().has("binary-over-http")) {
+if (getAvailableFeatures().has("binary-over-http")) {
   test("binary protocol over http", async () => {
     const codecsRegistry = new _CodecsRegistry();
     const config = await parseConnectArguments({

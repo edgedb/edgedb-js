@@ -25,39 +25,16 @@ import { Buffer } from "node:buffer";
 export const utf8Encoder = new TextEncoder();
 export const utf8Decoder = new TextDecoder("utf8");
 
-let decodeB64: (_: string) => Uint8Array;
-let encodeB64: (_: Uint8Array) => string;
+const decodeB64 = (b64: string): Uint8Array => {
+  return Buffer.from(b64, "base64") as unknown as Uint8Array;
+};
 
-// @ts-ignore
-const isDeno = typeof Deno !== "undefined";
-
-if (isDeno) {
-  decodeB64 = (b64: string): Uint8Array => {
-    const binaryString = atob(b64);
-    const size = binaryString.length;
-    const bytes = new Uint8Array(size);
-    for (let i = 0; i < size; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
-  };
-
-  encodeB64 = (data: Uint8Array): string => {
-    const binaryString = String.fromCharCode(...data);
-    return btoa(binaryString);
-  };
-} else {
-  decodeB64 = (b64: string): Uint8Array => {
-    return Buffer.from(b64, "base64") as unknown as Uint8Array;
-  };
-
-  encodeB64 = (data: Uint8Array): string => {
-    const buf = !Buffer.isBuffer(data)
-      ? Buffer.from(data.buffer, data.byteOffset, data.byteLength)
-      : data;
-    return buf.toString("base64");
-  };
-}
+const encodeB64 = (data: Uint8Array): string => {
+  const buf = !Buffer.isBuffer(data)
+    ? Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+    : data;
+  return buf.toString("base64");
+};
 
 export { decodeB64, encodeB64, Buffer };
 

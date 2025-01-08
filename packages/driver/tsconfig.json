@@ -4,6 +4,6 @@
     "outDir": "./dist",
     "downlevelIteration": true
   },
-  "include": ["src/**/*", "global.d.ts"],
+  "include": ["src/**/*"],
   "exclude": ["src/cli.mts", "src/**/*.deno.ts"]
 }

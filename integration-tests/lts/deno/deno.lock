@@ -156,7 +156,7 @@
     "https://deno.land/std@0.177.0/node/internal_binding/async_wrap.ts": "0dc5ae64eea2c9e57ab17887ef1573922245167ffe38e3685c28d636f487f1b7",
     "https://deno.land/std@0.177.0/node/internal_binding/buffer.ts": "31729e0537921d6c730ad0afea44a7e8a0a1044d070ade8368226cb6f7390c8b",
     "https://deno.land/std@0.177.0/node/internal_binding/cares_wrap.ts": "9b7247772167f8ed56acd0244a232d9d50e8d7c9cfc379f77f3d54cecc2f32ab",
-    "https://deno.land/std@0.177.0/node/internal_binding/config.mts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
+    "https://deno.land/std@0.177.0/node/internal_binding/config.ts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
     "https://deno.land/std@0.177.0/node/internal_binding/connection_wrap.ts": "7dd089ea46de38e4992d0f43a09b586e4cf04878fb06863c1cb8cb2ece7da521",
     "https://deno.land/std@0.177.0/node/internal_binding/constants.ts": "21ff9d1ee71d0a2086541083a7711842fc6ae25e264dbf45c73815aadce06f4c",
     "https://deno.land/std@0.177.0/node/internal_binding/contextify.ts": "37d293009d1718205bf28e878e54a9f1ca24c1c320cee2416c20dc054104c6ea",
