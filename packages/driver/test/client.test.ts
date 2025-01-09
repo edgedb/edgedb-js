@@ -439,82 +439,84 @@ test("fetch: int64 as bigint", async () => {
 
 const pgvectorVersion = getAvailableExtensions().get("pgvector");
 
-describe("fetch: ext::pgvector::vector", () => {
-  const con = getClient();
+if (pgvectorVersion != null) {
+  describe("fetch: ext::pgvector::vector", () => {
+    const con = getClient();
 
-  beforeAll(async () => {
-    await con.execute("create extension pgvector;");
-  });
+    beforeAll(async () => {
+      await con.execute("create extension pgvector;");
+    });
 
-  afterAll(async () => {
-    await con.execute("drop extension pgvector;");
-    await con.close();
-  });
+    afterAll(async () => {
+      await con.execute("drop extension pgvector;");
+      await con.close();
+    });
 
-  test("valid: Float32Array", async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.float32Array({
-          noNaN: true,
-          noDefaultInfinity: true,
-          minLength: 1,
-          maxLength: PG_VECTOR_MAX_DIM,
-        }),
-        async (data) => {
-          const result = await con.querySingle<unknown[]>(
-            "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
-            [data, [...data]],
-          );
-          expect(Array.isArray(result)).toBe(true);
-          expect(result!.length).toBe(2);
-          expect(result![0]).toBeInstanceOf(Float32Array);
-          expect(result![1]).toBeInstanceOf(Float32Array);
-          expect(result![0]).toEqual(data);
-          expect(result![1]).toEqual(data);
-        },
-      ),
-      { numRuns: 1000 },
-    );
-  });
+    test("valid: Float32Array", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.float32Array({
+            noNaN: true,
+            noDefaultInfinity: true,
+            minLength: 1,
+            maxLength: PG_VECTOR_MAX_DIM,
+          }),
+          async (data) => {
+            const result = await con.querySingle<unknown[]>(
+              "select (<ext::pgvector::vector>$0, <ext::pgvector::vector>$1)",
+              [data, [...data]],
+            );
+            expect(Array.isArray(result)).toBe(true);
+            expect(result!.length).toBe(2);
+            expect(result![0]).toBeInstanceOf(Float32Array);
+            expect(result![1]).toBeInstanceOf(Float32Array);
+            expect(result![0]).toEqual(data);
+            expect(result![1]).toEqual(data);
+          },
+        ),
+        { numRuns: 1000 },
+      );
+    });
 
-  test("valid: JSON", async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.float32Array({
-          noNaN: true,
-          noDefaultInfinity: true,
-          minLength: 1,
-          maxLength: PG_VECTOR_MAX_DIM,
-        }),
-        async (data) => {
-          const result = await con.querySingle<number[]>(
-            "select <json><ext::pgvector::vector>$0;",
-            [data],
-          );
-          const f32JsonResult = new Float32Array(result!);
-          const f32JsonData = new Float32Array(
-            JSON.parse(JSON.stringify(Array.from(data))),
-          );
-          expect(f32JsonResult).toEqual(f32JsonData);
-        },
-      ),
-      { numRuns: 1000 },
-    );
-  });
+    test("valid: JSON", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.float32Array({
+            noNaN: true,
+            noDefaultInfinity: true,
+            minLength: 1,
+            maxLength: PG_VECTOR_MAX_DIM,
+          }),
+          async (data) => {
+            const result = await con.querySingle<number[]>(
+              "select <json><ext::pgvector::vector>$0;",
+              [data],
+            );
+            const f32JsonResult = new Float32Array(result!);
+            const f32JsonData = new Float32Array(
+              JSON.parse(JSON.stringify(Array.from(data))),
+            );
+            expect(f32JsonResult).toEqual(f32JsonData);
+          },
+        ),
+        { numRuns: 1000 },
+      );
+    });
 
-  test("invalid: empty", async () => {
-    const data = new Float32Array([]);
-    await expect(
-      con.querySingle("select <ext::pgvector::vector>$0;", [data]),
-    ).rejects.toThrow();
-  });
+    test("invalid: empty", async () => {
+      const data = new Float32Array([]);
+      await expect(
+        con.querySingle("select <ext::pgvector::vector>$0;", [data]),
+      ).rejects.toThrow();
+    });
 
-  test("invalid: invalid argument", async () => {
-    await expect(
-      con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
-    ).rejects.toThrow();
+    test("invalid: invalid argument", async () => {
+      await expect(
+        con.querySingle("select <ext::pgvector::vector>$0;", ["foo"]),
+      ).rejects.toThrow();
+    });
   });
-});
+}
 
 if (
   pgvectorVersion != null &&
