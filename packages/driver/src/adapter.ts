@@ -15,6 +15,9 @@ export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
 }
 
+// export function hasFSReadPermission(): boolean {
+//   return Deno.permissions.querySync({ name: "read" }).state === "granted";
+// }
 export function hasFSReadPermission(): boolean {
   return true;
 }
@@ -113,13 +116,4 @@ export const homeDir = os.homedir;
 
 export function exit(code?: number) {
   process.exit(code);
-}
-
-export function srcDir() {
-  // @ts-ignore
-  // if (typeof Deno !== "undefined") {
-  // return new URL(".", import.meta.url).pathname;
-  // } else {
-  return typeof __dirname !== "undefined" ? __dirname : process.cwd();
-  // }
 }

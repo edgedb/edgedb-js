@@ -35,7 +35,7 @@ $ npx @edgedb/generate <generator> [options]
 **Deno**
 
 ```bash
-$ deno run --allow-all --unstable https://deno.land/x/edgedb/generate.ts <generator> [options]
+$ deno run --allow-all --unstable npm:@edgedb/generate <generator> [options]
 ```
 
 The value of `<generator>` should be one of the following.
@@ -51,7 +51,7 @@ The value of `<generator>` should be one of the following.
 The `edgedb` package exports a set of utilities to introspect the schema and analyze queries. We use this same set of tools to implement the first-party generators.
 
 ```ts
-import {createClient, $} from "edgedb";
+import { createClient, $ } from "edgedb";
 
 const client = createClient();
 
@@ -106,13 +106,8 @@ Run commands in watch mode. Useful when in development. The following command re
 yarn watch 'yarn build:fast && yarn play`
 ```
 
-Run tests. All `test:*` scripts are self-contained, in that they execute any prerequisite generation steps before running any tests.
+Run tests.
 
 ```
-yarn test         # runs all tests (listed below)
-yarn test:ts
-yarn test:esm
-yarn test:cjs
-yarn test:mts
-yarn test:deno
+yarn test
 ```
