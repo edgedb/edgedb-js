@@ -257,7 +257,7 @@ export class Options {
     }
     if (this.globals.size) {
       const globs: Record<string, any> = {};
-      for (let [key, val] of this.globals.entries()) {
+      for (const [key, val] of this.globals.entries()) {
         globs[key.includes("::") ? key : `${this.module}::${key}`] = val;
       }
       state.globals = globs;

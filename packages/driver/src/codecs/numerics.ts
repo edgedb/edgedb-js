@@ -19,7 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;

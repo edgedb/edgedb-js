@@ -27,7 +27,7 @@ import {
   ProtocolError,
   QueryArgumentError,
 } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];

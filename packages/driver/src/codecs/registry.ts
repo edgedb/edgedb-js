@@ -261,8 +261,8 @@ export class CodecsRegistry {
         const cards: number[] = new Array(els);
 
         for (let i = 0; i < els; i++) {
-          let flag: number = frb.readUInt32();
-          let card: number = frb.readUInt8();
+          const flag: number = frb.readUInt32();
+          const card: number = frb.readUInt8();
 
           const name = frb.readString();
 
@@ -352,7 +352,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_ARRAY: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();
@@ -382,7 +382,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_TUPLE: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();
@@ -414,7 +414,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_NAMEDTUPLE: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();
@@ -464,7 +464,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_ENUM: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();
@@ -489,7 +489,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_RANGE: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();
@@ -526,7 +526,7 @@ export class CodecsRegistry {
       }
 
       case CTYPE_MULTIRANGE: {
-        let typeName: string = frb.readString();
+        const typeName: string = frb.readString();
 
         // const _isSchemaDefined =
         frb.readBoolean();

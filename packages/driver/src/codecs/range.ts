@@ -21,7 +21,7 @@ import { Codec } from "./ifaces";
 import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { MultiRange, Range } from "../datatypes/range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 enum RangeFlags {
   EMPTY = 1 << 0,

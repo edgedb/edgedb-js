@@ -22,7 +22,7 @@ import {
   uuidToBuffer,
 } from "../primitives/buffer";
 import type { Mutable } from "../typeutil";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 import { KNOWN_TYPES } from "./consts";
 
 export type uuid = string;

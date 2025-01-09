@@ -49,7 +49,7 @@ import {
 } from "./pgvector";
 import { InternalClientError } from "../errors";
 
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 

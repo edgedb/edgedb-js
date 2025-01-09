@@ -18,9 +18,10 @@
 
 import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import type { WriteBuffer } from "../primitives/buffer";
+import { ReadBuffer } from "../primitives/buffer";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class RecordCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];

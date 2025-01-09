@@ -31,7 +31,7 @@ import {
 } from "../datatypes/datetime";
 import { ymd2ord, ord2ymd } from "../datatypes/dateutil";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).

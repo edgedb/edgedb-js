@@ -23,7 +23,7 @@ import {
 } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
   override tsType = "unknown";

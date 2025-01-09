@@ -21,7 +21,7 @@ import { Codec } from "./ifaces";
 import { type WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { ArrayCodec } from "./array";
 import { InvalidArgumentError, ProtocolError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;

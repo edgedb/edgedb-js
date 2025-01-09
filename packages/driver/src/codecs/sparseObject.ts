@@ -20,7 +20,7 @@ import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { UnknownArgumentError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class SparseObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];

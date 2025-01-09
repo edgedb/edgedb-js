@@ -27,7 +27,7 @@ import {
   UnknownArgumentError,
   ProtocolError,
 } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;

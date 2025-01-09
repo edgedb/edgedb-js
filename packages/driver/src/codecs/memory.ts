@@ -20,7 +20,7 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { ConfigMemory } from "../datatypes/memory";
 import { InvalidArgumentError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   override tsType = "ConfigMemory";

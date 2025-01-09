@@ -20,7 +20,7 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { uuidToBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 function UUIDBufferFromString(uuid: string): Uint8Array {
   let uuidClean = uuid;

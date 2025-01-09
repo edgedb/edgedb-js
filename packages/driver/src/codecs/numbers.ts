@@ -19,7 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   override tsType = "number";

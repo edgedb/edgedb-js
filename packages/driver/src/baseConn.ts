@@ -288,10 +288,9 @@ export class BaseRawConnection {
 
   protected _parseCommandCompleteMessage(): string {
     this._ignoreHeaders();
-    let status: string;
 
     this.buffer.readBigInt64();
-    status = this.buffer.readString();
+    const status = this.buffer.readString();
 
     const stateTypeId = this.buffer.readUUID();
     const stateData = this.buffer.readLenPrefixedBuffer();

@@ -23,7 +23,7 @@ import { TupleCodec } from "./tuple";
 import { MultiRangeCodec, RangeCodec } from "./range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 import { NamedTupleCodec } from "./namedtuple";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;

@@ -1,4 +1,4 @@
-import { ScalarCodec } from "./ifaces";
+import type { ScalarCodec } from "./ifaces";
 
 export interface CodecSpec {
   encode: (data: any) => any;
@@ -27,7 +27,7 @@ export class CodecContext {
     const specMap = this.spec!;
     const targetTypeName = codec.typeName;
 
-    let s = specMap.get(targetTypeName);
+    const s = specMap.get(targetTypeName);
     if (s != null) {
       this.map.set(targetTypeName, s);
       return s;
@@ -42,7 +42,7 @@ export class CodecContext {
 
     for (let i = 0; i < ancestors.length; i++) {
       const parent = ancestors[i];
-      let s = specMap.get(parent.typeName);
+      const s = specMap.get(parent.typeName);
       if (s != null) {
         this.map.set(targetTypeName, s);
         return s;

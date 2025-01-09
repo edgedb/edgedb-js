@@ -21,7 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 import { Float16Array, getFloat16, isFloat16Array, setFloat16 } from "../utils";
 import { SparseVector } from "../datatypes/pgvector";
-import { CodecContext } from "./context";
+import type { CodecContext } from "./context";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 
