@@ -18,7 +18,6 @@
 
 import type char from "./chars";
 import * as chars from "./chars";
-import { LegacyHeaderCodes } from "../ifaces";
 
 export const utf8Encoder = new TextEncoder();
 export const utf8Decoder = new TextDecoder("utf8");
@@ -239,39 +238,6 @@ export class WriteMessageBuffer {
       this.buffer.position - this.messagePos - 1,
     );
     this.messagePos = -1;
-    return this;
-  }
-
-  writeLegacyHeaders(
-    headers:
-      | { [key in keyof typeof LegacyHeaderCodes]?: string | Uint8Array }
-      | null,
-  ): this {
-    if (this.messagePos < 0) {
-      throw new BufferError("cannot writeHeaders: no current message");
-    }
-    if (!headers) {
-      this.buffer.writeUInt16(0);
-      return this;
-    }
-
-    const entries = Object.entries(headers).filter(
-      ([_, value]) => value !== undefined,
-    ) as [keyof typeof LegacyHeaderCodes, string | Uint8Array][];
-    this.buffer.writeUInt16(entries.length);
-    for (const [code, value] of entries) {
-      this.buffer.writeUInt16(LegacyHeaderCodes[code]);
-      if (value instanceof Uint8Array) {
-        this.buffer.writeUInt32(value.byteLength);
-        this.buffer.writeBuffer(value);
-      } else if (typeof value === "string") {
-        this.buffer.writeString(value);
-      } else {
-        throw new BufferError(
-          "cannot write header: value is not a Uint8Array or string",
-        );
-      }
-    }
     return this;
   }
 

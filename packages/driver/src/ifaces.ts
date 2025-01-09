@@ -75,15 +75,6 @@ export interface KnownServerSettings {
 
 export type ServerSettings = KnownServerSettings & Record<string, Uint8Array>;
 
-export const LegacyHeaderCodes = {
-  implicitLimit: 0xff01,
-  implicitTypenames: 0xff02,
-  implicitTypeids: 0xff03,
-  allowCapabilities: 0xff04,
-  capabilities: 0x1001,
-  explicitObjectids: 0xff05,
-};
-
 export interface QueryOptions {
   implicitLimit?: bigint;
   injectTypenames?: boolean;
