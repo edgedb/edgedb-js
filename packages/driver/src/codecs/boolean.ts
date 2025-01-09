@@ -19,6 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
 import type { CodecContext } from "./context";
 
 export class BoolCodec extends ScalarCodec implements ICodec {
@@ -36,6 +37,6 @@ export class BoolCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readUInt8() !== 0);
+    return ctx.postDecode<Codecs.BoolCodec>(this, buf.readUInt8() !== 0);
   }
 }

@@ -21,6 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 import { Float16Array, getFloat16, isFloat16Array, setFloat16 } from "../utils";
 import { SparseVector } from "../datatypes/pgvector";
+import type { Codecs } from "./codecs";
 import type { CodecContext } from "./context";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
@@ -78,7 +79,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
       vec[i] = data.getFloat32(i * 4);
     }
 
-    return ctx.postDecode(this, vec);
+    return ctx.postDecode<Codecs.PgVectorCodec>(this, vec);
   }
 }
 
@@ -145,7 +146,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
       vec[i] = getFloat16(data, i * 2);
     }
 
-    return ctx.postDecode(this, vec);
+    return ctx.postDecode<Codecs.PGVectorHalfCodec>(this, vec);
   }
 }
 
@@ -212,7 +213,11 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
     }
 
     if (ctx.hasOverload(this)) {
-      return ctx.postDecode(this, [dim, indexes, vecData]);
+      return ctx.postDecode<Codecs.PGVectorSparseCodec>(this, [
+        dim,
+        indexes,
+        vecData,
+      ]);
     }
 
     return new SparseVector(dim, indexes, vecData);

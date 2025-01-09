@@ -1,11 +1,17 @@
 import type { ScalarCodec } from "./ifaces";
+import type { Codecs } from "./codecs";
 
-export interface CodecSpec {
-  encode: (data: any) => any;
-  decode: (data: any) => any;
-}
+export type CodecMap = Map<string, Codecs.AnyCodec>;
+export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
 
-const NOOP: CodecSpec = {
+export type CodecValueType<S> =
+  S extends Codecs.KnownCodecs[keyof Codecs.KnownCodecs]
+    ? S extends Codecs.Codec<infer T>
+      ? T
+      : never
+    : never;
+
+const NOOP: Codecs.AnyCodec = {
   encode(data: any) {
     return data;
   },
@@ -15,15 +21,15 @@ const NOOP: CodecSpec = {
 };
 
 export class CodecContext {
-  private readonly spec: ReadonlyMap<string, CodecSpec> | null;
-  private readonly map: Map<string, CodecSpec>;
+  private readonly spec: ReadonlyCodecMap | null;
+  private readonly map: CodecMap;
 
-  constructor(spec: ReadonlyMap<string, CodecSpec> | null) {
+  constructor(spec: ReadonlyCodecMap | null) {
     this.spec = spec;
     this.map = new Map();
   }
 
-  private initCodec(codec: ScalarCodec): CodecSpec {
+  private initCodec(codec: ScalarCodec): Codecs.AnyCodec {
     const specMap = this.spec!;
     const targetTypeName = codec.typeName;
 
@@ -68,7 +74,7 @@ export class CodecContext {
     return this.initCodec(codec) !== NOOP;
   }
 
-  postDecode(codec: ScalarCodec, value: any): any {
+  postDecode<T>(codec: ScalarCodec, value: CodecValueType<T>): any {
     if (this.spec === null || !this.spec.size) {
       return value;
     }
@@ -84,7 +90,7 @@ export class CodecContext {
     return op.decode(value);
   }
 
-  preEncode(codec: ScalarCodec, value: any): any {
+  preEncode<T>(codec: ScalarCodec, value: any): CodecValueType<T> {
     if (this.spec === null || !this.spec.size) {
       return value;
     }

@@ -27,7 +27,7 @@ import {
 } from "@jest/globals";
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
-import type { Client, Executor, _ICodec } from "../src/index.node";
+import type { Client, Executor, _ICodec, Codecs } from "../src/index.node";
 import {
   DivisionByZeroError,
   Duration,
@@ -2393,7 +2393,7 @@ if (getEdgeDBVersion().major >= 5) {
           decode(val) {
             return val + 10000;
           },
-        },
+        } as Codecs.Int32Codec,
       });
 
       // c2 settings shouldn't affect the original client

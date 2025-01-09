@@ -19,6 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { Codecs } from "./codecs";
 import type { CodecContext } from "./context";
 
 const NUMERIC_POS = 0x0000;
@@ -70,7 +71,10 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (ctx.hasOverload(this)) {
-      return ctx.postDecode(this, decodeBigIntToString(buf));
+      return ctx.postDecode<Codecs.BigIntCodec>(
+        this,
+        decodeBigIntToString(buf),
+      );
     }
 
     return BigInt(decodeBigIntToString(buf));
@@ -118,7 +122,10 @@ export class DecimalStringCodec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (ctx.hasOverload(this)) {
-      return ctx.postDecode(this, decodeDecimalToString(buf));
+      return ctx.postDecode<Codecs.DecimalCodec>(
+        this,
+        decodeDecimalToString(buf),
+      );
     }
 
     return decodeDecimalToString(buf);

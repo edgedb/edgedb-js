@@ -20,6 +20,7 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { utf8Encoder } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
 import type { CodecContext } from "./context";
 
 export class StrCodec extends ScalarCodec implements ICodec {
@@ -37,6 +38,6 @@ export class StrCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.consumeAsString());
+    return ctx.postDecode<Codecs.StrCodec>(this, buf.consumeAsString());
   }
 }

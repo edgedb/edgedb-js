@@ -19,6 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
 import type { CodecContext } from "./context";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
@@ -33,7 +34,7 @@ export class Int64Codec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (ctx.hasOverload(this)) {
-      return ctx.postDecode(this, buf.readBigInt64());
+      return ctx.postDecode<Codecs.Int64Codec>(this, buf.readBigInt64());
     }
 
     return buf.readInt64();
@@ -50,7 +51,7 @@ export class Int64BigintCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readBigInt64());
+    return ctx.postDecode<Codecs.Int64Codec>(this, buf.readBigInt64());
   }
 }
 
@@ -65,7 +66,7 @@ export class Int32Codec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readInt32());
+    return ctx.postDecode<Codecs.Int32Codec>(this, buf.readInt32());
   }
 }
 
@@ -80,7 +81,7 @@ export class Int16Codec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readInt16());
+    return ctx.postDecode<Codecs.Int16Codec>(this, buf.readInt16());
   }
 }
 
@@ -95,7 +96,7 @@ export class Float32Codec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readFloat32());
+    return ctx.postDecode<Codecs.Float32Codec>(this, buf.readFloat32());
   }
 }
 
@@ -110,6 +111,6 @@ export class Float64Codec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode(this, buf.readFloat64());
+    return ctx.postDecode<Codecs.Float64Codec>(this, buf.readFloat64());
   }
 }

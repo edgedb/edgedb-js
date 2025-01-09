@@ -984,6 +984,10 @@ export class ReadBuffer {
     return buf;
   }
 
+  readUUIDBytes(dash = ""): Uint8Array {
+    return this.readBuffer(16);
+  }
+
   readUUID(dash = ""): string {
     if (this.pos + 16 > this.len) {
       throw new BufferError("buffer overread");

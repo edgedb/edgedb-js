@@ -53,6 +53,90 @@ import type { CodecContext } from "./context";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 
+import type { Float16Array } from "../adapter.shared.node";
+
+// Types for Client.withCodecs() API:
+export namespace Codecs {
+  export type Codec<T> = {
+    encode: (data: any) => T;
+    decode: (data: T) => any;
+  };
+
+  export type AnyCodec = Codec<any>;
+
+  export type BoolCodec = Codec<boolean>;
+  export type Int16Codec = Codec<number>;
+  export type Int32Codec = Codec<number>;
+  export type Int64Codec = Codec<bigint>;
+  export type Float32Codec = Codec<number>;
+  export type Float64Codec = Codec<number>;
+  export type BigIntCodec = Codec<string>;
+  export type DecimalCodec = Codec<string>;
+  export type BytesCodec = Codec<Uint8Array>;
+  export type DateTimeCodec = Codec<bigint>;
+  export type LocalDateTimeCodec = Codec<bigint>;
+  export type LocalDateCodec = Codec<
+    [years: number, months: number, days: number]
+  >;
+  export type LocalTimeCodec = Codec<bigint>;
+  export type DurationCodec = Codec<bigint>;
+  export type RelativeDurationCodec = Codec<
+    [months: number, days: number, uSeconds: bigint]
+  >;
+  export type DateDurationCodec = Codec<[months: number, days: number]>;
+  export type JsonCodec = Codec<string>;
+  export type MemoryCodec = Codec<bigint>;
+  export type PgVectorCodec = Codec<Float32Array>;
+  export type PGVectorSparseCodec = Codec<
+    [dimensions: number, indexes: Uint32Array, data: Float32Array]
+  >;
+  export type StrCodec = Codec<string>;
+  export type UUIDCodec = Codec<Uint8Array>;
+
+  // TODO: Figure out if we can drop the dep
+  // on an external package for Float16Array.
+  export type PGVectorHalfCodec = Codec<Float16Array>;
+
+  export type KnownCodecs = {
+    ["std::bool"]: BoolCodec;
+    ["std::int16"]: Int16Codec;
+    ["std::int32"]: Int32Codec;
+    ["std::int64"]: Int64Codec;
+    ["std::float32"]: Float32Codec;
+    ["std::float64"]: Float64Codec;
+    ["std::bigint"]: BigIntCodec;
+    ["std::decimal"]: DecimalCodec;
+    ["std::bytes"]: BytesCodec;
+    ["std::datetime"]: DateTimeCodec;
+    ["std::duration"]: DurationCodec;
+    ["std::json"]: JsonCodec;
+    ["std::str"]: StrCodec;
+    ["std::uuid"]: UUIDCodec;
+
+    ["cal::local_date"]: LocalDateCodec;
+    ["cal::local_time"]: LocalTimeCodec;
+    ["cal::local_datetime"]: LocalDateTimeCodec;
+    ["cal::relative_duration"]: RelativeDurationCodec;
+    ["cal::date_duration"]: DateDurationCodec;
+
+    ["cfg::memory"]: MemoryCodec;
+
+    ["std::pg::json"]: JsonCodec;
+    ["std::pg::timestampz"]: DateTimeCodec;
+    ["std::pg::timestamp"]: LocalDateTimeCodec;
+    ["std::pg::date"]: LocalDateCodec;
+    ["std::pg::interval"]: RelativeDurationCodec;
+
+    ["ext::pgvector::vector"]: PgVectorCodec;
+    ["ext::pgvector::halfvec"]: PGVectorHalfCodec;
+    ["ext::pgvector::sparsevec"]: PGVectorSparseCodec;
+  };
+
+  export type CodecSpec = Partial<KnownCodecs> & {
+    [key: string]: AnyCodec;
+  };
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 export class NullCodec extends Codec implements ICodec {

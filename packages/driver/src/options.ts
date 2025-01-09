@@ -1,6 +1,8 @@
 import * as errors from "./errors/index";
 import { utf8Encoder } from "./primitives/buffer";
 import type { Mutable } from "./typeutil";
+import type { Codecs } from "./codecs/codecs";
+import type { ReadonlyCodecMap } from "./codecs/context";
 
 export type BackoffFunction = (n: number) => number;
 
@@ -150,7 +152,7 @@ export interface OptionsList {
   retryOptions?: RetryOptions;
   transactionOptions?: TransactionOptions;
   warningHandler?: WarningHandler;
-  codecs?: Record<string, CodecSpec>;
+  codecs?: Codecs.CodecSpec;
 }
 
 export class Options {
@@ -162,7 +164,7 @@ export class Options {
   readonly globals: ReadonlyMap<string, any>;
   readonly retryOptions: RetryOptions;
   readonly transactionOptions: TransactionOptions;
-  readonly codecs: ReadonlyMap<string, CodecSpec>;
+  readonly codecs: ReadonlyCodecMap;
   readonly warningHandler: WarningHandler;
 
   /** @internal */
@@ -189,7 +191,7 @@ export class Options {
     this.moduleAliases = new Map(Object.entries(moduleAliases));
     this.config = new Map(Object.entries(config));
     this.globals = new Map(Object.entries(globals));
-    this.codecs = new Map(Object.entries(codecs));
+    this.codecs = new Map(Object.entries(codecs)) as ReadonlyCodecMap;
   }
 
   private _cloneWith(mergeOptions: OptionsList) {
@@ -233,7 +235,7 @@ export class Options {
       clone.codecs = new Map([
         ...this.codecs,
         ...Object.entries(mergeOptions.codecs),
-      ]);
+      ]) as ReadonlyCodecMap;
     } else {
       clone.codecs = this.codecs;
     }
@@ -281,7 +283,7 @@ export class Options {
     return this._cloneWith({ config });
   }
 
-  withCodecs(codecs: Record<string, CodecSpec>): Options {
+  withCodecs(codecs: Codecs.CodecSpec): Options {
     return this._cloneWith({ codecs });
   }
 

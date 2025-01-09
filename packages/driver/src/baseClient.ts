@@ -17,6 +17,7 @@
  */
 
 import type { Duration } from "./datatypes/datetime";
+import type { Codecs } from "./codecs/codecs";
 import { CodecsRegistry } from "./codecs/registry";
 import type {
   ConnectArgumentsParser,
@@ -39,7 +40,6 @@ import type {
   SimpleTransactionOptions,
   TransactionOptions,
   WarningHandler,
-  CodecSpec,
 } from "./options";
 import { Options } from "./options";
 import Event from "./primitives/event";
@@ -589,7 +589,7 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withConfig(config));
   }
 
-  withCodecs(codecs: Record<string, CodecSpec>): Client {
+  withCodecs(codecs: Codecs.CodecSpec): Client {
     return new Client(this.pool, this.options.withCodecs(codecs));
   }
 
