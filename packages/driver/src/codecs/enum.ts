@@ -24,11 +24,10 @@ export class EnumCodec extends StrCodec implements ICodec {
 
   constructor(
     tid: uuid,
-    typeName: string | null,
-    derivedFromTid: uuid | null = null,
+    typeName: string,
     values: string[],
   ) {
-    super(tid, typeName, derivedFromTid);
+    super(tid, typeName);
     this.values = values;
   }
 }

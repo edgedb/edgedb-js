@@ -97,9 +97,9 @@ export class RangeCodec extends Codec implements ICodec {
   readonly tsModule = "edgedb";
 
   private subCodec: ICodec;
-  readonly typeName: string | null;
+  readonly typeName: string;
 
-  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec) {
     super(tid);
     this.subCodec = subCodec;
     this.typeName = typeName;
@@ -127,9 +127,9 @@ export class MultiRangeCodec extends Codec implements ICodec {
   readonly tsModule = "edgedb";
 
   private subCodec: ICodec;
-  public typeName: string | null;
+  public typeName: string;
 
-  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec) {
     super(tid);
     this.subCodec = subCodec;
     this.typeName = typeName;
