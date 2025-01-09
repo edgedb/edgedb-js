@@ -21,6 +21,7 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 import { Float16Array, getFloat16, isFloat16Array, setFloat16 } from "../utils";
 import { SparseVector } from "../datatypes/pgvector";
+import { CodecContext } from "./context";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 
@@ -61,7 +62,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
     }
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt16();
     buf.discard(2);
 
@@ -77,7 +78,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
       vec[i] = data.getFloat32(i * 4);
     }
 
-    return vec;
+    return ctx.postDecode(this, vec);
   }
 }
 
@@ -128,7 +129,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(vecBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt16();
     buf.discard(2);
 
@@ -144,7 +145,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
       vec[i] = getFloat16(data, i * 2);
     }
 
-    return vec;
+    return ctx.postDecode(this, vec);
   }
 }
 
@@ -190,7 +191,7 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(vecBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt32();
     const nnz = buf.readUInt32();
     buf.discard(4);
@@ -208,6 +209,10 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
     const vecData = new Float32Array(nnz);
     for (let i = 0; i < nnz; i++) {
       vecData[i] = data.getFloat32((i + nnz) * 4);
+    }
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, [dim, indexes, vecData]);
     }
 
     return new SparseVector(dim, indexes, vecData);

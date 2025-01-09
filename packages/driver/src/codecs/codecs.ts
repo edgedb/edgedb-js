@@ -49,6 +49,8 @@ import {
 } from "./pgvector";
 import { InternalClientError } from "../errors";
 
+import { CodecContext } from "./context";
+
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,7 +61,7 @@ export class NullCodec extends Codec implements ICodec {
     throw new InternalClientError("null codec cannot used to encode data");
   }
 
-  decode(_buf: ReadBuffer): any {
+  decode(_buf: ReadBuffer, _ctx: CodecContext): any {
     throw new InternalClientError("null codec cannot used to decode data");
   }
 

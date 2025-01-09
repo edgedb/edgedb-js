@@ -19,6 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import { CodecContext } from "./context";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
@@ -30,7 +31,11 @@ export class Int64Codec extends ScalarCodec implements ICodec {
     buf.writeInt64(object);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, buf.readBigInt64());
+    }
+
     return buf.readInt64();
   }
 }
@@ -44,8 +49,8 @@ export class Int64BigintCodec extends ScalarCodec implements ICodec {
     buf.writeBigInt64(object);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readBigInt64();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readBigInt64());
   }
 }
 
@@ -59,8 +64,8 @@ export class Int32Codec extends ScalarCodec implements ICodec {
     buf.writeInt32(object as number);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readInt32();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readInt32());
   }
 }
 
@@ -74,8 +79,8 @@ export class Int16Codec extends ScalarCodec implements ICodec {
     buf.writeInt16(object as number);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readInt16();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readInt16());
   }
 }
 
@@ -89,8 +94,8 @@ export class Float32Codec extends ScalarCodec implements ICodec {
     buf.writeFloat32(object as number);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readFloat32();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readFloat32());
   }
 }
 
@@ -104,7 +109,7 @@ export class Float64Codec extends ScalarCodec implements ICodec {
     buf.writeFloat64(object as number);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readFloat64();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readFloat64());
   }
 }

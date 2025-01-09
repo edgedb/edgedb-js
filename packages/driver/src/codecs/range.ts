@@ -21,6 +21,7 @@ import { Codec } from "./ifaces";
 import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { MultiRange, Range } from "../datatypes/range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import { CodecContext } from "./context";
 
 enum RangeFlags {
   EMPTY = 1 << 0,
@@ -60,7 +61,11 @@ function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
   buf.writeBuffer(elemBuf);
 }
 
-function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
+function decodeRange(
+  buf: ReadBuffer,
+  subCodec: ICodec,
+  ctx: CodecContext,
+): any {
   const flags = buf.readUInt8();
 
   if (flags & RangeFlags.EMPTY) {
@@ -74,13 +79,13 @@ function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
 
   if (!(flags & RangeFlags.EMPTY_LOWER)) {
     buf.sliceInto(elemBuf, buf.readInt32());
-    lower = subCodec.decode(elemBuf);
+    lower = subCodec.decode(elemBuf, ctx);
     elemBuf.finish();
   }
 
   if (!(flags & RangeFlags.EMPTY_UPPER)) {
     buf.sliceInto(elemBuf, buf.readInt32());
-    upper = subCodec.decode(elemBuf);
+    upper = subCodec.decode(elemBuf, ctx);
     elemBuf.finish();
   }
 
@@ -109,8 +114,8 @@ export class RangeCodec extends Codec implements ICodec {
     return encodeRange(buf, obj, this.subCodec);
   }
 
-  decode(buf: ReadBuffer): any {
-    return decodeRange(buf, this.subCodec);
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return decodeRange(buf, this.subCodec, ctx);
   }
 
   getSubcodecs(): ICodec[] {
@@ -180,7 +185,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
     buf.writeBuffer(elemBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const elemCount = buf.readInt32();
     const result = new Array(elemCount);
     const elemBuf = ReadBuffer.alloc();
@@ -192,7 +197,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
         throw new ProtocolError("unexpected NULL element in multirange value");
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        const elem = decodeRange(elemBuf, subCodec);
+        const elem = decodeRange(elemBuf, subCodec, ctx);
         if (elemBuf.length) {
           throw new ProtocolError(
             `unexpected trailing data in buffer after multirange element decoding: ${elemBuf.length}`,

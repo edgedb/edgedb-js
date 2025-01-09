@@ -20,6 +20,7 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { uuidToBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import { CodecContext } from "./context";
 
 function UUIDBufferFromString(uuid: string): Uint8Array {
   let uuidClean = uuid;
@@ -51,7 +52,7 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
     }
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.readUUID("-");
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode(this, buf.readUUID("-"));
   }
 }

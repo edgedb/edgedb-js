@@ -1,5 +1,6 @@
 import * as errors from "./errors/index";
 import { utf8Encoder } from "./primitives/buffer";
+import type { Mutable } from "./typeutil";
 
 export type BackoffFunction = (n: number) => number;
 
@@ -150,10 +151,6 @@ export interface OptionsList {
   transactionOptions?: TransactionOptions;
   warningHandler?: WarningHandler;
   codecs?: Record<string, CodecSpec>;
-}
-
-type Mutable<T> = {
-  -readonly [K in keyof T]: T[K]
 }
 
 export class Options {

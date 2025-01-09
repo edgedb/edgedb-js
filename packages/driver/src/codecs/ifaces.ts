@@ -21,6 +21,8 @@ import {
   type WriteBuffer,
   uuidToBuffer,
 } from "../primitives/buffer";
+import type { Mutable } from "../typeutil";
+import { CodecContext } from "./context";
 import { KNOWN_TYPES } from "./consts";
 
 export type uuid = string;
@@ -42,7 +44,7 @@ export interface ICodec {
   readonly tidBuffer: Uint8Array;
 
   encode(buf: WriteBuffer, object: any): void;
-  decode(buf: ReadBuffer): any;
+  decode(buf: ReadBuffer, ctx: CodecContext): any;
 
   getSubcodecs(): ICodec[];
   getKind(): CodecKind;
@@ -68,7 +70,8 @@ export abstract class Codec {
 }
 
 export abstract class ScalarCodec extends Codec {
-  private typeName: string;
+  readonly typeName: string;
+  readonly ancestors: ScalarCodec[] | null = null;
 
   constructor(
     tid: uuid,
@@ -78,14 +81,12 @@ export abstract class ScalarCodec extends Codec {
     this.typeName = typeName;
   }
 
-  /** @internal */
-  setTypeName(typeName: string): void {
-    this.typeName = typeName;
-  }
-
-  derive(tid: uuid, typeName: string): Codec {
+  derive(tid: uuid, typeName: string, ancestors: ScalarCodec[]): Codec {
     const self = this.constructor;
-    return new (self as any)(tid, this.tid, typeName) as Codec;
+    const codec: Mutable<ScalarCodec> =
+      new (self as any)(tid, typeName) as ScalarCodec;
+    codec.ancestors = ancestors;
+    return codec;
   }
 
   getSubcodecs(): ICodec[] {

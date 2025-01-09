@@ -23,6 +23,7 @@ import { TupleCodec } from "./tuple";
 import { MultiRangeCodec, RangeCodec } from "./range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 import { NamedTupleCodec } from "./namedtuple";
+import { CodecContext } from "./context";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -92,7 +93,7 @@ export class ArrayCodec extends Codec implements ICodec {
     buf.writeBuffer(elemBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const ndims = buf.readInt32();
 
     buf.discard(4); // ignore flags
@@ -124,7 +125,7 @@ export class ArrayCodec extends Codec implements ICodec {
         result[i] = null;
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        result[i] = subCodec.decode(elemBuf);
+        result[i] = subCodec.decode(elemBuf, ctx);
         elemBuf.finish();
       }
     }

@@ -25,6 +25,7 @@ import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
 import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
+import { CodecContext, NOOP_CODEC_CONTEXT } from "./codecs/context";
 import type {
   QueryOptions,
   ProtocolVersion,
@@ -302,6 +303,7 @@ export class BaseRawConnection {
     if (this.adminUIMode && stateTypeId === this.stateCodec.tid) {
       this.lastStateUpdate = this.stateCodec.decode(
         new ReadBuffer(stateData),
+        NOOP_CODEC_CONTEXT,
       );
     }
 
@@ -348,25 +350,37 @@ export class BaseRawConnection {
     this.buffer.finishMessage();
   }
 
-  private _parseDataMessages(codec: ICodec, result: any[] | WriteBuffer): void {
+  private _redirectDataMessages(result: WriteBuffer): void {
+    const $D = chars.$D;
+    const buffer = this.buffer;
+
+    while (buffer.takeMessageType($D)) {
+      const msg = buffer.consumeMessage();
+      result.writeChar($D);
+      result.writeInt32(msg.length + 4);
+      result.writeBuffer(msg);
+    }
+  }
+
+  private _parseDataMessages(
+    codec: ICodec,
+    result: any[] | WriteBuffer,
+    state: Options,
+  ): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
 
     if (Array.isArray(result)) {
+      const ctx = new CodecContext(state.codecs);
       while (buffer.takeMessageType($D)) {
         buffer.consumeMessageInto(frb);
         frb.discard(6);
-        result.push(codec.decode(frb));
+        result.push(codec.decode(frb, ctx));
         frb.finish();
       }
     } else {
-      while (buffer.takeMessageType($D)) {
-        const msg = buffer.consumeMessage();
-        result.writeChar($D);
-        result.writeInt32(msg.length + 4);
-        result.writeBuffer(msg);
-      }
+      this._redirectDataMessages(result);
     }
   }
 
@@ -394,7 +408,7 @@ export class BaseRawConnection {
         }
 
         buf.discard(4); // discard data length int32
-        const data = codec.decode(buf);
+        const data = codec.decode(buf, NOOP_CODEC_CONTEXT);
         buf.finish();
 
         this.serverSettings.system_config = data;
@@ -732,7 +746,7 @@ export class BaseRawConnection {
         case chars.$D: {
           if (error == null) {
             try {
-              this._parseDataMessages(outCodec!, result);
+              this._parseDataMessages(outCodec!, result, state);
             } catch (e: any) {
               error = e;
               this.buffer.finishMessage();

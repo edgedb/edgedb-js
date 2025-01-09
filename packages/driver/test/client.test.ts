@@ -16,6 +16,15 @@
  * limitations under the License.
  */
 
+import {
+  expect,
+  test,
+  describe,
+  beforeAll,
+  afterAll,
+  it,
+  jest,
+} from '@jest/globals';
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
 import type { Client, Executor, _ICodec } from "../src/index.node";
@@ -47,6 +56,7 @@ import {
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
 import type { CustomCodecSpec } from "../src/codecs/registry";
+import { NOOP_CODEC_CONTEXT } from "../src/codecs/context";
 import {
   getAvailableExtensions,
   getAvailableFeatures,
@@ -2281,7 +2291,7 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
 
     buf.sliceInto(codecReadBuf, len - 4);
     codecReadBuf.discard(6);
-    const val = outCodec.decode(codecReadBuf);
+    const val = outCodec.decode(codecReadBuf, NOOP_CODEC_CONTEXT);
     result.push(val);
   }
   return result;
@@ -2349,6 +2359,60 @@ if (getAvailableFeatures().has("binary-over-http")) {
     await expect(
       fetchConn.rawParse(Language.EDGEQL, `select 1`, Options.defaults()),
     ).rejects.toThrow(AuthenticationError);
+  });
+}
+
+if (getEdgeDBVersion().major >= 5) {
+  describe("withCodecs", () => {
+    const client = getClient();
+
+    beforeAll(async () => {
+      await client.execute(`
+        CREATE SCALAR TYPE default::MyInt extending std::int32;
+        CREATE SCALAR TYPE default::MySuperInt extending default::MyInt;
+      `);
+    });
+
+    afterAll(async () => {
+      await client.execute(`
+        DROP SCALAR TYPE default::MySuperInt;
+        DROP SCALAR TYPE default::MyInt;
+      `);
+      await client.close();
+    });
+
+    it("middle type override", async () => {
+      let r = await client.querySingle('select <MyInt>123');
+      expect(r).toBe(123);
+
+      const c2 = client.withCodecs({
+        'default::MyInt': {
+          encode(val) {
+            throw "not implemented";
+          },
+          decode(val) {
+            return val + 10000;
+          }
+        }
+      });
+
+      // c2 settings shouldn't affect the original client
+      r = await client.querySingle('select <MyInt>123');
+      expect(r).toBe(123);
+
+      // let's test c2 now
+      r = await c2.querySingle('select <MyInt>123');
+      expect(r).toBe(10123);
+      r = await c2.querySingle('select <MySuperInt>144');
+      expect(r).toBe(10144);
+      r = await c2.querySingle('select <int32>150');
+      expect(r).toBe(150);
+
+      // let's test again, that c2 settings shouldn't affect
+      // the original client
+      r = await client.querySingle('select <MyInt>123');
+      expect(r).toBe(123);
+    });
   });
 }
 

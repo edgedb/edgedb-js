@@ -20,6 +20,7 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { ConfigMemory } from "../datatypes/memory";
 import { InvalidArgumentError } from "../errors";
+import { CodecContext } from "./context";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   override tsType = "ConfigMemory";
@@ -36,7 +37,13 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
     buf.writeBigInt64(object._bytes);
   }
 
-  decode(buf: ReadBuffer): any {
-    return new ConfigMemory(buf.readBigInt64());
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    const val = buf.readBigInt64();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, val);
+    }
+
+    return new ConfigMemory(val);
   }
 }

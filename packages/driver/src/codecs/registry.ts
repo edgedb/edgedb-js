@@ -311,7 +311,7 @@ export class CodecsRegistry {
         frb.readBoolean();
 
         const ancestorCount = frb.readUInt16();
-        const ancestors: ICodec[] = [];
+        const ancestors: ScalarCodec[] = [];
         for (let i = 0; i < ancestorCount; i++) {
           const ancestorPos = frb.readUInt16();
           const ancestorCodec = cl[ancestorPos];
@@ -345,13 +345,7 @@ export class CodecsRegistry {
           }
         } else {
           const baseCodec = ancestors[ancestors.length - 1];
-          if (!(baseCodec instanceof ScalarCodec)) {
-            throw new ProtocolError(
-              `a scalar codec expected for base scalar type, ` +
-                `got ${baseCodec}`,
-            );
-          }
-          res = baseCodec.derive(tid, typeName) as ICodec;
+          res = baseCodec.derive(tid, typeName, ancestors) as ICodec;
         }
 
         break;

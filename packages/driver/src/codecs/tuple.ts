@@ -27,6 +27,7 @@ import {
   ProtocolError,
   QueryArgumentError,
 } from "../errors";
+import { CodecContext } from "./context";
 
 export class TupleCodec extends Codec implements ICodec, IArgsCodec {
   private subCodecs: ICodec[];
@@ -111,7 +112,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     return buf.unwrap();
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const els = buf.readUInt32();
     const subCodecs = this.subCodecs;
     if (els !== subCodecs.length) {
@@ -130,7 +131,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
         result[i] = null;
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        result[i] = subCodecs[i].decode(elemBuf);
+        result[i] = subCodecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
     }

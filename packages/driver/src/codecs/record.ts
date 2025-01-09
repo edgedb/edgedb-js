@@ -23,6 +23,7 @@ import {
   InvalidArgumentError,
   ProtocolError,
 } from "../errors";
+import { CodecContext } from "./context";
 
 export class RecordCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
@@ -42,7 +43,7 @@ export class RecordCodec extends Codec implements ICodec {
     throw new InvalidArgumentError("SQL records cannot be passed as arguments");
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const els = buf.readUInt32();
     const subCodecs = this.subCodecs;
     if (els !== subCodecs.length) {
@@ -60,7 +61,7 @@ export class RecordCodec extends Codec implements ICodec {
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
-        val = subCodecs[i].decode(elemBuf);
+        val = subCodecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
       result[i] = val;

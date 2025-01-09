@@ -29,8 +29,9 @@ import {
   LocalDateToOrdinal,
   localDateInstances,
 } from "../datatypes/datetime";
-import { ymd2ord } from "../datatypes/dateutil";
+import { ymd2ord, ord2ymd } from "../datatypes/dateutil";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import { CodecContext } from "./context";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
@@ -55,13 +56,21 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
     buf.writeInt64(us);
   }
 
-  decode(buf: ReadBuffer): Date {
+  decode(buf: ReadBuffer, ctx: CodecContext): Date {
     const us = Number(buf.readBigInt64());
     let ms = Math.round(us / 1000);
     if (Math.abs(us % 1000) === 500 && Math.abs(ms) % 2 === 1) {
       ms -= 1;
     }
-    return new Date(ms + TIMESHIFT);
+    ms += TIMESHIFT;
+
+    if (ctx.hasOverload(this)) {
+      // TODO XXX: make it so we replace the above imprecise calculations
+      // with proper bigint arithmetic; `ms` should be a `bigint`.
+      return ctx.postDecode(this, BigInt(ms));
+    }
+
+    return new Date(ms);
   }
 }
 
@@ -98,7 +107,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
     buf.writeBigInt64(us as bigint);
   }
 
-  decode(buf: ReadBuffer): LocalDateTime {
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalDateTime {
     const bi_us = buf.readBigInt64();
     const bi_ms = bi_us / 1000n;
     let us = Number(bi_us - bi_ms * 1000n);
@@ -107,8 +116,15 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       us += 1000;
       ms -= 1;
     }
+    ms += TIMESHIFT;
 
-    const date = new Date(Number(ms) + TIMESHIFT);
+    if (ctx.hasOverload(this)) {
+      // TODO XXX: make it so we replace the above imprecise calculations
+      // with proper bigint arithmetic; `ms` should be a `bigint`.
+      return ctx.postDecode(this, BigInt(ms));
+    }
+
+    const date = new Date(ms);
     return new LocalDateTime(
       date.getUTCFullYear(),
       date.getUTCMonth() + 1,
@@ -135,9 +151,14 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(LocalDateToOrdinal(object) - DATESHIFT_ORD);
   }
 
-  decode(buf: ReadBuffer): LocalDate {
-    const ord = buf.readInt32();
-    return LocalDateFromOrdinal(ord + DATESHIFT_ORD);
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalDate {
+    const ord = buf.readInt32() + DATESHIFT_ORD;
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, ord2ymd(ord));
+    }
+
+    return LocalDateFromOrdinal(ord);
   }
 }
 
@@ -169,8 +190,13 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
     buf.writeInt64(us);
   }
 
-  decode(buf: ReadBuffer): LocalTime {
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalTime {
     let us = Number(buf.readBigInt64());
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, us);
+    }
+
     let seconds = Math.floor(us / 1_000_000);
     const ms = Math.floor((us % 1_000_000) / 1000);
     us = (us % 1_000_000) - ms * 1000;
@@ -238,7 +264,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(0);
   }
 
-  decode(buf: ReadBuffer): Duration {
+  decode(buf: ReadBuffer, ctx: CodecContext): Duration {
     let bius = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
@@ -247,6 +273,10 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     }
     if (months !== 0) {
       throw new ProtocolError("non-zero reserved bytes in duration");
+    }
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, bius);
     }
 
     let sign = 1;
@@ -305,10 +335,14 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(object.months + 12 * object.years);
   }
 
-  decode(buf: ReadBuffer): RelativeDuration {
+  decode(buf: ReadBuffer, ctx: CodecContext): RelativeDuration {
     let bius = buf.readBigInt64();
     let days = buf.readInt32();
     let months = buf.readInt32();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, [bius, days, months]);
+    }
 
     let sign = 1;
     if (Number(bius) < 0) {
@@ -365,10 +399,14 @@ export class DateDurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(object.months + 12 * object.years);
   }
 
-  decode(buf: ReadBuffer): DateDuration {
+  decode(buf: ReadBuffer, ctx: CodecContext): DateDuration {
     buf.discard(8);
     let days = buf.readInt32();
     let months = buf.readInt32();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, [days, months]);
+    }
 
     const weeks = Math.trunc(days / 7);
     days = Math.trunc(days % 7);

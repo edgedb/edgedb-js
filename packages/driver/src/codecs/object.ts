@@ -27,6 +27,7 @@ import {
   UnknownArgumentError,
   ProtocolError,
 } from "../errors";
+import { CodecContext } from "./context";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;
@@ -176,7 +177,7 @@ export class ObjectCodec extends Codec implements ICodec {
     return buf.unwrap();
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const codecs = this.codecs;
     const fields = this.fields;
 
@@ -196,7 +197,7 @@ export class ObjectCodec extends Codec implements ICodec {
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
-        val = codecs[i].decode(elemBuf);
+        val = codecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
       result[name] = val;

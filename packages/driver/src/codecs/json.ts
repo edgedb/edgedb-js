@@ -23,6 +23,7 @@ import {
 } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import { CodecContext } from "./context";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
   override tsType = "unknown";
@@ -56,14 +57,18 @@ export class JSONCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(strbuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (this.jsonFormat !== null) {
       const format = buf.readUInt8();
       if (format !== this.jsonFormat) {
         throw new ProtocolError(`unexpected JSON format ${format}`);
       }
     }
-    return JSON.parse(buf.consumeAsString());
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode(this, buf.consumeAsString());
+    } else {
+      return JSON.parse(buf.consumeAsString());
+    }
   }
 }
 
@@ -89,14 +94,14 @@ export class JSONStringCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(strbuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (this.jsonFormat !== null) {
       const format = buf.readUInt8();
       if (format !== this.jsonFormat) {
         throw new ProtocolError(`unexpected JSON format ${format}`);
       }
     }
-    return buf.consumeAsString();
+    return ctx.postDecode(this, buf.consumeAsString());
   }
 }
 
