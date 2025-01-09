@@ -35,12 +35,7 @@ export class NamedTupleCodec extends Codec implements ICodec, IArgsCodec {
   private namesSet: Set<string>;
   public typeName: string;
 
-  constructor(
-    tid: uuid,
-    typeName: string,
-    codecs: ICodec[],
-    names: string[],
-  ) {
+  constructor(tid: uuid, typeName: string, codecs: ICodec[], names: string[]) {
     super(tid);
     this.subCodecs = codecs;
     this.names = names;

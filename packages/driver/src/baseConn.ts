@@ -32,11 +32,7 @@ import type {
   QueryArgs,
   ServerSettings,
 } from "./ifaces";
-import {
-  Cardinality,
-  OutputFormat,
-  Language,
-} from "./ifaces";
+import { Cardinality, OutputFormat, Language } from "./ifaces";
 import {
   ReadBuffer,
   ReadMessageBuffer,

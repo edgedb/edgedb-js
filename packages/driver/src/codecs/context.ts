@@ -6,9 +6,13 @@ export interface CodecSpec {
 }
 
 const NOOP: CodecSpec = {
-  encode(data: any) { return data },
-  decode(data: any) { return data },
-}
+  encode(data: any) {
+    return data;
+  },
+  decode(data: any) {
+    return data;
+  },
+};
 
 export class CodecContext {
   private readonly spec: ReadonlyMap<string, CodecSpec> | null;

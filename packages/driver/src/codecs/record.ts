@@ -19,21 +19,14 @@
 import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import {
-  InvalidArgumentError,
-  ProtocolError,
-} from "../errors";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 import { CodecContext } from "./context";
 
 export class RecordCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
   private names: string[];
 
-  constructor(
-    tid: uuid,
-    codecs: ICodec[],
-    names: string[],
-  ) {
+  constructor(tid: uuid, codecs: ICodec[], names: string[]) {
     super(tid);
     this.subCodecs = codecs;
     this.names = names;

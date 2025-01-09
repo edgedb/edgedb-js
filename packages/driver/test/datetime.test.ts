@@ -51,7 +51,8 @@ test("datetime", () => {
     const buf = Buffer.alloc(8);
     buf.writeBigInt64BE(BigInt(micros));
     const datetime = codec.decode(
-      new ReadBuffer(buf), NOOP_CODEC_CONTEXT
+      new ReadBuffer(buf),
+      NOOP_CODEC_CONTEXT,
     ) as Date;
 
     expect(datetime.toISOString()).toEqual(datestring);

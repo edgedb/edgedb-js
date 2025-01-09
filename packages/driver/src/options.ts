@@ -203,33 +203,37 @@ export class Options {
     clone.warningHandler = mergeOptions.warningHandler ?? this.warningHandler;
 
     if (mergeOptions.config != null) {
-      clone.config = new Map(
-        [...this.config, ...Object.entries(mergeOptions.config)]
-      );
+      clone.config = new Map([
+        ...this.config,
+        ...Object.entries(mergeOptions.config),
+      ]);
     } else {
       clone.config = this.config;
     }
 
     if (mergeOptions.globals != null) {
-      clone.globals = new Map(
-        [...this.globals, ...Object.entries(mergeOptions.globals)]
-      );
+      clone.globals = new Map([
+        ...this.globals,
+        ...Object.entries(mergeOptions.globals),
+      ]);
     } else {
       clone.globals = this.globals;
     }
 
     if (mergeOptions.moduleAliases != null) {
-      clone.moduleAliases = new Map(
-        [...this.moduleAliases, ...Object.entries(mergeOptions.moduleAliases)]
-      );
+      clone.moduleAliases = new Map([
+        ...this.moduleAliases,
+        ...Object.entries(mergeOptions.moduleAliases),
+      ]);
     } else {
       clone.moduleAliases = this.moduleAliases;
     }
 
     if (mergeOptions.codecs != null) {
-      clone.codecs = new Map(
-        [...this.codecs, ...Object.entries(mergeOptions.codecs)]
-      );
+      clone.codecs = new Map([
+        ...this.codecs,
+        ...Object.entries(mergeOptions.codecs),
+      ]);
     } else {
       clone.codecs = this.codecs;
     }
@@ -274,11 +278,11 @@ export class Options {
   }
 
   withConfig(config: Record<string, any>): Options {
-    return this._cloneWith({config});
+    return this._cloneWith({ config });
   }
 
   withCodecs(codecs: Record<string, CodecSpec>): Options {
-    return this._cloneWith({codecs});
+    return this._cloneWith({ codecs });
   }
 
   withGlobals(globals: Record<string, any>): Options {
@@ -337,14 +341,13 @@ export class Options {
       this.config.size === 0 &&
       this.globals.size === 0 &&
       this.moduleAliases.size === 0 &&
-      this.module === 'default'
-    )
+      this.module === "default"
+    );
   }
 
   static defaults(): Options {
     return _defaultOptions;
   }
 }
-
 
 const _defaultOptions = new Options();

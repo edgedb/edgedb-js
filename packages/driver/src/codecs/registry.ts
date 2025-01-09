@@ -171,7 +171,7 @@ export class CodecsRegistry {
     if (!versionGreaterThanOrEqual(protocolVersion, [2, 0])) {
       throw new UnsupportedProtocolVersionError(
         "unsupported old protocol version v1; downgrade to the previous " +
-        "version of edgedb-js"
+          "version of edgedb-js",
       );
     }
 

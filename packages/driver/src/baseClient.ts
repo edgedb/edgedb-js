@@ -582,10 +582,7 @@ export class Client implements Executor {
   }
 
   withModuleAliases(aliases: Record<string, string>) {
-    return new Client(
-      this.pool,
-      this.options.withModuleAliases(aliases),
-    );
+    return new Client(this.pool, this.options.withModuleAliases(aliases));
   }
 
   withConfig(config: SimpleConfig): Client {
@@ -597,17 +594,11 @@ export class Client implements Executor {
   }
 
   withGlobals(globals: Record<string, any>): Client {
-    return new Client(
-      this.pool,
-      this.options.withGlobals(globals),
-    );
+    return new Client(this.pool, this.options.withGlobals(globals));
   }
 
   withQueryTag(tag: string | null): Client {
-    return new Client(
-      this.pool,
-      this.options.withQueryTag(tag),
-    );
+    return new Client(this.pool, this.options.withQueryTag(tag));
   }
 
   withWarningHandler(handler: WarningHandler): Client {

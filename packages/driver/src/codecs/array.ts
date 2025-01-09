@@ -30,12 +30,7 @@ export class ArrayCodec extends Codec implements ICodec {
   private len: number;
   public typeName: string;
 
-  constructor(
-    tid: uuid,
-    typeName: string,
-    subCodec: ICodec,
-    len: number,
-  ) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec, len: number) {
     super(tid);
     this.subCodec = subCodec;
     this.len = len;

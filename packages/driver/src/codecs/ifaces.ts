@@ -73,18 +73,17 @@ export abstract class ScalarCodec extends Codec {
   readonly typeName: string;
   readonly ancestors: ScalarCodec[] | null = null;
 
-  constructor(
-    tid: uuid,
-    typeName: string
-  ) {
+  constructor(tid: uuid, typeName: string) {
     super(tid);
     this.typeName = typeName;
   }
 
   derive(tid: uuid, typeName: string, ancestors: ScalarCodec[]): Codec {
     const self = this.constructor;
-    const codec: Mutable<ScalarCodec> =
-      new (self as any)(tid, typeName) as ScalarCodec;
+    const codec: Mutable<ScalarCodec> = new (self as any)(
+      tid,
+      typeName,
+    ) as ScalarCodec;
     codec.ancestors = ancestors;
     return codec;
   }
