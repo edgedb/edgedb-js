@@ -26,7 +26,9 @@ import type { CodecContext } from "./context";
 export class StrCodec extends ScalarCodec implements ICodec {
   override tsType = "string";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.StrCodec>(this, object);
+
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }

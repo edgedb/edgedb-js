@@ -177,7 +177,7 @@ test("local_datetime", () => {
         .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
-    codec.encode(buf, localDatetime);
+    codec.encode(buf, localDatetime, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));
@@ -214,7 +214,7 @@ test("local_time", () => {
         .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
-    codec.encode(buf, localDatetime);
+    codec.encode(buf, localDatetime, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));
@@ -248,7 +248,7 @@ test("duration", () => {
   for (const [durationString, micros] of tests) {
     const duration = Duration.from(durationString);
     const buf = new WriteBuffer();
-    codec.encode(buf, duration);
+    codec.encode(buf, duration, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));

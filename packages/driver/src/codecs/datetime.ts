@@ -40,12 +40,27 @@ import type { Codecs } from "./codecs";
  * which is specified in the below constant (in milliseconds.)
  */
 const TIMESHIFT = 946684800000;
+const BI_TIMESHIFT = BigInt(TIMESHIFT);
+const BI_TIMESHIFT_US = BigInt(TIMESHIFT) * 1000n;
+
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
 
 export class DateTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "Date";
 
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.DateTimeCodec>(this, object);
+      if (typeof val != 'bigint') {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom std::datetime codec`
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64((val - BI_TIMESHIFT) * 1000n);
+      return;
+    }
+
     if (!(object instanceof Date)) {
       throw new InvalidArgumentError(
         `a Date instance was expected, got "${object}"`,
@@ -79,7 +94,20 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDateTime";
   override tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      let us = ctx.preEncode<Codecs.LocalDateTimeCodec>(this, object);
+      if (typeof us != 'bigint') {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cal_local_datetime codec`
+        );
+      }
+      us -= BI_TIMESHIFT_US;
+      buf.writeInt32(8);
+      buf.writeBigInt64(us);
+      return;
+    }
+
     if (!(object instanceof LocalDateTime)) {
       throw new InvalidArgumentError(
         `a LocalDateTime instance was expected, got "${object}"`,
@@ -105,7 +133,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
     }
 
     buf.writeInt32(8);
-    buf.writeBigInt64(us as bigint);
+    buf.writeBigInt64(us);
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): LocalDateTime {
@@ -142,14 +170,24 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 export class LocalDateCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDate";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.LocalDateCodec>(this, object);
+      const ord = ymd2ord(...ret);
+      buf.writeInt32(4);
+      buf.writeInt32(ord - DATESHIFT_ORD);
+      return;
+    }
+
     if (!(object instanceof LocalDate)) {
       throw new InvalidArgumentError(
         `a LocalDate instance was expected, got "${object}"`,
       );
     }
+
+    const ord = LocalDateToOrdinal(object);
     buf.writeInt32(4);
-    buf.writeInt32(LocalDateToOrdinal(object) - DATESHIFT_ORD);
+    buf.writeInt32(ord - DATESHIFT_ORD);
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): LocalDate {
@@ -166,7 +204,19 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
 export class LocalTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalTime";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const us = ctx.preEncode<Codecs.LocalTimeCodec>(this, object);
+      if (typeof us != 'bigint') {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cal::local_time codec`
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64(us);
+      return;
+    }
+
     if (!(object instanceof LocalTime)) {
       throw new InvalidArgumentError(
         `a LocalTime instance was expected, got "${object}"`,
@@ -230,7 +280,22 @@ export function checkValidEdgeDBDuration(duration: Duration): null | string {
 export class DurationCodec extends ScalarCodec implements ICodec {
   override tsType = "Duration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const us = ctx.preEncode<Codecs.DurationCodec>(this, object);
+      if (typeof us != 'bigint') {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom std::duration codec`
+        );
+      }
+
+      buf.writeInt32(16);
+      buf.writeBigInt64(us);
+      buf.writeInt32(0);
+      buf.writeInt32(0);
+      return;
+    }
+
     if (!(object instanceof Duration)) {
       throw new InvalidArgumentError(
         `a Duration instance was expected, got "${object}"`,
@@ -318,7 +383,16 @@ export class DurationCodec extends ScalarCodec implements ICodec {
 export class RelativeDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "RelativeDuration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.RelativeDurationCodec>(this, object);
+      buf.writeInt32(16);
+      buf.writeBigInt64(ret[2]);
+      buf.writeInt32(ret[1]);
+      buf.writeInt32(ret[0]);
+      return;
+    }
+
     if (!(object instanceof RelativeDuration)) {
       throw new InvalidArgumentError(`
         a RelativeDuration instance was expected, got "${object}"
@@ -393,7 +467,16 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
 export class DateDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "DateDuration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.DateDurationCodec>(this, object);
+      buf.writeInt32(16);
+      buf.writeInt64(0);
+      buf.writeInt32(ret[1]);
+      buf.writeInt32(ret[0]);
+      return;
+    }
+
     if (!(object instanceof DateDuration)) {
       throw new InvalidArgumentError(`
         a DateDuration instance was expected, got "${object}"

@@ -33,7 +33,12 @@ enum RangeFlags {
 
 const MAXINT32 = 0x7fffffff;
 
-function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
+function encodeRange(
+  buf: WriteBuffer,
+  obj: any,
+  subCodec: ICodec,
+  ctx: CodecContext,
+): void {
   if (!(obj instanceof Range)) {
     throw new InvalidArgumentError("a Range was expected");
   }
@@ -41,10 +46,10 @@ function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
   const elemData = new WriteBuffer();
 
   if (obj.lower !== null) {
-    subCodec.encode(elemData, obj.lower);
+    subCodec.encode(elemData, obj.lower, ctx);
   }
   if (obj.upper !== null) {
-    subCodec.encode(elemData, obj.upper);
+    subCodec.encode(elemData, obj.upper, ctx);
   }
 
   const elemBuf = elemData.unwrap();
@@ -110,8 +115,8 @@ export class RangeCodec extends Codec implements ICodec {
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any) {
-    return encodeRange(buf, obj, this.subCodec);
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext) {
+    return encodeRange(buf, obj, this.subCodec, ctx);
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
@@ -140,7 +145,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any): void {
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext): void {
     if (!(obj instanceof MultiRange)) {
       throw new TypeError(
         `a MultiRange expected (got type ${obj.constructor.name})`,
@@ -155,7 +160,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
     const elemData = new WriteBuffer();
     for (const item of obj) {
       try {
-        encodeRange(elemData, item, this.subCodec);
+        encodeRange(elemData, item, this.subCodec, ctx);
       } catch (e) {
         if (e instanceof InvalidArgumentError) {
           throw new InvalidArgumentError(

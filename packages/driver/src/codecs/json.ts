@@ -31,14 +31,18 @@ export class JSONCodec extends ScalarCodec implements ICodec {
 
   readonly jsonFormat: number | null = 1;
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     let val: string;
-    try {
-      val = JSON.stringify(object);
-    } catch (_err) {
-      throw new InvalidArgumentError(
-        `a JSON-serializable value was expected, got "${object}"`,
-      );
+    if (ctx.hasOverload(this)) {
+      val = ctx.preEncode<Codecs.JsonCodec>(this, object);
+    } else {
+      try {
+        val = JSON.stringify(object);
+      } catch (_err) {
+        throw new InvalidArgumentError(
+          `a JSON-serializable value was expected, got "${object}"`,
+        );
+      }
     }
 
     // JSON.stringify can return undefined
@@ -80,7 +84,11 @@ export class PgTextJSONCodec extends JSONCodec {
 export class JSONStringCodec extends ScalarCodec implements ICodec {
   readonly jsonFormat: number | null = 1;
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      object = ctx.preEncode<Codecs.JsonCodec>(this, object);
+    }
+
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }

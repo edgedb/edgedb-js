@@ -20,11 +20,8 @@ import { ReadBuffer } from "../primitives/buffer";
 import LRU from "../primitives/lru";
 import { type ICodec, type uuid, ScalarCodec } from "./ifaces";
 import { NULL_CODEC, SCALAR_CODECS } from "./codecs";
-import { NULL_CODEC_ID, KNOWN_TYPES, KNOWN_TYPENAMES } from "./consts";
+import { NULL_CODEC_ID, KNOWN_TYPES } from "./consts";
 import { EMPTY_TUPLE_CODEC, EMPTY_TUPLE_CODEC_ID, TupleCodec } from "./tuple";
-import * as numbers from "./numbers";
-import * as datecodecs from "./datetime";
-import { JSONStringCodec, PgTextJSONStringCodec } from "./json";
 import { ArrayCodec } from "./array";
 import { NamedTupleCodec } from "./namedtuple";
 import { EnumCodec } from "./enum";
@@ -67,79 +64,13 @@ export interface CustomCodecSpec {
   pg_timestamptz_localDatetime?: boolean;
 }
 
-const INT64_TYPEID = KNOWN_TYPENAMES.get("std::int64")!;
-const DATETIME_TYPEID = KNOWN_TYPENAMES.get("std::datetime")!;
-const JSON_TYPEID = KNOWN_TYPENAMES.get("std::json")!;
-const PG_JSON_TYPEID = KNOWN_TYPENAMES.get("std::pg::json")!;
-const PG_TIMESTAMPTZ_TYPEID = KNOWN_TYPENAMES.get("std::pg::timestamptz")!;
-
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
   private codecs: LRU<uuid, ICodec>;
-  private customScalarCodecs: Map<uuid, ICodec>;
 
   constructor() {
     this.codecs = new LRU({ capacity: CODECS_CACHE_SIZE });
     this.codecsBuildCache = new LRU({ capacity: CODECS_BUILD_CACHE_SIZE });
-    this.customScalarCodecs = new Map();
-  }
-
-  setCustomCodecs({
-    int64_bigint,
-    datetime_localDatetime,
-    json_string,
-    pg_json_string,
-    pg_timestamptz_localDatetime,
-  }: CustomCodecSpec = {}): void {
-    // This is a private API and it will change in the future.
-
-    if (int64_bigint) {
-      this.customScalarCodecs.set(
-        INT64_TYPEID,
-        new numbers.Int64BigintCodec(INT64_TYPEID, "std::int64"),
-      );
-    } else {
-      this.customScalarCodecs.delete(INT64_TYPEID);
-    }
-
-    if (datetime_localDatetime) {
-      this.customScalarCodecs.set(
-        DATETIME_TYPEID,
-        new datecodecs.LocalDateTimeCodec(DATETIME_TYPEID, "std::datetime"),
-      );
-    } else {
-      this.customScalarCodecs.delete(DATETIME_TYPEID);
-    }
-
-    if (json_string) {
-      this.customScalarCodecs.set(
-        JSON_TYPEID,
-        new JSONStringCodec(JSON_TYPEID, "std::json"),
-      );
-    } else {
-      this.customScalarCodecs.delete(JSON_TYPEID);
-    }
-
-    if (pg_json_string) {
-      this.customScalarCodecs.set(
-        PG_JSON_TYPEID,
-        new PgTextJSONStringCodec(PG_JSON_TYPEID, "std::pg::json"),
-      );
-    } else {
-      this.customScalarCodecs.delete(PG_JSON_TYPEID);
-    }
-
-    if (pg_timestamptz_localDatetime) {
-      this.customScalarCodecs.set(
-        PG_TIMESTAMPTZ_TYPEID,
-        new datecodecs.LocalDateTimeCodec(
-          PG_TIMESTAMPTZ_TYPEID,
-          "std::pg::timestamptz",
-        ),
-      );
-    } else {
-      this.customScalarCodecs.delete(PG_TIMESTAMPTZ_TYPEID);
-    }
   }
 
   hasCodec(typeId: uuid): boolean {
@@ -220,11 +151,6 @@ export class CodecsRegistry {
 
     switch (t) {
       case CTYPE_BASE_SCALAR: {
-        res = this.customScalarCodecs.get(tid);
-        if (res != null) {
-          break;
-        }
-
         res = SCALAR_CODECS.get(tid);
         if (!res) {
           if (KNOWN_TYPES.has(tid)) {
@@ -331,7 +257,7 @@ export class CodecsRegistry {
         }
 
         if (ancestorCount === 0) {
-          res = this.customScalarCodecs.get(tid) ?? SCALAR_CODECS.get(tid);
+          res = SCALAR_CODECS.get(tid);
           if (res == null) {
             if (KNOWN_TYPES.has(tid)) {
               throw new InternalClientError(

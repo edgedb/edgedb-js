@@ -27,7 +27,7 @@ import {
 } from "@jest/globals";
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
-import type { Client, Executor, _ICodec, Codecs } from "../src/index.node";
+import type { Executor, _ICodec, Codecs } from "../src/index.node";
 import {
   DivisionByZeroError,
   Duration,
@@ -55,7 +55,6 @@ import {
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
-import type { CustomCodecSpec } from "../src/codecs/registry";
 import { NOOP_CODEC_CONTEXT } from "../src/codecs/context";
 import {
   getAvailableExtensions,
@@ -69,17 +68,6 @@ import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/cryptoUtils";
 import { getAuthenticatedFetch } from "../src/utils";
 import { Language } from "../src/ifaces";
-
-function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
-  // @ts-ignore
-  const registry = client.pool._codecsRegistry;
-  registry.setCustomCodecs(
-    codecs.reduce((obj, codec) => {
-      obj[codec] = true;
-      return obj;
-    }, {} as any),
-  );
-}
 
 class CancelTransaction extends Error {}
 
@@ -407,8 +395,16 @@ test("fetch: decimal as string", async () => {
 });
 
 test("fetch: int64 as bigint", async () => {
-  const con = getClient();
-  setCustomCodecs(["int64_bigint"], con);
+  const con = getClient().withCodecs({
+    'std::int64': {
+      encode(data: bigint) {
+        return data;
+      },
+      decode(data: bigint) {
+        return data;
+      }
+    }
+  });
 
   const vals = [
     "0",

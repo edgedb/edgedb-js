@@ -43,7 +43,7 @@ export interface ICodec {
   readonly tid: uuid;
   readonly tidBuffer: Uint8Array;
 
-  encode(buf: WriteBuffer, object: any): void;
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void;
   decode(buf: ReadBuffer, ctx: CodecContext): any;
 
   getSubcodecs(): ICodec[];
@@ -52,7 +52,7 @@ export interface ICodec {
 }
 
 export interface IArgsCodec {
-  encodeArgs(args: any): Uint8Array;
+  encodeArgs(args: any, ctx: CodecContext): Uint8Array;
 }
 
 export abstract class Codec {

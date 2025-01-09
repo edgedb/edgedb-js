@@ -37,7 +37,7 @@ export class ArrayCodec extends Codec implements ICodec {
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any): void {
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext): void {
     if (
       !(
         this.subCodec instanceof ScalarCodec ||
@@ -72,7 +72,7 @@ export class ArrayCodec extends Codec implements ICodec {
       if (item == null) {
         elemData.writeInt32(-1);
       } else {
-        subCodec.encode(elemData, item);
+        subCodec.encode(elemData, item, ctx);
       }
     }
     const elemBuf = elemData.unwrap();

@@ -33,7 +33,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
     this.names = names;
   }
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     const elemBuf = new WriteBuffer();
 
     let objLen = 0;
@@ -54,7 +54,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
         if (val === null) {
           elemBuf.writeInt32(-1);
         } else {
-          this.codecs[i].encode(elemBuf, val);
+          this.codecs[i].encode(elemBuf, val, ctx);
         }
       }
     }

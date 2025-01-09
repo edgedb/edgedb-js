@@ -24,7 +24,7 @@ import type {
   NormalizedConnectConfig,
   ResolvedConnectConfig,
 } from "./conUtils";
-import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
+import { versionGreaterThan } from "./utils";
 import type { ClientHandshakeOptions, ProtocolVersion } from "./ifaces";
 import { WriteMessageBuffer } from "./primitives/buffer";
 import Event from "./primitives/event";
@@ -453,8 +453,7 @@ export class RawConnection extends BaseRawConnection {
           if (
             !(this.sock instanceof tls.TLSSocket) &&
             // @ts-ignore
-            typeof Deno === "undefined" &&
-            versionGreaterThanOrEqual(this.protocolVersion, [0, 11])
+            typeof Deno === "undefined"
           ) {
             const [major, minor] = this.protocolVersion;
             throw new errors.ProtocolError(

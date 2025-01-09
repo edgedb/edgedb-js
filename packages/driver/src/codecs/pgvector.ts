@@ -29,7 +29,9 @@ export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 export class PgVectorCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "Float32Array";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.PgVectorCodec>(this, object);
+
     if (!(object instanceof Float32Array || Array.isArray(object))) {
       throw new InvalidArgumentError(
         `a Float32Array or array of numbers was expected, got "${object}"`,
@@ -87,7 +89,9 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "Float16Array";
   override readonly tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.PGVectorHalfCodec>(this, object);
+
     if (!(isFloat16Array(object) || Array.isArray(object))) {
       throw new InvalidArgumentError(
         `a Float16Array or array of numbers was expected, got "${object}"`,
@@ -154,39 +158,52 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "SparseVector";
   override readonly tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof SparseVector)) {
-      throw new InvalidArgumentError(
-        `a SparseVector was expected, got "${object}"`,
-      );
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    let indexesLength: number;
+    let dims: number;
+    let indexes: Uint32Array;
+    let values: Float32Array;
+
+    if (ctx.hasOverload(this)) {
+      [dims, indexes, values] =
+        ctx.preEncode<Codecs.PGVectorSparseCodec>(this, object);
+    } else {
+      if (!(object instanceof SparseVector)) {
+        throw new InvalidArgumentError(
+          `a SparseVector was expected, got "${object}"`,
+        );
+      }
+      dims = object.length;
+      indexes = object.indexes;
+      values = object.values;
     }
 
-    const nnz = object.indexes.length;
+    indexesLength = indexes.length;
 
-    if (nnz > PG_VECTOR_MAX_DIM || nnz > object.length) {
+    if (indexesLength > PG_VECTOR_MAX_DIM || indexesLength > dims) {
       throw new InvalidArgumentError(
         "too many elements in sparse vector value",
       );
     }
 
     buf
-      .writeUInt32(4 * (3 + nnz * 2))
-      .writeUInt32(object.length)
-      .writeUInt32(nnz)
+      .writeUInt32(4 * (3 + indexesLength * 2))
+      .writeUInt32(dims)
+      .writeUInt32(indexesLength)
       .writeUInt32(0);
 
-    const vecBuf = new Uint8Array(nnz * 8);
+    const vecBuf = new Uint8Array(indexesLength * 8);
     const data = new DataView(
       vecBuf.buffer,
       vecBuf.byteOffset,
       vecBuf.byteLength,
     );
 
-    for (let i = 0; i < nnz; i++) {
-      data.setUint32(i * 4, object.indexes[i]);
+    for (let i = 0; i < indexesLength; i++) {
+      data.setUint32(i * 4, indexes[i]);
     }
-    for (let i = 0; i < nnz; i++) {
-      data.setFloat32((nnz + i) * 4, object.values[i]);
+    for (let i = 0; i < indexesLength; i++) {
+      data.setFloat32((indexesLength + i) * 4, values[i]);
     }
 
     buf.writeBuffer(vecBuf);

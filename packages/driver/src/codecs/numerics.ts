@@ -28,7 +28,12 @@ const NUMERIC_NEG = 0x4000;
 export class BigIntCodec extends ScalarCodec implements ICodec {
   override tsType = "bigint";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.BigIntCodec>(this, object);
+      object = BigInt(val);
+    }
+
     if (typeof object !== "bigint") {
       throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
     }
@@ -84,7 +89,9 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
   override tsType = "string";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.BigIntCodec>(this, object);
+
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }

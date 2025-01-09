@@ -27,7 +27,19 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   override tsType = "ConfigMemory";
   override tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.MemoryCodec>(this, object);
+      if (typeof val != 'bigint') {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cfg::memory codec`
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64(val);
+      return;
+    }
+
     if (!(object instanceof ConfigMemory)) {
       throw new InvalidArgumentError(
         `a ConfigMemory instance was expected, got "${object}"`,

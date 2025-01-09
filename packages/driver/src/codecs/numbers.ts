@@ -24,10 +24,18 @@ import type { CodecContext } from "./context";
 
 export class Int64Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.Int64Codec>(this, object);
+      buf.writeInt32(8);
+      buf.writeBigInt64(val);
+      return;
+    }
+
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
+
     buf.writeInt32(8);
     buf.writeInt64(object);
   }
@@ -41,23 +49,10 @@ export class Int64Codec extends ScalarCodec implements ICodec {
   }
 }
 
-export class Int64BigintCodec extends ScalarCodec implements ICodec {
-  encode(buf: WriteBuffer, object: any): void {
-    if (typeof object !== "bigint") {
-      throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
-    }
-    buf.writeInt32(8);
-    buf.writeBigInt64(object);
-  }
-
-  decode(buf: ReadBuffer, ctx: CodecContext): any {
-    return ctx.postDecode<Codecs.Int64Codec>(this, buf.readBigInt64());
-  }
-}
-
 export class Int32Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.Int32Codec>(this, object);
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
@@ -72,7 +67,8 @@ export class Int32Codec extends ScalarCodec implements ICodec {
 
 export class Int16Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.Int16Codec>(this, object);
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
@@ -87,7 +83,8 @@ export class Int16Codec extends ScalarCodec implements ICodec {
 
 export class Float32Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.Float32Codec>(this, object);
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }
@@ -102,7 +99,8 @@ export class Float32Codec extends ScalarCodec implements ICodec {
 
 export class Float64Codec extends ScalarCodec implements ICodec {
   override tsType = "number";
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.Float64Codec>(this, object);
     if (typeof object !== "number") {
       throw new InvalidArgumentError(`a number was expected, got "${object}"`);
     }

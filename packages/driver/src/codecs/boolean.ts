@@ -25,15 +25,16 @@ import type { CodecContext } from "./context";
 export class BoolCodec extends ScalarCodec implements ICodec {
   override tsType = "boolean";
 
-  encode(buf: WriteBuffer, object: any): void {
-    const typeOf = typeof object;
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    const val = ctx.preEncode<Codecs.BoolCodec>(this, object);
+    const typeOf = typeof val;
     if (typeOf !== "boolean" && typeOf !== "number") {
       throw new InvalidArgumentError(
-        `a boolean or a number was expected, got "${object}"`,
+        `a boolean or a number was expected, got "${val}"`,
       );
     }
     buf.writeInt32(1);
-    buf.writeChar(object ? 1 : 0);
+    buf.writeChar(val ? 1 : 0);
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {

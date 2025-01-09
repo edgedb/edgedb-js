@@ -88,7 +88,7 @@ export namespace Codecs {
   export type MemoryCodec = Codec<bigint>;
   export type PgVectorCodec = Codec<Float32Array>;
   export type PGVectorSparseCodec = Codec<
-    [dimensions: number, indexes: Uint32Array, data: Float32Array]
+    [dimensions: number, indexes: Uint32Array, values: Float32Array]
   >;
   export type StrCodec = Codec<string>;
   export type UUIDCodec = Codec<Uint8Array>;

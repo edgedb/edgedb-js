@@ -18,10 +18,8 @@
 
 import { INVALID_CODEC, NullCodec, NULL_CODEC } from "./codecs/codecs";
 import type { ICodec } from "./codecs/ifaces";
-import { NamedTupleCodec } from "./codecs/namedtuple";
 import { ObjectCodec } from "./codecs/object";
 import type { CodecsRegistry } from "./codecs/registry";
-import { EmptyTupleCodec, EMPTY_TUPLE_CODEC, TupleCodec } from "./codecs/tuple";
 import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
@@ -360,14 +358,13 @@ export class BaseRawConnection {
   private _parseDataMessages(
     codec: ICodec,
     result: any[] | WriteBuffer,
-    state: Options,
+    ctx: CodecContext,
   ): void {
     const frb = ReadBuffer.alloc();
     const $D = chars.$D;
     const buffer = this.buffer;
 
     if (Array.isArray(result)) {
-      const ctx = new CodecContext(state.codecs);
       while (buffer.takeMessageType($D)) {
         buffer.consumeMessageInto(frb);
         frb.discard(6);
@@ -460,42 +457,27 @@ export class BaseRawConnection {
     }
   }
 
-  private _encodeArgs(args: QueryArgs, inCodec: ICodec): Uint8Array {
-    if (versionGreaterThanOrEqual(this.protocolVersion, [0, 12])) {
-      if (inCodec === NULL_CODEC) {
-        if (args != null) {
-          throw new errors.QueryArgumentError(
-            `This query does not contain any query parameters, ` +
-              `but query arguments were provided to the 'query*()' method`,
-          );
-        }
-        return NullCodec.BUFFER;
+  private _encodeArgs(
+    args: QueryArgs,
+    inCodec: ICodec,
+    ctx: CodecContext
+  ): Uint8Array {
+    if (inCodec === NULL_CODEC) {
+      if (args != null) {
+        throw new errors.QueryArgumentError(
+          `This query does not contain any query parameters, ` +
+            `but query arguments were provided to the 'query*()' method`,
+        );
       }
-
-      if (inCodec instanceof ObjectCodec) {
-        return inCodec.encodeArgs(args);
-      }
-
-      // Shouldn't ever happen.
-      throw new errors.ProtocolError("invalid input codec");
-    } else {
-      if (inCodec === EMPTY_TUPLE_CODEC) {
-        if (args != null) {
-          throw new errors.QueryArgumentError(
-            `This query does not contain any query parameters, ` +
-              `but query arguments were provided to the 'query*()' method`,
-          );
-        }
-        return EmptyTupleCodec.BUFFER;
-      }
-
-      if (inCodec instanceof NamedTupleCodec || inCodec instanceof TupleCodec) {
-        return inCodec.encodeArgs(args);
-      }
-
-      // Shouldn't ever happen.
-      throw new errors.ProtocolError("invalid input codec");
+      return NullCodec.BUFFER;
     }
+
+    if (inCodec instanceof ObjectCodec) {
+      return inCodec.encodeArgs(args, ctx);
+    }
+
+    // Shouldn't ever happen.
+    throw new errors.ProtocolError("invalid input codec");
   }
 
   private _encodeParseParams(
@@ -555,7 +537,7 @@ export class BaseRawConnection {
       } else {
         if (!this.stateCache.has(state)) {
           const buf = new WriteBuffer();
-          this.stateCodec.encode(buf, state._serialise());
+          this.stateCodec.encode(buf, state._serialise(), NOOP_CODEC_CONTEXT);
           this.stateCache.set(state, buf.unwrap());
         }
         wb.writeBuffer(this.stateCache.get(state)!);
@@ -698,6 +680,7 @@ export class BaseRawConnection {
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
   ): Promise<errors.EdgeDBError[]> {
+    let ctx: CodecContext | null = null;
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
 
@@ -716,7 +699,10 @@ export class BaseRawConnection {
     wb.writeBuffer(outCodec.tidBuffer);
 
     if (inCodec) {
-      wb.writeBuffer(this._encodeArgs(args, inCodec));
+      if (ctx == null) {
+        ctx = new CodecContext(state.codecs);
+      }
+      wb.writeBuffer(this._encodeArgs(args, inCodec, ctx));
     } else {
       wb.writeInt32(0);
     }
@@ -730,6 +716,10 @@ export class BaseRawConnection {
     let parsing = true;
     let warnings: errors.EdgeDBError[] = [];
 
+    if (ctx == null) {
+      ctx = new CodecContext(state.codecs);
+    }
+
     while (parsing) {
       if (!this.buffer.takeMessage()) {
         await this._waitForMessage();
@@ -741,7 +731,7 @@ export class BaseRawConnection {
         case chars.$D: {
           if (error == null) {
             try {
-              this._parseDataMessages(outCodec!, result, state);
+              this._parseDataMessages(outCodec!, result, ctx);
             } catch (e: any) {
               error = e;
               this.buffer.finishMessage();
