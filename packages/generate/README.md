@@ -35,7 +35,7 @@ $ npx @edgedb/generate <generator> [options]
 **Deno**
 
 ```bash
-$ deno run --allow-all --unstable npm:@edgedb/generate <generator> [options]
+$ deno run --allow-all npm:@edgedb/generate <generator> [options]
 ```
 
 The value of `<generator>` should be one of the following.
