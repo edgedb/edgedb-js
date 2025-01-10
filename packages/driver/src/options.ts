@@ -3,6 +3,7 @@ import { utf8Encoder } from "./primitives/buffer";
 import type { Mutable } from "./typeutil";
 import type { Codecs } from "./codecs/codecs";
 import type { ReadonlyCodecMap } from "./codecs/context";
+import { CodecContext, NOOP_CODEC_CONTEXT } from "./codecs/context";
 
 export type BackoffFunction = (n: number) => number;
 
@@ -158,6 +159,8 @@ export interface OptionsList {
 export class Options {
   // This type is immutable.
 
+  private static schemaVersion: number = 0;
+
   readonly module: string;
   readonly moduleAliases: ReadonlyMap<string, string>;
   readonly config: ReadonlyMap<string, any>;
@@ -170,8 +173,15 @@ export class Options {
   /** @internal */
   readonly annotations: ReadonlyMap<string, string> = new Map<string, string>();
 
+  private cachedCodecContext: CodecContext | null = null;
+  private cachedCodecContextVer = -1;
+
   get tag(): string | null {
     return this.annotations.get(TAG_ANNOTATION_KEY) ?? null;
+  }
+
+  static signalSchemaChange() {
+    this.schemaVersion += 1;
   }
 
   constructor({
@@ -192,6 +202,29 @@ export class Options {
     this.config = new Map(Object.entries(config));
     this.globals = new Map(Object.entries(globals));
     this.codecs = new Map(Object.entries(codecs)) as ReadonlyCodecMap;
+  }
+
+  public makeCodecContext(): CodecContext {
+    if (this.codecs.size === 0) {
+      return NOOP_CODEC_CONTEXT;
+    }
+
+    if (this.cachedCodecContextVer === Options.schemaVersion) {
+      /* We really want to cache CodecContext because it works fast
+         when it's "warm", i.e. enough kinds of scalar types went through
+         it to populate its internal mapping of 'type name => user codec'.
+         This is a complication of the fact that users can define client
+         codecs for user-defined scalar types, and correct codec selection
+         requires correct "order of resolution", the cost of building which
+         is non-negligible.
+      */
+      return this.cachedCodecContext!;
+    }
+
+    const ctx = new CodecContext(this.codecs);
+    this.cachedCodecContext = ctx;
+    this.cachedCodecContextVer = Options.schemaVersion;
+    return ctx;
   }
 
   private _cloneWith(mergeOptions: OptionsList) {

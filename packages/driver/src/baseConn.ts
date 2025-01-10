@@ -23,7 +23,8 @@ import type { CodecsRegistry } from "./codecs/registry";
 import { versionGreaterThan, versionGreaterThanOrEqual } from "./utils";
 import * as errors from "./errors";
 import { resolveErrorCode, errorFromJSON } from "./errors/resolve";
-import { CodecContext, NOOP_CODEC_CONTEXT } from "./codecs/context";
+import type { CodecContext } from "./codecs/context";
+import { NOOP_CODEC_CONTEXT } from "./codecs/context";
 import type {
   QueryOptions,
   ProtocolVersion,
@@ -680,7 +681,8 @@ export class BaseRawConnection {
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
   ): Promise<errors.EdgeDBError[]> {
-    let ctx: CodecContext | null = null;
+    let ctx = state.makeCodecContext();
+
     const wb = new WriteMessageBuffer();
     wb.beginMessage(chars.$O);
 
@@ -699,9 +701,6 @@ export class BaseRawConnection {
     wb.writeBuffer(outCodec.tidBuffer);
 
     if (inCodec) {
-      if (ctx == null) {
-        ctx = new CodecContext(state.codecs);
-      }
       wb.writeBuffer(this._encodeArgs(args, inCodec, ctx));
     } else {
       wb.writeInt32(0);
@@ -715,10 +714,6 @@ export class BaseRawConnection {
     let error: Error | null = null;
     let parsing = true;
     let warnings: errors.EdgeDBError[] = [];
-
-    if (ctx == null) {
-      ctx = new CodecContext(state.codecs);
-    }
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -755,6 +750,8 @@ export class BaseRawConnection {
 
         case chars.$T: {
           try {
+            ctx = state.makeCodecContext();
+
             const [
               newCard,
               newInCodec,
@@ -764,6 +761,37 @@ export class BaseRawConnection {
               __,
               _warnings,
             ] = this._parseDescribeTypeMessage(query);
+
+            /* Quoting the docs:
+
+            - If the declared input type descriptor does not match
+              the expected value, a CommandDataDescription message is
+              returned followed by a ParameterTypeMismatchError in
+              an ErrorResponse message.
+
+            - If the declared output type descriptor does not match,
+              the server will send a CommandDataDescription prior
+              to sending any Data messages.
+
+            Therefore, basically receiving CommandDataDescription
+            means that our codecs have outdate knowledge of the schema.
+            The only exception to that is if our codecs were NULL codecs
+            in the first place, in which case we're here because we want
+            to learn
+            */
+            if (
+              (outCodec !== NULL_CODEC && outCodec.tid != newOutCodec.tid) ||
+              (inCodec !== NULL_CODEC && inCodec.tid != newInCodec.tid)
+            ) {
+              Options.signalSchemaChange();
+
+              // If this was the result of outCodec mismatch, we'll get
+              // the information to build a new one, build it, and
+              // then continue this loop to receiving and parsing data
+              // messages. In this case we want a fresh new CodecContext.
+              ctx = state.makeCodecContext();
+            }
+
             const key = this._getQueryCacheKey(
               query,
               outputFormat,
@@ -778,12 +806,30 @@ export class BaseRawConnection {
             outCodec = newOutCodec;
             warnings = _warnings;
           } catch (e: any) {
+            // An error happened, so we don't know if we bumped the internal
+            // schema tracker or not, so let's do it again to be on the safe
+            // side.
+            Options.signalSchemaChange();
+
+            // Keep parsing the buffer, we'll raise it later.
             error = e;
           }
           break;
         }
 
         case chars.$s: {
+          // Quoting docs:
+          //
+          //    If the declared state type descriptor does not match
+          //    the expected value, a StateDataDescription message is
+          //    returned followed by a StateMismatchError in
+          //    an ErrorResponse message
+          //
+          // If we're here it means the state data descriptor has changed,
+          // which can be the result of a new global added, which is a schema
+          // changes. So let's signal it just to be safe.
+          Options.signalSchemaChange();
+
           this._parseDescribeStateMessage();
           break;
         }
