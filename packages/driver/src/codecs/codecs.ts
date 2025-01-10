@@ -19,6 +19,7 @@
 import type { ReadBuffer } from "../primitives/buffer";
 import { WriteBuffer } from "../primitives/buffer";
 import { BoolCodec } from "./boolean";
+import type { ScalarCodec } from "./ifaces";
 import { type ICodec, type uuid, type CodecKind, Codec } from "./ifaces";
 import {
   Int16Codec,
@@ -168,52 +169,54 @@ export const INVALID_CODEC = new NullCodec(INVALID_CODEC_ID);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-function registerScalarCodec(
-  typename: string,
-  type: new (tid: uuid, typename: string) => ICodec,
-): void {
-  const id = KNOWN_TYPENAMES.get(typename);
-  if (id == null) {
-    throw new InternalClientError("unknown type name");
-  }
+type ScalarCodecType = {
+  new (tid: string, typeName: string): ScalarCodec;
+};
 
-  SCALAR_CODECS.set(id, new type(id, typename));
+type CodecsToRegister = {
+  [key in keyof Codecs.KnownCodecs]: ScalarCodecType;
+};
+
+function registerScalarCodecs(codecs: CodecsToRegister): void {
+  for (const [typename, type] of Object.entries(codecs)) {
+    const id = KNOWN_TYPENAMES.get(typename);
+    if (id == null) {
+      throw new InternalClientError("unknown type name");
+    }
+
+    SCALAR_CODECS.set(id, new type(id, typename) as unknown as ICodec);
+  }
 }
 
-registerScalarCodec("std::int16", Int16Codec);
-registerScalarCodec("std::int32", Int32Codec);
-registerScalarCodec("std::int64", Int64Codec);
+registerScalarCodecs({
+  "std::int16": Int16Codec,
+  "std::int32": Int32Codec,
+  "std::int64": Int64Codec,
+  "std::float32": Float32Codec,
+  "std::float64": Float64Codec,
+  "std::bigint": BigIntCodec,
+  "std::decimal": DecimalStringCodec,
+  "std::bool": BoolCodec,
+  "std::json": JSONCodec,
+  "std::str": StrCodec,
+  "std::bytes": BytesCodec,
+  "std::uuid": UUIDCodec,
+  "cal::local_date": LocalDateCodec,
+  "cal::local_time": LocalTimeCodec,
+  "cal::local_datetime": LocalDateTimeCodec,
+  "std::datetime": DateTimeCodec,
+  "std::duration": DurationCodec,
+  "cal::relative_duration": RelativeDurationCodec,
+  "cal::date_duration": DateDurationCodec,
+  "cfg::memory": ConfigMemoryCodec,
 
-registerScalarCodec("std::float32", Float32Codec);
-registerScalarCodec("std::float64", Float64Codec);
+  "std::pg::json": PgTextJSONCodec,
+  "std::pg::timestamptz": DateTimeCodec,
+  "std::pg::timestamp": LocalDateTimeCodec,
+  "std::pg::date": LocalDateCodec,
+  "std::pg::interval": RelativeDurationCodec,
 
-registerScalarCodec("std::bigint", BigIntCodec);
-registerScalarCodec("std::decimal", DecimalStringCodec);
-
-registerScalarCodec("std::bool", BoolCodec);
-
-registerScalarCodec("std::json", JSONCodec);
-registerScalarCodec("std::str", StrCodec);
-registerScalarCodec("std::bytes", BytesCodec);
-
-registerScalarCodec("std::uuid", UUIDCodec);
-
-registerScalarCodec("cal::local_date", LocalDateCodec);
-registerScalarCodec("cal::local_time", LocalTimeCodec);
-registerScalarCodec("cal::local_datetime", LocalDateTimeCodec);
-registerScalarCodec("std::datetime", DateTimeCodec);
-registerScalarCodec("std::duration", DurationCodec);
-registerScalarCodec("cal::relative_duration", RelativeDurationCodec);
-registerScalarCodec("cal::date_duration", DateDurationCodec);
-
-registerScalarCodec("cfg::memory", ConfigMemoryCodec);
-
-registerScalarCodec("std::pg::json", PgTextJSONCodec);
-registerScalarCodec("std::pg::timestamptz", DateTimeCodec);
-registerScalarCodec("std::pg::timestamp", LocalDateTimeCodec);
-registerScalarCodec("std::pg::date", LocalDateCodec);
-registerScalarCodec("std::pg::interval", RelativeDurationCodec);
-
-registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
-registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
-registerScalarCodec("ext::pgvector::sparsevec", PgVectorSparseVecCodec);
+  "ext::pgvector::vector": PgVectorCodec,
+  "ext::pgvector::halfvec": PgVectorHalfVecCodec,
+  "ext::pgvector::sparsevec": PgVectorSparseVecCodec,
+});

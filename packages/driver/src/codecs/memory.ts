@@ -30,9 +30,9 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const val = ctx.preEncode<Codecs.MemoryCodec>(this, object);
-      if (typeof val != 'bigint') {
+      if (typeof val != "bigint") {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom cfg::memory codec`
+          `a bigint was expected out of a custom cfg::memory codec`,
         );
       }
       buf.writeInt32(8);

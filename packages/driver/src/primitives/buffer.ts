@@ -984,7 +984,7 @@ export class ReadBuffer {
     return buf;
   }
 
-  readUUIDBytes(dash = ""): Uint8Array {
+  readUUIDBytes(): Uint8Array {
     return this.readBuffer(16);
   }
 

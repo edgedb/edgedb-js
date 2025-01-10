@@ -50,9 +50,9 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const val = ctx.preEncode<Codecs.DateTimeCodec>(this, object);
-      if (typeof val != 'bigint') {
+      if (typeof val != "bigint") {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom std::datetime codec`
+          `a bigint was expected out of a custom std::datetime codec`,
         );
       }
       buf.writeInt32(8);
@@ -84,7 +84,6 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
     }
     ms += TIMESHIFT;
 
-
     return new Date(ms);
   }
 }
@@ -96,9 +95,9 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       let us = ctx.preEncode<Codecs.LocalDateTimeCodec>(this, object);
-      if (typeof us != 'bigint') {
+      if (typeof us != "bigint") {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom cal::local_datetime codec`
+          `a bigint was expected out of a custom cal::local_datetime codec`,
         );
       }
       us -= BI_TIMESHIFT_US;
@@ -140,7 +139,8 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
     if (ctx.hasOverload(this)) {
       return ctx.postDecode<Codecs.LocalDateTimeCodec>(
-        this, BigInt(bi_us + BI_TIMESHIFT_US)
+        this,
+        BigInt(bi_us + BI_TIMESHIFT_US),
       );
     }
 
@@ -207,9 +207,9 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const us = ctx.preEncode<Codecs.LocalTimeCodec>(this, object);
-      if (typeof us != 'bigint') {
+      if (typeof us != "bigint") {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom cal::local_time codec`
+          `a bigint was expected out of a custom cal::local_time codec`,
         );
       }
       buf.writeInt32(8);
@@ -283,9 +283,9 @@ export class DurationCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const us = ctx.preEncode<Codecs.DurationCodec>(this, object);
-      if (typeof us != 'bigint') {
+      if (typeof us != "bigint") {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom std::duration codec`
+          `a bigint was expected out of a custom std::duration codec`,
         );
       }
 

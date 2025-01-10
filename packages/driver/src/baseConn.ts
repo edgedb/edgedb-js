@@ -460,7 +460,7 @@ export class BaseRawConnection {
   private _encodeArgs(
     args: QueryArgs,
     inCodec: ICodec,
-    ctx: CodecContext
+    ctx: CodecContext,
   ): Uint8Array {
     if (inCodec === NULL_CODEC) {
       if (args != null) {

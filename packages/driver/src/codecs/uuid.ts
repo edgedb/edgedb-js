@@ -46,11 +46,13 @@ export class UUIDCodec extends ScalarCodec implements ICodec {
       const val = ctx.preEncode<Codecs.UUIDCodec>(this, object);
       if (!(val instanceof Uint8Array)) {
         throw new InvalidArgumentError(
-          `a Uint8Array was expected from a custom UUID codec`
+          `a Uint8Array was expected from a custom UUID codec`,
         );
       }
       if (val.length != 16) {
-        `a 16 element long Uint8Array was expected from a custom UUID codec`
+        throw new InvalidArgumentError(
+          `a 16-element long Uint8Array was expected from a custom UUID codec`,
+        );
       }
       buf.writeInt32(16);
       buf.writeBuffer(val);

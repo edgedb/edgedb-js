@@ -159,14 +159,15 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
   override readonly tsModule = "edgedb";
 
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
-    let indexesLength: number;
     let dims: number;
     let indexes: Uint32Array;
     let values: Float32Array;
 
     if (ctx.hasOverload(this)) {
-      [dims, indexes, values] =
-        ctx.preEncode<Codecs.PGVectorSparseCodec>(this, object);
+      [dims, indexes, values] = ctx.preEncode<Codecs.PGVectorSparseCodec>(
+        this,
+        object,
+      );
     } else {
       if (!(object instanceof SparseVector)) {
         throw new InvalidArgumentError(
@@ -178,7 +179,7 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
       values = object.values;
     }
 
-    indexesLength = indexes.length;
+    const indexesLength = indexes.length;
 
     if (indexesLength > PG_VECTOR_MAX_DIM || indexesLength > dims) {
       throw new InvalidArgumentError(
