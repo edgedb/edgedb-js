@@ -32,7 +32,7 @@ import type char from "./primitives/chars";
 import * as chars from "./primitives/chars";
 import { getSCRAM } from "./scram";
 import * as errors from "./errors";
-import cryptoUtils from "./adapter.crypto";
+import cryptoUtils from "./cryptoUtils";
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,

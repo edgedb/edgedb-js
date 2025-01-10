@@ -4,7 +4,7 @@ import { Options } from "./options";
 import { RawConnection } from "./rawConn";
 import { FetchConnection } from "./fetchConn";
 import { getHTTPSCRAMAuth } from "./httpScram";
-import cryptoUtils from "./adapter.crypto";
+import cryptoUtils from "./cryptoUtils";
 
 class ClientPool extends BaseClientPool {
   isStateless = false;

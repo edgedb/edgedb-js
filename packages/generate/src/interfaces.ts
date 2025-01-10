@@ -5,7 +5,6 @@ import type { CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
 import { $, type Client } from "edgedb";
 import { DirBuilder } from "./builders";
-
 import { generateInterfaces } from "./edgeql-js/generateInterfaces";
 
 export async function runInterfacesGenerator(params: {

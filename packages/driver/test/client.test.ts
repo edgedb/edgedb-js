@@ -56,7 +56,7 @@ import {
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
-import cryptoUtils from "../src/adapter.crypto";
+import cryptoUtils from "../src/cryptoUtils";
 import { getAuthenticatedFetch } from "../src/utils";
 import { Language } from "../src/ifaces";
 
