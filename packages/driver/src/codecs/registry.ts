@@ -56,14 +56,6 @@ const CTYPE_COMPOUND = 11;
 const CTYPE_MULTIRANGE = 12;
 const CTYPE_RECORD = 13;
 
-export interface CustomCodecSpec {
-  int64_bigint?: boolean;
-  datetime_localDatetime?: boolean;
-  json_string?: boolean;
-  pg_json_string?: boolean;
-  pg_timestamptz_localDatetime?: boolean;
-}
-
 export class CodecsRegistry {
   private codecsBuildCache: LRU<uuid, ICodec>;
   private codecs: LRU<uuid, ICodec>;
