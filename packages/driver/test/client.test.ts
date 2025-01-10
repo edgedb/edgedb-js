@@ -2366,13 +2366,13 @@ if (getEdgeDBVersion().major >= 6) {
 
     try {
       let res = await client.querySQL("select 1");
-      expect(JSON.stringify(res)).toEqual('[[1]]');
+      expect(JSON.stringify(res)).toEqual("[[1]]");
 
       res = await client.querySQL("select 1 AS foo, 2 AS bar");
-      expect(JSON.stringify(res)).toEqual('[[1,2]]');
+      expect(JSON.stringify(res)).toEqual("[[1,2]]");
 
       res = await client.querySQL("select 1 + $1::int8", [41]);
-      expect(JSON.stringify(res)).toEqual('[[42]]');
+      expect(JSON.stringify(res)).toEqual("[[42]]");
     } finally {
       await client.close();
     }

@@ -18,29 +18,22 @@
 
 import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
-import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
-import {
-  InvalidArgumentError,
-  ProtocolError,
-} from "../errors";
+import type { WriteBuffer } from "../primitives/buffer";
+import { ReadBuffer } from "../primitives/buffer";
+import { InvalidArgumentError, ProtocolError } from "../errors";
 
 export class RecordCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
   private names: string[];
 
-  constructor(
-    tid: uuid,
-    codecs: ICodec[],
-    names: string[],
-  ) {
+  constructor(tid: uuid, codecs: ICodec[], names: string[]) {
     super(tid);
     this.subCodecs = codecs;
     this.names = names;
   }
 
-  encode(buf: WriteBuffer, object: any): void {
-    throw new InvalidArgumentError(
-      "SQL records cannot be passed as arguments");
+  encode(_buf: WriteBuffer, _object: any): void {
+    throw new InvalidArgumentError("SQL records cannot be passed as arguments");
   }
 
   decode(buf: ReadBuffer): any {
