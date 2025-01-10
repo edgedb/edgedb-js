@@ -1,4 +1,6 @@
-import { $, adapter, type Client } from "edgedb";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { $, systemUtils, type Client } from "edgedb";
 import { type CommandOptions, isTTY, promptBoolean } from "./commandutil";
 import { headerComment } from "./genutil";
 import { DirBuilder } from "./builders";
@@ -14,7 +16,7 @@ import { generateRuntimeSpec } from "./edgeql-js/generateRuntimeSpec";
 import { generateScalars } from "./edgeql-js/generateScalars";
 import { generateSetImpl } from "./edgeql-js/generateSetImpl";
 
-const { path, fs, readFileUtf8, exists, walk } = adapter;
+const { readFileUtf8, exists, walk } = systemUtils;
 
 export const configFileHeader = `// EdgeDB query builder`;
 
@@ -53,7 +55,7 @@ export async function generateQueryBuilder(params: {
   if (options.out) {
     outputDir = path.isAbsolute(options.out)
       ? options.out
-      : path.join(adapter.process.cwd(), options.out);
+      : path.join(process.cwd(), options.out);
   } else if (root) {
     outputDir = path.join(root, schemaDir, "edgeql-js");
   } else {

@@ -1,33 +1,21 @@
 import * as crypto from "node:crypto";
 import { promises as fs } from "node:fs";
-import net from "node:net";
-import os from "node:os";
 import path from "node:path";
-import * as tls from "node:tls";
-
 import process from "node:process";
 import * as readline from "node:readline";
 import { Writable } from "node:stream";
-
-export { path, net, fs, tls, process };
 
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
 }
 
-// export function hasFSReadPermission(): boolean {
-//   return Deno.permissions.querySync({ name: "read" }).state === "granted";
-// }
 export function hasFSReadPermission(): boolean {
+  // @ts-ignore
+  if (typeof Deno !== "undefined") {
+    // @ts-ignore
+    return Deno.permissions.querySync({ name: "read" }).state === "granted";
+  }
   return true;
-}
-
-export function watch(dir: string) {
-  return fs.watch(dir, { recursive: true });
-}
-
-export async function readDir(pathString: string) {
-  return fs.readdir(pathString);
 }
 
 export function hashSHA1toHex(msg: string): string {
@@ -110,10 +98,4 @@ export async function input(
     });
     silent = true;
   });
-}
-
-export const homeDir = os.homedir;
-
-export function exit(code?: number) {
-  process.exit(code);
 }

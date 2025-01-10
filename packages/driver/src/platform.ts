@@ -1,6 +1,10 @@
-import { path, homeDir, exists } from "./adapter";
+import path from "node:path";
+import os from "node:os";
+import { exists } from "./systemUtils";
 
 export const isWindows = process.platform === "win32";
+
+const homeDir = os.homedir;
 
 let _configDir: () => string;
 

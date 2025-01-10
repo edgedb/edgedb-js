@@ -1,11 +1,12 @@
+import { promises as fs } from "node:fs";
+import path from "node:path";
+
 import type { CommandOptions } from "./commandutil";
 import { headerComment } from "./genutil";
-import { $, adapter, type Client } from "edgedb";
+import { $, type Client } from "edgedb";
 import { DirBuilder } from "./builders";
 
 import { generateInterfaces } from "./edgeql-js/generateInterfaces";
-
-const { path } = adapter;
 
 export async function runInterfacesGenerator(params: {
   root: string | null;
@@ -19,7 +20,7 @@ export async function runInterfacesGenerator(params: {
   if (options.file) {
     outFile = path.isAbsolute(options.file)
       ? options.file
-      : path.join(adapter.process.cwd(), options.file);
+      : path.join(process.cwd(), options.file);
   } else if (root) {
     outFile = path.join(root, schemaDir, "interfaces.ts");
   } else {
@@ -62,7 +63,7 @@ export async function runInterfacesGenerator(params: {
 
   console.log(`Writing interfaces file...`);
   console.log("   " + prettyOutputDir);
-  await adapter.fs.writeFile(outFile, rendered);
+  await fs.writeFile(outFile, rendered);
 
   console.log(`Generation complete! 🤘`);
 }

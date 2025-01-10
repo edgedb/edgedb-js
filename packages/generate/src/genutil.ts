@@ -1,16 +1,17 @@
+import process from "node:process";
+import type { $ } from "edgedb";
+import type * as introspect from "edgedb/dist/reflection/queries/types";
+import { util } from "edgedb/dist/reflection/index";
 import type {
   CodeBuilder,
   CodeFragment,
   DirBuilder,
   IdentRef,
 } from "./builders";
-import type * as introspect from "edgedb/dist/reflection/queries/types";
-import { util } from "edgedb/dist/reflection/index";
 
 export { OperatorKind, StrictMapSet } from "edgedb/dist/reflection/index";
+
 export { $ } from "edgedb";
-import type { $ } from "edgedb";
-import { adapter } from "edgedb";
 
 export const splitName = util.splitName;
 
@@ -504,7 +505,7 @@ export type GeneratorParams = {
 
 export function exitWithError(message: string): never {
   console.error(message);
-  adapter.exit(1);
+  process.exit(1);
   throw new Error();
 }
 

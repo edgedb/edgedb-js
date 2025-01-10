@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 
-import { adapter, type Client, createClient, createHttpClient } from "edgedb";
+import path from "node:path";
+import process from "node:process";
+import {
+  systemUtils,
+  type Client,
+  createClient,
+  createHttpClient,
+} from "edgedb";
 import * as TOML from "@iarna/toml";
 
 import {
@@ -19,7 +26,7 @@ import { runInterfacesGenerator } from "./interfaces";
 import { type Target, exitWithError } from "./genutil";
 import { generateQueryFiles } from "./queries";
 
-const { path, readFileUtf8, exists } = adapter;
+const { readFileUtf8, exists } = systemUtils;
 
 enum Generator {
   QueryBuilder = "edgeql-js",
@@ -34,7 +41,7 @@ Available generators:
  - interfaces`;
 
 const run = async () => {
-  const args = adapter.process.argv.slice(2);
+  const args = process.argv.slice(2);
   const generator: Generator = args.shift() as any;
 
   const connectionConfig: ConnectConfig = {};
@@ -42,19 +49,19 @@ const run = async () => {
 
   if ((generator as any) === "-h" || (generator as any) === "--help") {
     printHelp();
-    adapter.process.exit();
+    process.exit();
   }
   if (!generator || generator[0] === "-") {
     console.error(
       `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`${availableGeneratorsHelp}`,
     );
-    adapter.exit();
+    process.exit();
   }
   if (!Object.values(Generator).includes(generator)) {
     console.error(
       `Error: Invalid generator "${generator}".${availableGeneratorsHelp}`,
     );
-    adapter.exit();
+    process.exit();
   }
 
   switch (generator) {
@@ -68,7 +75,7 @@ const run = async () => {
   }
 
   let projectRoot: string | null = null;
-  let currentDir = adapter.process.cwd();
+  let currentDir = process.cwd();
   let schemaDir = "dbschema";
   const systemRoot = path.parse(currentDir).root;
   while (currentDir !== systemRoot) {
@@ -121,7 +128,7 @@ const run = async () => {
       }
       if (args.length === 0) {
         console.error(`Error: No value provided for ${flag} option`);
-        adapter.exit();
+        process.exit();
       }
       return args.shift();
     };
@@ -226,7 +233,7 @@ const run = async () => {
           if (args.length > 0 && args[0][0] !== "-") {
             options.file = getVal();
           } else {
-            options.file = adapter.path.join(schemaDir, "queries");
+            options.file = path.join(schemaDir, "queries");
           }
         } else {
           exitWithError(
@@ -277,7 +284,7 @@ const run = async () => {
 
   if (options.showHelp) {
     printHelp();
-    adapter.process.exit();
+    process.exit();
   }
 
   switch (generator) {
@@ -417,7 +424,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
   } finally {
     await client.close();
   }
-  adapter.process.exit();
+  process.exit();
 };
 
 function printHelp() {
