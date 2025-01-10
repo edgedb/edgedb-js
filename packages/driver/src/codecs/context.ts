@@ -12,10 +12,10 @@ export type CodecValueType<S> =
     : never;
 
 const NOOP: Codecs.AnyCodec = {
-  encode(data: any) {
+  toDatabase(data: any) {
     return data;
   },
-  decode(data: any) {
+  fromDatabase(data: any) {
     return data;
   },
 };
@@ -87,7 +87,7 @@ export class CodecContext {
     if (op == null) {
       op = this.initCodec(codec);
     }
-    return op.decode(value);
+    return op.fromDatabase(value);
   }
 
   preEncode<T>(codec: ScalarCodec, value: any): CodecValueType<T> {
@@ -103,7 +103,7 @@ export class CodecContext {
     if (op == null) {
       op = this.initCodec(codec);
     }
-    return op.encode(value);
+    return op.toDatabase(value);
   }
 }
 

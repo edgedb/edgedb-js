@@ -2313,10 +2313,10 @@ if (getEdgeDBVersion().major >= 5) {
   test("fetch: int64 as bigint", async () => {
     const con = getClient().withCodecs({
       "std::int64": {
-        encode(data: bigint) {
+        toDatabase(data: bigint) {
           return data;
         },
-        decode(data: bigint) {
+        fromDatabase(data: bigint) {
           return data;
         },
       },
@@ -2385,10 +2385,10 @@ if (getEdgeDBVersion().major >= 5) {
 
       const c2 = client.withCodecs({
         "default::MyInt": {
-          encode(val) {
+          toDatabase(val) {
             throw "not implemented";
           },
-          decode(val) {
+          fromDatabase(val) {
             return val + 10000;
           },
         } as Codecs.Int32Codec,
@@ -2471,10 +2471,10 @@ if (getEdgeDBVersion().major >= 5) {
             return [
               tn,
               {
-                encode(data: Value): any {
+                toDatabase(data: Value): any {
                   return data.value;
                 },
-                decode(data: any): Value {
+                fromDatabase(data: any): Value {
                   return new Value(tn, data);
                 },
               },

@@ -59,8 +59,8 @@ import type { Float16Array } from "../adapter.shared.node";
 // Types for Client.withCodecs() API:
 export namespace Codecs {
   export type Codec<T> = {
-    encode: (data: any) => T;
-    decode: (data: T) => any;
+    toDatabase: (data: any) => T;
+    fromDatabase: (data: T) => any;
   };
 
   export type AnyCodec = Codec<any>;
