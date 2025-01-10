@@ -2366,13 +2366,13 @@ if (getEdgeDBVersion().major >= 6) {
 
     try {
       let res = await client.querySQL("select 1");
-      expect(JSON.stringify(res)).toEqual('[{"col~1":1}]');
+      expect(JSON.stringify(res)).toEqual("[[1]]");
 
       res = await client.querySQL("select 1 AS foo, 2 AS bar");
-      expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
+      expect(JSON.stringify(res)).toEqual("[[1,2]]");
 
       res = await client.querySQL("select 1 + $1::int8", [41]);
-      expect(JSON.stringify(res)).toEqual('[{"col~1":42}]');
+      expect(JSON.stringify(res)).toEqual("[[42]]");
     } finally {
       await client.close();
     }
@@ -2439,11 +2439,11 @@ if (getEdgeDBVersion().major >= 6) {
 
     try {
       for (const [typename, val] of pgTypes) {
-        const res = await client.querySQL<{ val: any }>(
+        const res = await client.querySQL<any>(
           `select $1::${typename} as "val"`,
           [val],
         );
-        expect(JSON.stringify(res[0].val)).toEqual(JSON.stringify(val));
+        expect(JSON.stringify(res[0][0])).toEqual(JSON.stringify(val));
       }
     } finally {
       await client.close();
