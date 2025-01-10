@@ -40,7 +40,6 @@ import type { Codecs } from "./codecs";
  * which is specified in the below constant (in milliseconds.)
  */
 const TIMESHIFT = 946684800000;
-const BI_TIMESHIFT = BigInt(TIMESHIFT);
 const BI_TIMESHIFT_US = BigInt(TIMESHIFT) * 1000n;
 
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
@@ -57,7 +56,7 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
         );
       }
       buf.writeInt32(8);
-      buf.writeBigInt64((val - BI_TIMESHIFT) * 1000n);
+      buf.writeBigInt64(val - BI_TIMESHIFT_US);
       return;
     }
 
@@ -73,6 +72,11 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): Date {
+    if (ctx.hasOverload(this)) {
+      const us = buf.readBigInt64();
+      return ctx.postDecode<Codecs.DateTimeCodec>(this, us + BI_TIMESHIFT_US);
+    }
+
     const us = Number(buf.readBigInt64());
     let ms = Math.round(us / 1000);
     if (Math.abs(us % 1000) === 500 && Math.abs(ms) % 2 === 1) {
@@ -80,11 +84,6 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
     }
     ms += TIMESHIFT;
 
-    if (ctx.hasOverload(this)) {
-      // TODO XXX: make it so we replace the above imprecise calculations
-      // with proper bigint arithmetic; `ms` should be a `bigint`.
-      return ctx.postDecode<Codecs.DateTimeCodec>(this, BigInt(ms));
-    }
 
     return new Date(ms);
   }
@@ -99,7 +98,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       let us = ctx.preEncode<Codecs.LocalDateTimeCodec>(this, object);
       if (typeof us != 'bigint') {
         throw new InvalidArgumentError(
-          `a bigint was expected out of a custom cal_local_datetime codec`
+          `a bigint was expected out of a custom cal::local_datetime codec`
         );
       }
       us -= BI_TIMESHIFT_US;
@@ -138,6 +137,13 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
   decode(buf: ReadBuffer, ctx: CodecContext): LocalDateTime {
     const bi_us = buf.readBigInt64();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.LocalDateTimeCodec>(
+        this, BigInt(bi_us + BI_TIMESHIFT_US)
+      );
+    }
+
     const bi_ms = bi_us / 1000n;
     let us = Number(bi_us - bi_ms * 1000n);
     let ms = Number(bi_ms);
@@ -146,12 +152,6 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       ms -= 1;
     }
     ms += TIMESHIFT;
-
-    if (ctx.hasOverload(this)) {
-      // TODO XXX: make it so we replace the above imprecise calculations
-      // with proper bigint arithmetic; `ms` should be a `bigint`.
-      return ctx.postDecode<Codecs.LocalDateTimeCodec>(this, BigInt(ms));
-    }
 
     const date = new Date(ms);
     return new LocalDateTime(

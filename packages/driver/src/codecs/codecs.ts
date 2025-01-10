@@ -122,7 +122,7 @@ export namespace Codecs {
     ["cfg::memory"]: MemoryCodec;
 
     ["std::pg::json"]: JsonCodec;
-    ["std::pg::timestampz"]: DateTimeCodec;
+    ["std::pg::timestamptz"]: DateTimeCodec;
     ["std::pg::timestamp"]: LocalDateTimeCodec;
     ["std::pg::date"]: LocalDateCodec;
     ["std::pg::interval"]: RelativeDurationCodec;

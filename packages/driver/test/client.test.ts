@@ -55,7 +55,7 @@ import {
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
-import { NOOP_CODEC_CONTEXT } from "../src/codecs/context";
+import { NOOP_CODEC_CONTEXT, CodecValueType } from "../src/codecs/context";
 import {
   getAvailableExtensions,
   getAvailableFeatures,
@@ -388,55 +388,6 @@ test("fetch: decimal as string", async () => {
     for (let i = 0; i < fetched[0].length; i++) {
       expect(fetched[0][i]).toBe(fetched[2][i]);
       expect(fetched[0][i]).toBe(fetched[1][i]);
-    }
-  } finally {
-    await con.close();
-  }
-});
-
-test("fetch: int64 as bigint", async () => {
-  const con = getClient().withCodecs({
-    'std::int64': {
-      encode(data: bigint) {
-        return data;
-      },
-      decode(data: bigint) {
-        return data;
-      }
-    }
-  });
-
-  const vals = [
-    "0",
-    "-0",
-    "1",
-    "-1",
-    "11",
-    "-11",
-    "110000",
-    "-1100000",
-    "113",
-    "1152921504594725865",
-    "-1152921504594725865",
-  ];
-
-  try {
-    const fetched = await con.querySingle<any>(
-      `
-      WITH
-        inp := <array<int64>>$0,
-        inpStr := <array<str>>$1,
-        str := <array<str>>inp,
-      SELECT
-        (inp, str, <array<int64>>inpStr)
-    `,
-      [vals.map((v) => BigInt(v)), vals],
-    );
-
-    expect(fetched[0].length).toBe(vals.length);
-    for (let i = 0; i < fetched[0].length; i++) {
-      expect(fetched[0][i]).toBe(fetched[2][i]);
-      expect(fetched[0][i].toString()).toBe(fetched[1][i]);
     }
   } finally {
     await con.close();
@@ -2359,10 +2310,61 @@ if (getAvailableFeatures().has("binary-over-http")) {
 }
 
 if (getEdgeDBVersion().major >= 5) {
+
+  test("fetch: int64 as bigint", async () => {
+    const con = getClient().withCodecs({
+      'std::int64': {
+        encode(data: bigint) {
+          return data;
+        },
+        decode(data: bigint) {
+          return data;
+        }
+      }
+    });
+
+    const vals = [
+      "0",
+      "-0",
+      "1",
+      "-1",
+      "11",
+      "-11",
+      "110000",
+      "-1100000",
+      "113",
+      "1152921504594725865",
+      "-1152921504594725865",
+    ];
+
+    try {
+      const fetched = await con.querySingle<any>(
+        `
+        WITH
+          inp := <array<int64>>$0,
+          inpStr := <array<str>>$1,
+          str := <array<str>>inp,
+        SELECT
+          (inp, str, <array<int64>>inpStr)
+      `,
+        [vals.map((v) => BigInt(v)), vals],
+      );
+
+      expect(fetched[0].length).toBe(vals.length);
+      for (let i = 0; i < fetched[0].length; i++) {
+        expect(fetched[0][i]).toBe(fetched[2][i]);
+        expect(fetched[0][i].toString()).toBe(fetched[1][i]);
+      }
+    } finally {
+      await con.close();
+    }
+  });
+
   describe("withCodecs", () => {
     const client = getClient();
 
     beforeAll(async () => {
+      await client.execute("create extension pgvector;");
       await client.execute(`
         CREATE SCALAR TYPE default::MyInt extending std::int32;
         CREATE SCALAR TYPE default::MySuperInt extending default::MyInt;
@@ -2370,6 +2372,7 @@ if (getEdgeDBVersion().major >= 5) {
     });
 
     afterAll(async () => {
+      await client.execute("drop extension pgvector;");
       await client.execute(`
         DROP SCALAR TYPE default::MySuperInt;
         DROP SCALAR TYPE default::MyInt;
@@ -2377,7 +2380,7 @@ if (getEdgeDBVersion().major >= 5) {
       await client.close();
     });
 
-    it("middle type override", async () => {
+    it("custom scalar type overrides", async () => {
       let r = await client.querySingle("select <MyInt>123");
       expect(r).toBe(123);
 
@@ -2408,6 +2411,103 @@ if (getEdgeDBVersion().major >= 5) {
       // the original client
       r = await client.querySingle("select <MyInt>123");
       expect(r).toBe(123);
+    });
+
+    it("supports all types", async () => {
+      // A very simple roundtrip smoke test; checks the overall machinery
+      // health, mundane check that type names are spelled correctly, etc.
+
+      class Value {
+        constructor(public type: string, public value: any) {}
+      }
+
+      // TODO: Add tests!
+      type SkipCodecs = "ext::pgvector::halfvec" | "ext::pgvector::sparsevec";
+
+      type CodecsToTest = SkipCodecs extends never ?
+        keyof Codecs.KnownCodecs :
+        Exclude<keyof Codecs.KnownCodecs, SkipCodecs>;
+
+      type TestedCodecs = {
+        [key in CodecsToTest]: CodecValueType<Codecs.KnownCodecs[key]>
+      };
+
+      const allCodecs: TestedCodecs = {
+        'std::int16': -123,
+        'std::int32': 12,
+        'std::int64': 12398890798n,
+        'std::float32': 0.1,
+        'std::float64': -0.1,
+        'std::bigint': '182981712312938102881028312',
+        'std::decimal': '-123121231231200031098082.123123123129083712987',
+        'std::bool': false,
+        'std::json': '{"a": true}',
+        'std::str': 'aaaa',
+        'std::bytes': new Uint8Array([1, 2, 3, 4]),
+        'std::uuid': new Uint8Array(
+          [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
+        ),
+        'cal::local_date': [2020, 5, 20],
+        'cal::local_time': 121231213n,
+        'cal::local_datetime': 91312312088n,
+        'cal::relative_duration': [10, 4, 12312312321n],
+        'cal::date_duration': [2, 3],
+        'std::datetime': 1213123163n,
+        'std::duration': 1000002n,
+        'cfg::memory': 99n,
+        'std::pg::json': '{"a": "postgres rocks"}',
+        'std::pg::timestamptz': 132222n,
+        'std::pg::timestamp': 1121121223n,
+        'std::pg::date': [1985, 2, 2],
+        'std::pg::interval': [1, 2, 3n],
+        'ext::pgvector::vector': new Float32Array([1, -1, 0.3]),
+      };
+
+      const con = getClient().withCodecs(
+        Object.fromEntries(
+          Object.keys(allCodecs).map((tn) => {
+            return [
+              tn,
+              {
+                encode(data: Value): any {
+                  return data.value;
+                },
+                decode(data: any): Value {
+                  return new Value(tn, data);
+                }
+              }
+            ];
+          })
+        )
+      );
+
+      let args: any[] = [];
+      let query = 'select (';
+      for (let [idx, [type, value]] of Object.entries(allCodecs).entries()) {
+        query += `<${type}>\$${idx},`;
+        args.push(new Value(type, value));
+      }
+      query += ')';
+
+      const ret = await con.querySingle(query, args) as Array<Value>;
+
+      expect(ret.length).toBe(args.length);
+
+      for (let i = 0; i < ret.length; i++) {
+        const tn = ret[i].type;
+        expect(tn).toBe(args[i].type);
+
+        try {
+          if (ret[i].type.includes('float')) {
+            expect(ret[i].value).toBeCloseTo(args[i].value);
+          } else {
+            expect(ret[i].value).toStrictEqual(args[i].value);
+          }
+        } catch(e) {
+          console.error(`type ${tn}`);
+          throw e;
+        }
+      }
     });
   });
 }

@@ -4,7 +4,7 @@ import type { Codecs } from "./codecs";
 export type CodecMap = Map<string, Codecs.AnyCodec>;
 export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
 
-type CodecValueType<S> =
+export type CodecValueType<S> =
   S extends Codecs.KnownCodecs[keyof Codecs.KnownCodecs]
     ? S extends Codecs.Codec<infer T>
       ? T
