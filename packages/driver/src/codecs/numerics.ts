@@ -29,23 +29,16 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
   override tsType = "bigint";
 
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
-    if (ctx.hasOverload(this)) {
-      const val = ctx.preEncode<Codecs.BigIntCodec>(this, object);
-      object = BigInt(val);
-    }
-
+    object = ctx.preEncode<Codecs.BigIntCodec>(this, object);
     if (typeof object !== "bigint") {
       throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
     }
-
-    const NBASE = BigInt("10000");
-    const ZERO = BigInt("0");
 
     const digits: bigint[] = [];
     let sign = NUMERIC_POS;
     let uval = object;
 
-    if (object === ZERO) {
+    if (object === 0n) {
       buf.writeUInt32(8); // len
       buf.writeUInt32(0); // ndigits + weight
       buf.writeUInt16(NUMERIC_POS); // sign
@@ -53,14 +46,14 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
       return;
     }
 
-    if (object < ZERO) {
+    if (object < 0n) {
       sign = NUMERIC_NEG;
       uval = -uval;
     }
 
     while (uval) {
-      const mod: bigint = uval % NBASE;
-      uval /= NBASE;
+      const mod: bigint = uval % 10000n;
+      uval /= 10000n;
       digits.push(mod);
     }
 
@@ -75,14 +68,8 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    if (ctx.hasOverload(this)) {
-      return ctx.postDecode<Codecs.BigIntCodec>(
-        this,
-        decodeBigIntToString(buf),
-      );
-    }
-
-    return BigInt(decodeBigIntToString(buf));
+    const val = BigInt(decodeBigIntToString(buf));
+    return ctx.postDecode<Codecs.BigIntCodec>(this, val);
   }
 }
 

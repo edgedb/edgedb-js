@@ -71,7 +71,7 @@ export namespace Codecs {
   export type Int64Codec = Codec<bigint>;
   export type Float32Codec = Codec<number>;
   export type Float64Codec = Codec<number>;
-  export type BigIntCodec = Codec<string>;
+  export type BigIntCodec = Codec<bigint>;
   export type DecimalCodec = Codec<string>;
   export type BytesCodec = Codec<Uint8Array>;
   export type DateTimeCodec = Codec<bigint>;
