@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import type { TLSSocket } from "tls";
+import type { TLSSocket } from "node:tls";
 
 interface PatchedTLSSocket extends TLSSocket {
   abortOnMessageType: number | null;
@@ -25,8 +25,8 @@ interface PatchedTLSSocket extends TLSSocket {
 
 let currentSocket: PatchedTLSSocket | null = null;
 
-jest.mock("tls", () => {
-  const actualTls = jest.requireActual("tls");
+jest.mock("node:tls", () => {
+  const actualTls = jest.requireActual("node:tls");
 
   function patchTlsSocket(_socket: TLSSocket) {
     const socket = _socket as PatchedTLSSocket;

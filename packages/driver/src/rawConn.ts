@@ -16,7 +16,8 @@
  * limitations under the License.
  */
 
-import { net, tls } from "./adapter.node";
+import net from "node:net";
+import * as tls from "node:tls";
 import { PROTO_VER, PROTO_VER_MIN, BaseRawConnection } from "./baseConn";
 import type { CodecsRegistry } from "./codecs/registry";
 import type {
@@ -31,7 +32,7 @@ import type char from "./primitives/chars";
 import * as chars from "./primitives/chars";
 import { getSCRAM } from "./scram";
 import * as errors from "./errors";
-import cryptoUtils from "./adapter.crypto.node";
+import cryptoUtils from "./cryptoUtils";
 
 enum AuthenticationStatuses {
   AUTH_OK = 0,

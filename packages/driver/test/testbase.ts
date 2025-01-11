@@ -17,6 +17,7 @@
  */
 
 import createClient, { Client, ConnectOptions } from "../src/index.node";
+import * as process from "node:process";
 
 export interface EdgeDBVersion {
   major: number;
@@ -24,11 +25,6 @@ export interface EdgeDBVersion {
   stage: string;
   stage_no: number;
 }
-
-export const isDeno =
-  typeof window !== "undefined" &&
-  // @ts-ignore
-  typeof Deno !== "undefined";
 
 function _getOpts(opts: ConnectOptions): ConnectOptions {
   let config;

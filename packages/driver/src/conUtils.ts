@@ -23,7 +23,6 @@ import {
   readCredentialsFile,
   validateCredentials,
 } from "./credentials";
-import { getEnv } from "./adapter.shared.node";
 import { Duration, parseHumanDurationString } from "./datatypes/datetime";
 import { checkValidEdgeDBDuration } from "./codecs/datetime";
 import { InterfaceError } from "./errors";
@@ -136,6 +135,10 @@ export type ResolvedConnectConfigReadonly = Readonly<
     | "address"
   >
 >;
+
+function getEnv(envName: string, _required = false): string | undefined {
+  return process.env[envName];
+}
 
 export class ResolvedConnectConfig {
   _host: string | null = null;

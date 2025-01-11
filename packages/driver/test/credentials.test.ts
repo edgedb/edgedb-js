@@ -2,7 +2,7 @@ import { readCredentialsFile, validateCredentials } from "../src/credentials";
 import { serverUtils } from "../src/conUtils.server";
 
 test("readCredentialsFile", async () => {
-  let data = await readCredentialsFile("test/credentials1.json", serverUtils);
+  const data = await readCredentialsFile("test/credentials1.json", serverUtils);
   expect(data).toEqual({
     database: "test3n",
     password: "lZTBy1RVCfOpBAOwSCwIyBIR",

@@ -1,12 +1,12 @@
+import * as platform from "./platform";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import {
-  path,
-  fs,
   readFileUtf8,
   exists,
   hashSHA1toHex,
   hasFSReadPermission,
-} from "./adapter.node";
-import * as platform from "./platform";
+} from "./systemUtils";
 import { getConnectArgumentsParser } from "./conUtils";
 
 const projectDirCache = new Map<string, string | null>();

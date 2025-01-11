@@ -1,30 +1,21 @@
-import * as crypto from "crypto";
-import { promises as fs } from "fs";
-import * as net from "net";
-import * as os from "os";
-import * as path from "path";
-import * as tls from "tls";
-
-import process from "process";
-import * as readline from "readline";
-import { Writable } from "stream";
-
-export { path, net, fs, tls, process };
+import * as crypto from "node:crypto";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import * as readline from "node:readline";
+import { Writable } from "node:stream";
 
 export async function readFileUtf8(...pathParts: string[]): Promise<string> {
   return await fs.readFile(path.join(...pathParts), { encoding: "utf8" });
 }
 
 export function hasFSReadPermission(): boolean {
+  // @ts-ignore
+  if (typeof Deno !== "undefined") {
+    // @ts-ignore
+    return Deno.permissions.querySync({ name: "read" }).state === "granted";
+  }
   return true;
-}
-
-export function watch(dir: string) {
-  return fs.watch(dir, { recursive: true });
-}
-
-export async function readDir(pathString: string) {
-  return fs.readdir(pathString);
 }
 
 export function hashSHA1toHex(msg: string): string {
@@ -78,17 +69,16 @@ export async function exists(filepath: string): Promise<boolean> {
   }
 }
 
-export function input(
+export async function input(
   message: string,
   params?: { silent?: boolean },
 ): Promise<string> {
   let silent = false;
-
   const output = params?.silent
     ? new Writable({
         write(
           chunk: any,
-          encoding: BufferEncoding,
+          encoding: NodeJS.BufferEncoding,
           callback: (...args: any) => void,
         ) {
           if (!silent) process.stdout.write(chunk, encoding);
@@ -108,14 +98,4 @@ export function input(
     });
     silent = true;
   });
-}
-
-export const homeDir = os.homedir;
-
-export function exit(code?: number) {
-  process.exit(code);
-}
-
-export function srcDir() {
-  return __dirname;
 }

@@ -19,12 +19,7 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
-import {
-  Float16Array,
-  getFloat16,
-  isFloat16Array,
-  setFloat16,
-} from "../adapter.shared.node";
+import { Float16Array, getFloat16, isFloat16Array, setFloat16 } from "../utils";
 import { SparseVector } from "../datatypes/pgvector";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;

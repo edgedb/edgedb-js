@@ -28,7 +28,7 @@
     "@js-temporal/polyfill": "0.4.3",
     "@repo/tsconfig": "*",
     "@types/jest": "^29.5.12",
-    "@types/node": "^22.7.5",
+    "@types/node": "^22.10.2",
     "@types/semver": "^7.5.8",
     "@types/shell-quote": "^1.7.5",
     "@types/which": "^3.0.3",
@@ -43,17 +43,16 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "echo 'Building edgedb-js...' && rm -rf dist && yarn build:cjs && yarn build:cli && yarn build:deno",
-    "build:cli": "tsc --project tsconfig.cli.json",
-    "build:cjs": "tsc --project tsconfig.json",
-    "build:deno": "deno run --unstable --allow-all ./buildDeno.ts",
+    "build": "echo 'Building edgedb driver...' && rm -rf dist && yarn build:cjs && yarn build:cli",
+    "build:cli": "tsc -p tsconfig.cli.json",
+    "build:cjs": "tsc -p tsconfig.json",
     "lint": "eslint --quiet",
     "lint:fix": "eslint --fix",
     "test": "NODE_OPTIONS='--experimental-global-webcrypto' npx jest --detectOpenHandles",
     "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
-    "dev": "yarn tsc --project tsconfig.json --incremental && yarn build:deno"
+    "dev": "yarn tsc --project tsconfig.json --incremental"
   },
   "dependencies": {
     "@petamoriken/float16": "^3.8.7",

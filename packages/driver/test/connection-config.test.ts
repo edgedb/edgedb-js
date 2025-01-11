@@ -2,8 +2,8 @@ let mockFs = false;
 let mockedFiles: { [key: string]: string } = {};
 let homedir: string | null = null;
 
-jest.mock("fs", () => {
-  const actualFs = jest.requireActual("fs");
+jest.mock("node:fs", () => {
+  const actualFs = jest.requireActual("node:fs");
 
   return {
     ...actualFs,
@@ -43,8 +43,8 @@ jest.mock("fs", () => {
     },
   };
 });
-jest.mock("os", () => {
-  const actualOs = jest.requireActual("os");
+jest.mock("node:os", () => {
+  const actualOs = jest.requireActual("node:os");
 
   return {
     ...actualOs,
@@ -54,9 +54,9 @@ jest.mock("os", () => {
   };
 });
 
-import * as fs from "fs";
-import * as crypto from "crypto";
-import { join as pathJoin } from "path";
+import * as fs from "node:fs";
+import * as crypto from "node:crypto";
+import { join as pathJoin } from "node:path";
 import { Duration } from "../src/index.node";
 import { parseDuration } from "../src/conUtils";
 import { parseConnectArguments, findStashPath } from "../src/conUtils.server";

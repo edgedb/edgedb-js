@@ -1,9 +1,11 @@
-import { adapter } from "edgedb";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { systemUtils } from "edgedb";
 import { StrictMap } from "edgedb/dist/reflection/strictMap";
 import * as genutil from "./genutil";
 import { importExportHelpers } from "./importExportHelpers";
 
-const { fs, path, exists, readFileUtf8 } = adapter;
+const { exists, readFileUtf8 } = systemUtils;
 type Mode = "ts" | "js" | "dts";
 type ModuleKind = "esm" | "cjs";
 

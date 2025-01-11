@@ -23,9 +23,9 @@ jobs:
           node-version: 20
 
       - name: Set up Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          deno-version: v2.x
 
       - name: Install deps
         run: yarn

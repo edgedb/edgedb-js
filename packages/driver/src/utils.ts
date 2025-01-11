@@ -20,6 +20,13 @@ import type { ResolvedConnectConfigReadonly } from "./conUtils";
 import type { HttpSCRAMAuth } from "./httpScram";
 import type { ProtocolVersion } from "./ifaces";
 
+export {
+  Float16Array,
+  getFloat16,
+  isFloat16Array,
+  setFloat16,
+} from "@petamoriken/float16";
+
 const idCounter: { [key: string]: number } = {};
 
 export function getUniqueId(prefix = ""): string {
