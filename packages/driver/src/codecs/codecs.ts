@@ -54,7 +54,7 @@ import type { CodecContext } from "./context";
 
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
 
-import type { Float16Array } from "../adapter.shared.node";
+import type { Float16Array } from "../utils";
 
 // Types for Client.withCodecs() API:
 export namespace Codecs {
