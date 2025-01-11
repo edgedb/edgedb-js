@@ -2512,6 +2512,60 @@ if (getEdgeDBVersion().major >= 5) {
       }
     });
   });
+
+  test("codec context invalidation", async () => {
+    const query = `SELECT <CodecInv_01>'123'`;
+
+    const client = getClient().withCodecs({
+      "std::str": {
+        toDatabase() {
+          throw "not implemented";
+        },
+        fromDatabase(val) {
+          return { str: val };
+        },
+      },
+      "std::int32": {
+        toDatabase() {
+          throw "not implemented";
+        },
+        fromDatabase(val) {
+          return { int: val };
+        },
+      },
+    });
+
+    try {
+      await client.transaction(async (tx) => {
+        await tx.execute(`
+          CREATE SCALAR TYPE CodecInv_01 EXTENDING std::str;
+        `);
+
+        let ret = await tx.querySingle(query);
+        expect(ret).toStrictEqual({ str: "123" });
+
+        await tx.execute(`
+          DROP SCALAR TYPE CodecInv_01;
+          CREATE SCALAR TYPE CodecInv_01 EXTENDING std::int32;
+        `);
+
+        // If CodecContext wasn't invalidated and the previous one got
+        // used to after running the above DDL, we'll have ret == {str: '123'},
+        // because we'd still think that the appropriate codec for
+        // 'CodecInv_01' would be one for 'std::str'.
+        ret = await tx.querySingle(query);
+        expect(ret).toStrictEqual({ int: 123 });
+
+        throw new CancelTransaction();
+      });
+    } catch (e) {
+      if (!(e instanceof CancelTransaction)) {
+        throw e;
+      }
+    } finally {
+      await client.close();
+    }
+  });
 }
 
 if (getEdgeDBVersion().major >= 6) {

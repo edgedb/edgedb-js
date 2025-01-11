@@ -627,6 +627,10 @@ export class BaseRawConnection {
         }
 
         case chars.$s: {
+          // The state descriptor has change, a modification might have
+          // been applied to the schema, let's reset codec contexts.
+          Options.signalSchemaChange();
+
           this._parseDescribeStateMessage();
           break;
         }
@@ -780,8 +784,8 @@ export class BaseRawConnection {
             to learn
             */
             if (
-              (outCodec !== NULL_CODEC && outCodec.tid != newOutCodec.tid) ||
-              (inCodec !== NULL_CODEC && inCodec.tid != newInCodec.tid)
+              (outCodec !== NULL_CODEC && outCodec.tid !== newOutCodec.tid) ||
+              (inCodec !== NULL_CODEC && inCodec.tid !== newInCodec.tid)
             ) {
               Options.signalSchemaChange();
 
@@ -806,7 +810,7 @@ export class BaseRawConnection {
             outCodec = newOutCodec;
             warnings = _warnings;
           } catch (e: any) {
-            // An error happened, so we don't know if we bumped the internal
+            // An error happened, so we don't know if we did bump the internal
             // schema tracker or not, so let's do it again to be on the safe
             // side.
             Options.signalSchemaChange();
