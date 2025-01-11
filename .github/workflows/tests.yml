@@ -25,10 +25,13 @@ jobs:
             edgedb-version: "nightly"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "4"
+            edgedb-version: "5"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "3"
+            edgedb-version: "4"
+          # - os: ubuntu-latest
+          #   node-version: "20"
+          #   edgedb-version: "3"
           # XXX: macOS is currently unsupported by setup-edgedb
           # - os: macos-latest
           #   node-version: "20"
