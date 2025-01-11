@@ -29,10 +29,7 @@ jobs:
           - os: ubuntu-latest
             node-version: "20"
             edgedb-version: "3"
-          - os: ubuntu-latest
-            node-version: "20"
-            edgedb-version: "2"
-          # XXX: macOS is currently unsupported by setup-edgedb
+\          # XXX: macOS is currently unsupported by setup-edgedb
           # - os: macos-latest
           #   node-version: "20"
           #   edgedb-version: "stable"
@@ -90,11 +87,6 @@ jobs:
       - name: Run package tests
         run: |
           yarn ci:test
-
-      - name: Run query builder integration tests legacy
-        if: ${{ matrix.edgedb-version == '2' }}
-        run: |
-          turbo run ci:integration-test --filter=@edgedb/integration-legacy
 
       - name: Run query builder integration tests lts
         if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
