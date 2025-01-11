@@ -1,9 +1,6 @@
 import type { ScalarCodec } from "./ifaces";
 import type { Codecs } from "./codecs";
 
-export type CodecMap = Map<string, Codecs.AnyCodec>;
-export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
-
 export type CodecValueType<S> =
   S extends Codecs.KnownCodecs[keyof Codecs.KnownCodecs]
     ? S extends Codecs.Codec<infer T>
@@ -20,12 +17,18 @@ const NOOP: Codecs.AnyCodec = {
   },
 };
 
+export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
+
 export class CodecContext {
   private readonly spec: ReadonlyCodecMap | null;
-  private readonly map: CodecMap;
+  private readonly map: Map<string, Codecs.AnyCodec>;
 
   constructor(spec: ReadonlyCodecMap | null) {
-    this.spec = spec;
+    if (spec === null || spec.size === 0) {
+      this.spec = null;
+    } else {
+      this.spec = spec;
+    }
     this.map = new Map();
   }
 
