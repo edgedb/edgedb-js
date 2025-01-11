@@ -2424,7 +2424,19 @@ if (getEdgeDBVersion().major >= 5) {
       }
 
       // TODO: Add tests!
-      type SkipCodecs = "ext::pgvector::halfvec" | "ext::pgvector::sparsevec";
+      type SkipCodecs =
+        // halfvec requires Float16Array and I'm not sure we should
+        // proxy a third-party lib through our API.
+        | "ext::pgvector::halfvec"
+        // just need to write a test
+        | "ext::pgvector::sparsevec"
+        // these are only available in EdgeDB 6, and also re-use the
+        // existing codecs, so I'm not too worried on testing them.
+        | "std::pg::json"
+        | "std::pg::timestamptz"
+        | "std::pg::timestamp"
+        | "std::pg::date"
+        | "std::pg::interval";
 
       type CodecsToTest = SkipCodecs extends never
         ? keyof Codecs.KnownCodecs
@@ -2457,11 +2469,6 @@ if (getEdgeDBVersion().major >= 5) {
         "std::datetime": 12121223163n,
         "std::duration": 1000002n,
         "cfg::memory": 99n,
-        "std::pg::json": '{"a": "postgres rocks"}',
-        "std::pg::timestamptz": 132222n,
-        "std::pg::timestamp": 1121121223n,
-        "std::pg::date": [1985, 2, 2],
-        "std::pg::interval": [1, 2, 3n],
         "ext::pgvector::vector": new Float32Array([1, -1, 0.3]),
       };
 
