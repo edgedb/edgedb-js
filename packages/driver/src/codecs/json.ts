@@ -81,9 +81,7 @@ export class PgTextJSONCodec extends JSONCodec {
   override readonly jsonFormat = null;
 }
 
-export class JSONStringCodec extends ScalarCodec implements ICodec {
-  readonly jsonFormat: number | null = 1;
-
+export class PgTextJSONStringCodec extends ScalarCodec implements ICodec {
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       object = ctx.preEncode<Codecs.JsonCodec>(this, object);
@@ -94,26 +92,11 @@ export class JSONStringCodec extends ScalarCodec implements ICodec {
     }
 
     const strbuf = utf8Encoder.encode(object);
-    if (this.jsonFormat !== null) {
-      buf.writeInt32(strbuf.length + 1);
-      buf.writeChar(this.jsonFormat);
-    } else {
-      buf.writeInt32(strbuf.length);
-    }
+    buf.writeInt32(strbuf.length);
     buf.writeBuffer(strbuf);
   }
 
   decode(buf: ReadBuffer, ctx: CodecContext): any {
-    if (this.jsonFormat !== null) {
-      const format = buf.readUInt8();
-      if (format !== this.jsonFormat) {
-        throw new ProtocolError(`unexpected JSON format ${format}`);
-      }
-    }
     return ctx.postDecode<Codecs.JsonCodec>(this, buf.consumeAsString());
   }
-}
-
-export class PgTextJSONStringCodec extends JSONStringCodec {
-  override readonly jsonFormat = null;
 }
