@@ -1,4 +1,5 @@
 import { KNOWN_TYPENAMES } from "../src/codecs/consts";
+import { NOOP_CODEC_CONTEXT } from "../src/codecs/context";
 import {
   DateTimeCodec,
   DurationCodec,
@@ -49,7 +50,10 @@ test("datetime", () => {
   for (const [micros, datestring] of tests) {
     const buf = Buffer.alloc(8);
     buf.writeBigInt64BE(BigInt(micros));
-    const datetime = codec.decode(new ReadBuffer(buf)) as Date;
+    const datetime = codec.decode(
+      new ReadBuffer(buf),
+      NOOP_CODEC_CONTEXT,
+    ) as Date;
 
     expect(datetime.toISOString()).toEqual(datestring);
   }
@@ -173,13 +177,13 @@ test("local_datetime", () => {
         .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
-    codec.encode(buf, localDatetime);
+    codec.encode(buf, localDatetime, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));
 
     const readBuf = new ReadBuffer(buf.unwrap().slice(4));
-    const decodedLocalDatetime = codec.decode(readBuf);
+    const decodedLocalDatetime = codec.decode(readBuf, NOOP_CODEC_CONTEXT);
     expect(decodedLocalDatetime.toString()).toBe(outputDatestring);
   }
 });
@@ -210,7 +214,7 @@ test("local_time", () => {
         .map((n) => parseInt(n, 10)),
     );
     const buf = new WriteBuffer();
-    codec.encode(buf, localDatetime);
+    codec.encode(buf, localDatetime, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));
@@ -244,7 +248,7 @@ test("duration", () => {
   for (const [durationString, micros] of tests) {
     const duration = Duration.from(durationString);
     const buf = new WriteBuffer();
-    codec.encode(buf, duration);
+    codec.encode(buf, duration, NOOP_CODEC_CONTEXT);
     const encodedMicros = Buffer.from(buf.unwrap()).readBigInt64BE(4);
 
     expect(encodedMicros).toEqual(BigInt(micros));

@@ -35,6 +35,8 @@ export type { Executor } from "./ifaces";
 
 export * from "./errors";
 
+export type { Codecs } from "./codecs/codecs";
+
 /* Private APIs */
 import type * as codecs from "./codecs/ifaces";
 import * as reg from "./codecs/registry";

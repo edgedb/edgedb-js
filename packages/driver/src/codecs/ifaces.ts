@@ -21,6 +21,8 @@ import {
   type WriteBuffer,
   uuidToBuffer,
 } from "../primitives/buffer";
+import type { Mutable } from "../typeutil";
+import type { CodecContext } from "./context";
 import { KNOWN_TYPES } from "./consts";
 
 export type uuid = string;
@@ -41,8 +43,8 @@ export interface ICodec {
   readonly tid: uuid;
   readonly tidBuffer: Uint8Array;
 
-  encode(buf: WriteBuffer, object: any): void;
-  decode(buf: ReadBuffer): any;
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void;
+  decode(buf: ReadBuffer, ctx: CodecContext): any;
 
   getSubcodecs(): ICodec[];
   getKind(): CodecKind;
@@ -50,7 +52,7 @@ export interface ICodec {
 }
 
 export interface IArgsCodec {
-  encodeArgs(args: any): Uint8Array;
+  encodeArgs(args: any, ctx: CodecContext): Uint8Array;
 }
 
 export abstract class Codec {
@@ -68,27 +70,22 @@ export abstract class Codec {
 }
 
 export abstract class ScalarCodec extends Codec {
-  private derivedFromTid: uuid | null = null;
-  private typeName: string | null = null;
+  readonly typeName: string;
+  readonly ancestors: ScalarCodec[] | null = null;
 
-  constructor(
-    tid: uuid,
-    typeName: string | null,
-    derivedFromTid: uuid | null = null,
-  ) {
+  constructor(tid: uuid, typeName: string) {
     super(tid);
-    this.derivedFromTid = derivedFromTid;
     this.typeName = typeName;
   }
 
-  /** @internal */
-  setTypeName(typeName: string): void {
-    this.typeName = typeName;
-  }
-
-  derive(tid: uuid, typeName: string | null): Codec {
+  derive(tid: uuid, typeName: string, ancestors: ScalarCodec[]): Codec {
     const self = this.constructor;
-    return new (self as any)(tid, this.tid, typeName) as Codec;
+    const codec: Mutable<ScalarCodec> = new (self as any)(
+      tid,
+      typeName,
+    ) as ScalarCodec;
+    codec.ancestors = ancestors;
+    return codec;
   }
 
   getSubcodecs(): ICodec[] {
@@ -105,10 +102,6 @@ export abstract class ScalarCodec extends Codec {
   override getKnownTypeName(): string {
     if (this.typeName) {
       return this.typeName;
-    }
-
-    if (this.derivedFromTid) {
-      return KNOWN_TYPES.get(this.derivedFromTid)!;
     }
 
     return KNOWN_TYPES.get(this.tid) || "anytype";

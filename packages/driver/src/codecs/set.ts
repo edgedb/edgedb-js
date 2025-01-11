@@ -21,6 +21,7 @@ import { Codec } from "./ifaces";
 import { type WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { ArrayCodec } from "./array";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { CodecContext } from "./context";
 
 export class SetCodec extends Codec implements ICodec {
   private subCodec: ICodec;
@@ -34,15 +35,15 @@ export class SetCodec extends Codec implements ICodec {
     throw new InvalidArgumentError("Sets cannot be passed in query arguments");
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (this.subCodec instanceof ArrayCodec) {
-      return this.decodeSetOfArrays(buf);
+      return this.decodeSetOfArrays(buf, ctx);
     } else {
-      return this.decodeSet(buf);
+      return this.decodeSet(buf, ctx);
     }
   }
 
-  private decodeSetOfArrays(buf: ReadBuffer): any {
+  private decodeSetOfArrays(buf: ReadBuffer, ctx: CodecContext): any {
     const ndims = buf.readInt32();
 
     buf.discard(4); // ignore flags
@@ -84,14 +85,14 @@ export class SetCodec extends Codec implements ICodec {
       }
 
       buf.sliceInto(elemBuf, elemLen);
-      result[i] = subCodec.decode(elemBuf);
+      result[i] = subCodec.decode(elemBuf, ctx);
       elemBuf.finish();
     }
 
     return result;
   }
 
-  private decodeSet(buf: ReadBuffer): any {
+  private decodeSet(buf: ReadBuffer, ctx: CodecContext): any {
     const ndims = buf.readInt32();
 
     buf.discard(4); // ignore flags
@@ -118,7 +119,7 @@ export class SetCodec extends Codec implements ICodec {
         result[i] = null;
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        result[i] = subCodec.decode(elemBuf);
+        result[i] = subCodec.decode(elemBuf, ctx);
         elemBuf.finish();
       }
     }

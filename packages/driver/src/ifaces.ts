@@ -59,21 +59,21 @@ export interface Executor {
   queryRequiredSingleJSON(query: string, args?: QueryArgs): Promise<string>;
 }
 
+interface UserCodec {
+  encode(value: any): any;
+  decode(value: any): any;
+}
+
+export type UserCodecs = {
+  [typeName: string]: UserCodec;
+};
+
 export interface KnownServerSettings {
   suggested_pool_concurrency?: number;
   system_config?: any;
 }
 
 export type ServerSettings = KnownServerSettings & Record<string, Uint8Array>;
-
-export const LegacyHeaderCodes = {
-  implicitLimit: 0xff01,
-  implicitTypenames: 0xff02,
-  implicitTypeids: 0xff03,
-  allowCapabilities: 0xff04,
-  capabilities: 0x1001,
-  explicitObjectids: 0xff05,
-};
 
 export interface QueryOptions {
   implicitLimit?: bigint;

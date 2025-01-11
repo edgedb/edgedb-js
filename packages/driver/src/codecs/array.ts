@@ -23,25 +23,21 @@ import { TupleCodec } from "./tuple";
 import { MultiRangeCodec, RangeCodec } from "./range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 import { NamedTupleCodec } from "./namedtuple";
+import type { CodecContext } from "./context";
 
 export class ArrayCodec extends Codec implements ICodec {
   private subCodec: ICodec;
   private len: number;
-  public typeName: string | null;
+  public typeName: string;
 
-  constructor(
-    tid: uuid,
-    typeName: string | null,
-    subCodec: ICodec,
-    len: number,
-  ) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec, len: number) {
     super(tid);
     this.subCodec = subCodec;
     this.len = len;
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any): void {
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext): void {
     if (
       !(
         this.subCodec instanceof ScalarCodec ||
@@ -76,7 +72,7 @@ export class ArrayCodec extends Codec implements ICodec {
       if (item == null) {
         elemData.writeInt32(-1);
       } else {
-        subCodec.encode(elemData, item);
+        subCodec.encode(elemData, item, ctx);
       }
     }
     const elemBuf = elemData.unwrap();
@@ -92,7 +88,7 @@ export class ArrayCodec extends Codec implements ICodec {
     buf.writeBuffer(elemBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const ndims = buf.readInt32();
 
     buf.discard(4); // ignore flags
@@ -124,7 +120,7 @@ export class ArrayCodec extends Codec implements ICodec {
         result[i] = null;
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        result[i] = subCodec.decode(elemBuf);
+        result[i] = subCodec.decode(elemBuf, ctx);
         elemBuf.finish();
       }
     }

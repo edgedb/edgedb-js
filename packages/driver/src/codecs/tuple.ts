@@ -18,7 +18,7 @@
 
 import { KNOWN_TYPENAMES } from "./consts";
 
-import type { ICodec, uuid, IArgsCodec, CodecKind } from "./ifaces";
+import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import {
@@ -27,8 +27,9 @@ import {
   ProtocolError,
   QueryArgumentError,
 } from "../errors";
+import type { CodecContext } from "./context";
 
-export class TupleCodec extends Codec implements ICodec, IArgsCodec {
+export class TupleCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
   public typeName: string | null;
 
@@ -38,7 +39,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, object: any, allowNull = false): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     if (!Array.isArray(object)) {
       throw new InvalidArgumentError(`an array was expected, got "${object}"`);
     }
@@ -63,16 +64,12 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
       const elem = object[i];
       elemData.writeInt32(0); // reserved bytes
       if (elem == null) {
-        if (allowNull) {
-          elemData.writeInt32(-1);
-        } else {
-          throw new MissingArgumentError(
-            `element at index ${i} in tuple cannot be 'null'`,
-          );
-        }
+        throw new MissingArgumentError(
+          `element at index ${i} in tuple cannot be 'null'`,
+        );
       } else {
         try {
-          codecs[i].encode(elemData, elem);
+          codecs[i].encode(elemData, elem, ctx);
         } catch (e) {
           if (e instanceof QueryArgumentError) {
             throw new InvalidArgumentError(
@@ -92,26 +89,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
     buf.writeBuffer(elemBuf);
   }
 
-  encodeArgs(args: any): Uint8Array {
-    if (!Array.isArray(args)) {
-      throw new InvalidArgumentError("an array of arguments was expected");
-    }
-
-    const codecsLen = this.subCodecs.length;
-    if (args.length !== codecsLen) {
-      throw new InvalidArgumentError(
-        `expected ${codecsLen} argument${codecsLen === 1 ? "" : "s"}, got ${
-          args.length
-        }`,
-      );
-    }
-
-    const buf = new WriteBuffer();
-    this.encode(buf, args, true);
-    return buf.unwrap();
-  }
-
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const els = buf.readUInt32();
     const subCodecs = this.subCodecs;
     if (els !== subCodecs.length) {
@@ -130,7 +108,7 @@ export class TupleCodec extends Codec implements ICodec, IArgsCodec {
         result[i] = null;
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        result[i] = subCodecs[i].decode(elemBuf);
+        result[i] = subCodecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
     }
@@ -153,7 +131,7 @@ export class EmptyTupleCodec extends Codec implements ICodec {
     .writeInt32(0)
     .unwrap();
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, _ctx: CodecContext): void {
     if (!Array.isArray(object)) {
       throw new InvalidArgumentError(
         "cannot encode empty Tuple: expected an array",

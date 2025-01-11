@@ -20,6 +20,7 @@ import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { UnknownArgumentError } from "../errors";
+import type { CodecContext } from "./context";
 
 export class SparseObjectCodec extends Codec implements ICodec {
   private codecs: ICodec[];
@@ -32,7 +33,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
     this.names = names;
   }
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     const elemBuf = new WriteBuffer();
 
     let objLen = 0;
@@ -53,7 +54,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
         if (val === null) {
           elemBuf.writeInt32(-1);
         } else {
-          this.codecs[i].encode(elemBuf, val);
+          this.codecs[i].encode(elemBuf, val, ctx);
         }
       }
     }
@@ -63,7 +64,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
     buf.writeBuffer(elemData);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const codecs = this.codecs;
     const names = this.names;
 
@@ -78,7 +79,7 @@ export class SparseObjectCodec extends Codec implements ICodec {
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
-        val = codecs[i].decode(elemBuf);
+        val = codecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
       result[name] = val;

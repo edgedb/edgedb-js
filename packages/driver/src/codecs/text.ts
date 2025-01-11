@@ -20,11 +20,15 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { utf8Encoder } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 export class StrCodec extends ScalarCodec implements ICodec {
   override tsType = "string";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.StrCodec>(this, object);
+
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
@@ -35,7 +39,7 @@ export class StrCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(strbuf);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.consumeAsString();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode<Codecs.StrCodec>(this, buf.consumeAsString());
   }
 }

@@ -68,7 +68,7 @@ export class Transaction implements Executor {
       undefined,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
-      holder.options.session,
+      holder.options,
       true,
     );
 
@@ -144,7 +144,7 @@ export class Transaction implements Executor {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
-          this._holder.options.session,
+          this._holder.options,
           true,
         );
         this._state = TransactionState.COMMITTED;
@@ -163,7 +163,7 @@ export class Transaction implements Executor {
           undefined,
           OutputFormat.NONE,
           Cardinality.NO_RESULT,
-          this._holder.options.session,
+          this._holder.options,
           true,
         );
         this._state = TransactionState.ROLLEDBACK;
@@ -179,7 +179,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -190,7 +190,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
-      this._holder.options.session,
+      this._holder.options,
       false /* privilegedMode */,
       Language.SQL,
     );
@@ -203,7 +203,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -217,7 +217,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      this._holder.options.session,
+      this._holder.options,
       false /* privilegedMode */,
       Language.SQL,
     );
@@ -230,7 +230,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.JSON,
       Cardinality.MANY,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -244,7 +244,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.BINARY,
       Cardinality.AT_MOST_ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -255,7 +255,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.JSON,
       Cardinality.AT_MOST_ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -269,7 +269,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.BINARY,
       Cardinality.AT_LEAST_ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -280,7 +280,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.JSON,
       Cardinality.AT_LEAST_ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -294,7 +294,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.BINARY,
       Cardinality.ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 
@@ -308,7 +308,7 @@ export class Transaction implements Executor {
       args,
       OutputFormat.JSON,
       Cardinality.ONE,
-      this._holder.options.session,
+      this._holder.options,
     );
   }
 }

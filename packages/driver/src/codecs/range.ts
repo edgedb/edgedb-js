@@ -21,6 +21,7 @@ import { Codec } from "./ifaces";
 import { WriteBuffer, ReadBuffer } from "../primitives/buffer";
 import { MultiRange, Range } from "../datatypes/range";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { CodecContext } from "./context";
 
 enum RangeFlags {
   EMPTY = 1 << 0,
@@ -32,7 +33,12 @@ enum RangeFlags {
 
 const MAXINT32 = 0x7fffffff;
 
-function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
+function encodeRange(
+  buf: WriteBuffer,
+  obj: any,
+  subCodec: ICodec,
+  ctx: CodecContext,
+): void {
   if (!(obj instanceof Range)) {
     throw new InvalidArgumentError("a Range was expected");
   }
@@ -40,10 +46,10 @@ function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
   const elemData = new WriteBuffer();
 
   if (obj.lower !== null) {
-    subCodec.encode(elemData, obj.lower);
+    subCodec.encode(elemData, obj.lower, ctx);
   }
   if (obj.upper !== null) {
-    subCodec.encode(elemData, obj.upper);
+    subCodec.encode(elemData, obj.upper, ctx);
   }
 
   const elemBuf = elemData.unwrap();
@@ -60,7 +66,11 @@ function encodeRange(buf: WriteBuffer, obj: any, subCodec: ICodec): void {
   buf.writeBuffer(elemBuf);
 }
 
-function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
+function decodeRange(
+  buf: ReadBuffer,
+  subCodec: ICodec,
+  ctx: CodecContext,
+): any {
   const flags = buf.readUInt8();
 
   if (flags & RangeFlags.EMPTY) {
@@ -74,13 +84,13 @@ function decodeRange(buf: ReadBuffer, subCodec: ICodec): any {
 
   if (!(flags & RangeFlags.EMPTY_LOWER)) {
     buf.sliceInto(elemBuf, buf.readInt32());
-    lower = subCodec.decode(elemBuf);
+    lower = subCodec.decode(elemBuf, ctx);
     elemBuf.finish();
   }
 
   if (!(flags & RangeFlags.EMPTY_UPPER)) {
     buf.sliceInto(elemBuf, buf.readInt32());
-    upper = subCodec.decode(elemBuf);
+    upper = subCodec.decode(elemBuf, ctx);
     elemBuf.finish();
   }
 
@@ -97,20 +107,20 @@ export class RangeCodec extends Codec implements ICodec {
   readonly tsModule = "edgedb";
 
   private subCodec: ICodec;
-  readonly typeName: string | null;
+  readonly typeName: string;
 
-  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec) {
     super(tid);
     this.subCodec = subCodec;
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any) {
-    return encodeRange(buf, obj, this.subCodec);
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext) {
+    return encodeRange(buf, obj, this.subCodec, ctx);
   }
 
-  decode(buf: ReadBuffer): any {
-    return decodeRange(buf, this.subCodec);
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return decodeRange(buf, this.subCodec, ctx);
   }
 
   getSubcodecs(): ICodec[] {
@@ -127,15 +137,15 @@ export class MultiRangeCodec extends Codec implements ICodec {
   readonly tsModule = "edgedb";
 
   private subCodec: ICodec;
-  public typeName: string | null;
+  public typeName: string;
 
-  constructor(tid: uuid, typeName: string | null, subCodec: ICodec) {
+  constructor(tid: uuid, typeName: string, subCodec: ICodec) {
     super(tid);
     this.subCodec = subCodec;
     this.typeName = typeName;
   }
 
-  encode(buf: WriteBuffer, obj: any): void {
+  encode(buf: WriteBuffer, obj: any, ctx: CodecContext): void {
     if (!(obj instanceof MultiRange)) {
       throw new TypeError(
         `a MultiRange expected (got type ${obj.constructor.name})`,
@@ -150,7 +160,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
     const elemData = new WriteBuffer();
     for (const item of obj) {
       try {
-        encodeRange(elemData, item, this.subCodec);
+        encodeRange(elemData, item, this.subCodec, ctx);
       } catch (e) {
         if (e instanceof InvalidArgumentError) {
           throw new InvalidArgumentError(
@@ -180,7 +190,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
     buf.writeBuffer(elemBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const elemCount = buf.readInt32();
     const result = new Array(elemCount);
     const elemBuf = ReadBuffer.alloc();
@@ -192,7 +202,7 @@ export class MultiRangeCodec extends Codec implements ICodec {
         throw new ProtocolError("unexpected NULL element in multirange value");
       } else {
         buf.sliceInto(elemBuf, elemLen);
-        const elem = decodeRange(elemBuf, subCodec);
+        const elem = decodeRange(elemBuf, subCodec, ctx);
         if (elemBuf.length) {
           throw new ProtocolError(
             `unexpected trailing data in buffer after multirange element decoding: ${elemBuf.length}`,

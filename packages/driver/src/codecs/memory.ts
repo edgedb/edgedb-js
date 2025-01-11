@@ -20,12 +20,26 @@ import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { ConfigMemory } from "../datatypes/memory";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   override tsType = "ConfigMemory";
   override tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.MemoryCodec>(this, object);
+      if (typeof val != "bigint") {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cfg::memory codec`,
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64(val);
+      return;
+    }
+
     if (!(object instanceof ConfigMemory)) {
       throw new InvalidArgumentError(
         `a ConfigMemory instance was expected, got "${object}"`,
@@ -36,7 +50,13 @@ export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
     buf.writeBigInt64(object._bytes);
   }
 
-  decode(buf: ReadBuffer): any {
-    return new ConfigMemory(buf.readBigInt64());
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    const val = buf.readBigInt64();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.MemoryCodec>(this, val);
+    }
+
+    return new ConfigMemory(val);
   }
 }

@@ -21,13 +21,17 @@ import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
 import { Float16Array, getFloat16, isFloat16Array, setFloat16 } from "../utils";
 import { SparseVector } from "../datatypes/pgvector";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 export const PG_VECTOR_MAX_DIM = (1 << 16) - 1;
 
 export class PgVectorCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "Float32Array";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.PgVectorCodec>(this, object);
+
     if (!(object instanceof Float32Array || Array.isArray(object))) {
       throw new InvalidArgumentError(
         `a Float32Array or array of numbers was expected, got "${object}"`,
@@ -61,7 +65,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
     }
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt16();
     buf.discard(2);
 
@@ -77,7 +81,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
       vec[i] = data.getFloat32(i * 4);
     }
 
-    return vec;
+    return ctx.postDecode<Codecs.PgVectorCodec>(this, vec);
   }
 }
 
@@ -85,7 +89,9 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "Float16Array";
   override readonly tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.PGVectorHalfCodec>(this, object);
+
     if (!(isFloat16Array(object) || Array.isArray(object))) {
       throw new InvalidArgumentError(
         `a Float16Array or array of numbers was expected, got "${object}"`,
@@ -128,7 +134,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(vecBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt16();
     buf.discard(2);
 
@@ -144,7 +150,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
       vec[i] = getFloat16(data, i * 2);
     }
 
-    return vec;
+    return ctx.postDecode<Codecs.PGVectorHalfCodec>(this, vec);
   }
 }
 
@@ -152,45 +158,59 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "SparseVector";
   override readonly tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof SparseVector)) {
-      throw new InvalidArgumentError(
-        `a SparseVector was expected, got "${object}"`,
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    let dims: number;
+    let indexes: Uint32Array;
+    let values: Float32Array;
+
+    if (ctx.hasOverload(this)) {
+      [dims, indexes, values] = ctx.preEncode<Codecs.PGVectorSparseCodec>(
+        this,
+        object,
       );
+    } else {
+      if (!(object instanceof SparseVector)) {
+        throw new InvalidArgumentError(
+          `a SparseVector was expected, got "${object}"`,
+        );
+      }
+      dims = object.length;
+      indexes = object.indexes;
+      values = object.values;
     }
 
-    const nnz = object.indexes.length;
+    const indexesLength = indexes.length;
 
-    if (nnz > PG_VECTOR_MAX_DIM || nnz > object.length) {
+    if (indexesLength > PG_VECTOR_MAX_DIM || indexesLength > dims) {
       throw new InvalidArgumentError(
         "too many elements in sparse vector value",
       );
     }
 
     buf
-      .writeUInt32(4 * (3 + nnz * 2))
-      .writeUInt32(object.length)
-      .writeUInt32(nnz)
+      .writeUInt32(4 * (3 + indexesLength * 2))
+      .writeUInt32(dims)
+      .writeUInt32(indexesLength)
       .writeUInt32(0);
 
-    const vecBuf = new Uint8Array(nnz * 8);
+    const vecBuf = new Uint8Array(indexesLength * 8);
     const data = new DataView(
       vecBuf.buffer,
       vecBuf.byteOffset,
       vecBuf.byteLength,
     );
 
-    for (let i = 0; i < nnz; i++) {
-      data.setUint32(i * 4, object.indexes[i]);
+    for (let i = 0; i < indexesLength; i++) {
+      data.setUint32(i * 4, indexes[i]);
     }
-    for (let i = 0; i < nnz; i++) {
-      data.setFloat32((nnz + i) * 4, object.values[i]);
+    for (let i = 0; i < indexesLength; i++) {
+      data.setFloat32((indexesLength + i) * 4, values[i]);
     }
 
     buf.writeBuffer(vecBuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const dim = buf.readUInt32();
     const nnz = buf.readUInt32();
     buf.discard(4);
@@ -208,6 +228,14 @@ export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
     const vecData = new Float32Array(nnz);
     for (let i = 0; i < nnz; i++) {
       vecData[i] = data.getFloat32((i + nnz) * 4);
+    }
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.PGVectorSparseCodec>(this, [
+        dim,
+        indexes,
+        vecData,
+      ]);
     }
 
     return new SparseVector(dim, indexes, vecData);

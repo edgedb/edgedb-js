@@ -17,6 +17,7 @@
  */
 
 import type { Duration } from "./datatypes/datetime";
+import type { Codecs } from "./codecs/codecs";
 import { CodecsRegistry } from "./codecs/registry";
 import type {
   ConnectArgumentsParser,
@@ -35,7 +36,6 @@ import {
 } from "./ifaces";
 import type {
   RetryOptions,
-  Session,
   SimpleRetryOptions,
   SimpleTransactionOptions,
   TransactionOptions,
@@ -190,7 +190,7 @@ export class ClientConnectionHolder {
           args,
           outputFormat,
           expectedCardinality,
-          this.options.session,
+          this.options,
           false /* privilegedMode */,
           language,
         );
@@ -581,34 +581,24 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withRetryOptions(opts));
   }
 
-  withSession(session: Session): Client {
-    return new Client(this.pool, this.options.withSession(session));
-  }
-
   withModuleAliases(aliases: Record<string, string>) {
-    return new Client(
-      this.pool,
-      this.options.withSession(this.options.session.withModuleAliases(aliases)),
-    );
+    return new Client(this.pool, this.options.withModuleAliases(aliases));
   }
 
   withConfig(config: SimpleConfig): Client {
-    const newConfig = this.options.session.withConfig(config);
-    return new Client(this.pool, this.options.withSession(newConfig));
+    return new Client(this.pool, this.options.withConfig(config));
+  }
+
+  withCodecs(codecs: Codecs.CodecSpec): Client {
+    return new Client(this.pool, this.options.withCodecs(codecs));
   }
 
   withGlobals(globals: Record<string, any>): Client {
-    return new Client(
-      this.pool,
-      this.options.withSession(this.options.session.withGlobals(globals)),
-    );
+    return new Client(this.pool, this.options.withGlobals(globals));
   }
 
   withQueryTag(tag: string | null): Client {
-    return new Client(
-      this.pool,
-      this.options.withSession(this.options.session.withQueryTag(tag)),
-    );
+    return new Client(this.pool, this.options.withQueryTag(tag));
   }
 
   withWarningHandler(handler: WarningHandler): Client {
@@ -775,7 +765,7 @@ export class Client implements Executor {
         query,
         OutputFormat.BINARY,
         Cardinality.MANY,
-        this.options.session,
+        this.options,
       );
       const cardinality = util.parseCardinality(result[0]);
 

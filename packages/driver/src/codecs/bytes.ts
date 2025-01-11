@@ -19,22 +19,25 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError } from "../errors";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 export class BytesCodec extends ScalarCodec implements ICodec {
   override tsType = "Uint8Array";
 
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof Uint8Array)) {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    const val = ctx.preEncode<Codecs.BytesCodec>(this, object);
+    if (!(val instanceof Uint8Array)) {
       throw new InvalidArgumentError(
-        `a Uint8Array or Buffer was expected, got "${object}"`,
+        `a Uint8Array or Buffer was expected, got "${val}"`,
       );
     }
 
-    buf.writeInt32(object.length);
-    buf.writeBuffer(object);
+    buf.writeInt32(val.length);
+    buf.writeBuffer(val);
   }
 
-  decode(buf: ReadBuffer): any {
-    return buf.consumeAsBuffer();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode<Codecs.BytesCodec>(this, buf.consumeAsBuffer());
   }
 }

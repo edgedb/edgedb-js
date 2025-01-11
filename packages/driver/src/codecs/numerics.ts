@@ -19,6 +19,8 @@
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 const NUMERIC_POS = 0x0000;
 const NUMERIC_NEG = 0x4000;
@@ -26,19 +28,17 @@ const NUMERIC_NEG = 0x4000;
 export class BigIntCodec extends ScalarCodec implements ICodec {
   override tsType = "bigint";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.BigIntCodec>(this, object);
     if (typeof object !== "bigint") {
       throw new InvalidArgumentError(`a bigint was expected, got "${object}"`);
     }
-
-    const NBASE = BigInt("10000");
-    const ZERO = BigInt("0");
 
     const digits: bigint[] = [];
     let sign = NUMERIC_POS;
     let uval = object;
 
-    if (object === ZERO) {
+    if (object === 0n) {
       buf.writeUInt32(8); // len
       buf.writeUInt32(0); // ndigits + weight
       buf.writeUInt16(NUMERIC_POS); // sign
@@ -46,14 +46,14 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
       return;
     }
 
-    if (object < ZERO) {
+    if (object < 0n) {
       sign = NUMERIC_NEG;
       uval = -uval;
     }
 
     while (uval) {
-      const mod: bigint = uval % NBASE;
-      uval /= NBASE;
+      const mod: bigint = uval % 10000n;
+      uval /= 10000n;
       digits.push(mod);
     }
 
@@ -67,15 +67,18 @@ export class BigIntCodec extends ScalarCodec implements ICodec {
     }
   }
 
-  decode(buf: ReadBuffer): any {
-    return BigInt(decodeBigIntToString(buf));
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    const val = BigInt(decodeBigIntToString(buf));
+    return ctx.postDecode<Codecs.BigIntCodec>(this, val);
   }
 }
 
 export class DecimalStringCodec extends ScalarCodec implements ICodec {
   override tsType = "string";
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    object = ctx.preEncode<Codecs.BigIntCodec>(this, object);
+
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
@@ -111,7 +114,14 @@ export class DecimalStringCodec extends ScalarCodec implements ICodec {
     }
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.DecimalCodec>(
+        this,
+        decodeDecimalToString(buf),
+      );
+    }
+
     return decodeDecimalToString(buf);
   }
 }

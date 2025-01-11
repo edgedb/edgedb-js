@@ -19,6 +19,7 @@
 import type { ReadBuffer } from "../primitives/buffer";
 import { WriteBuffer } from "../primitives/buffer";
 import { BoolCodec } from "./boolean";
+import type { ScalarCodec } from "./ifaces";
 import { type ICodec, type uuid, type CodecKind, Codec } from "./ifaces";
 import {
   Int16Codec,
@@ -49,7 +50,93 @@ import {
 } from "./pgvector";
 import { InternalClientError } from "../errors";
 
+import type { CodecContext } from "./context";
+
 import { INVALID_CODEC_ID, KNOWN_TYPENAMES, NULL_CODEC_ID } from "./consts";
+
+import type { Float16Array } from "../utils";
+
+// Types for Client.withCodecs() API:
+export namespace Codecs {
+  export type Codec<T> = {
+    toDatabase: (data: any) => T;
+    fromDatabase: (data: T) => any;
+  };
+
+  export type AnyCodec = Codec<any>;
+
+  export type BoolCodec = Codec<boolean>;
+  export type Int16Codec = Codec<number>;
+  export type Int32Codec = Codec<number>;
+  export type Int64Codec = Codec<bigint>;
+  export type Float32Codec = Codec<number>;
+  export type Float64Codec = Codec<number>;
+  export type BigIntCodec = Codec<bigint>;
+  export type DecimalCodec = Codec<string>;
+  export type BytesCodec = Codec<Uint8Array>;
+  export type DateTimeCodec = Codec<bigint>;
+  export type LocalDateTimeCodec = Codec<bigint>;
+  export type LocalDateCodec = Codec<
+    [years: number, months: number, days: number]
+  >;
+  export type LocalTimeCodec = Codec<bigint>;
+  export type DurationCodec = Codec<bigint>;
+  export type RelativeDurationCodec = Codec<
+    [months: number, days: number, uSeconds: bigint]
+  >;
+  export type DateDurationCodec = Codec<[months: number, days: number]>;
+  export type JsonCodec = Codec<string>;
+  export type MemoryCodec = Codec<bigint>;
+  export type PgVectorCodec = Codec<Float32Array>;
+  export type PGVectorSparseCodec = Codec<
+    [dimensions: number, indexes: Uint32Array, values: Float32Array]
+  >;
+  export type StrCodec = Codec<string>;
+  export type UUIDCodec = Codec<Uint8Array>;
+
+  // TODO: Figure out if we can drop the dep
+  // on an external package for Float16Array.
+  export type PGVectorHalfCodec = Codec<Float16Array>;
+
+  export type KnownCodecs = {
+    ["std::bool"]: BoolCodec;
+    ["std::int16"]: Int16Codec;
+    ["std::int32"]: Int32Codec;
+    ["std::int64"]: Int64Codec;
+    ["std::float32"]: Float32Codec;
+    ["std::float64"]: Float64Codec;
+    ["std::bigint"]: BigIntCodec;
+    ["std::decimal"]: DecimalCodec;
+    ["std::bytes"]: BytesCodec;
+    ["std::datetime"]: DateTimeCodec;
+    ["std::duration"]: DurationCodec;
+    ["std::json"]: JsonCodec;
+    ["std::str"]: StrCodec;
+    ["std::uuid"]: UUIDCodec;
+
+    ["cal::local_date"]: LocalDateCodec;
+    ["cal::local_time"]: LocalTimeCodec;
+    ["cal::local_datetime"]: LocalDateTimeCodec;
+    ["cal::relative_duration"]: RelativeDurationCodec;
+    ["cal::date_duration"]: DateDurationCodec;
+
+    ["cfg::memory"]: MemoryCodec;
+
+    ["std::pg::json"]: JsonCodec;
+    ["std::pg::timestamptz"]: DateTimeCodec;
+    ["std::pg::timestamp"]: LocalDateTimeCodec;
+    ["std::pg::date"]: LocalDateCodec;
+    ["std::pg::interval"]: RelativeDurationCodec;
+
+    ["ext::pgvector::vector"]: PgVectorCodec;
+    ["ext::pgvector::halfvec"]: PGVectorHalfCodec;
+    ["ext::pgvector::sparsevec"]: PGVectorSparseCodec;
+  };
+
+  export type CodecSpec = Partial<KnownCodecs> & {
+    [key: string]: AnyCodec;
+  };
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +146,7 @@ export class NullCodec extends Codec implements ICodec {
     throw new InternalClientError("null codec cannot used to encode data");
   }
 
-  decode(_buf: ReadBuffer): any {
+  decode(_buf: ReadBuffer, _ctx: CodecContext): any {
     throw new InternalClientError("null codec cannot used to decode data");
   }
 
@@ -82,52 +169,54 @@ export const INVALID_CODEC = new NullCodec(INVALID_CODEC_ID);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-function registerScalarCodec(
-  typename: string,
-  type: new (tid: uuid, typename: string | null) => ICodec,
-): void {
-  const id = KNOWN_TYPENAMES.get(typename);
-  if (id == null) {
-    throw new InternalClientError("unknown type name");
-  }
+type ScalarCodecType = {
+  new (tid: string, typeName: string): ScalarCodec;
+};
 
-  SCALAR_CODECS.set(id, new type(id, typename));
+type CodecsToRegister = {
+  [key in keyof Codecs.KnownCodecs]: ScalarCodecType;
+};
+
+function registerScalarCodecs(codecs: CodecsToRegister): void {
+  for (const [typename, type] of Object.entries(codecs)) {
+    const id = KNOWN_TYPENAMES.get(typename);
+    if (id == null) {
+      throw new InternalClientError("unknown type name");
+    }
+
+    SCALAR_CODECS.set(id, new type(id, typename) as unknown as ICodec);
+  }
 }
 
-registerScalarCodec("std::int16", Int16Codec);
-registerScalarCodec("std::int32", Int32Codec);
-registerScalarCodec("std::int64", Int64Codec);
+registerScalarCodecs({
+  "std::int16": Int16Codec,
+  "std::int32": Int32Codec,
+  "std::int64": Int64Codec,
+  "std::float32": Float32Codec,
+  "std::float64": Float64Codec,
+  "std::bigint": BigIntCodec,
+  "std::decimal": DecimalStringCodec,
+  "std::bool": BoolCodec,
+  "std::json": JSONCodec,
+  "std::str": StrCodec,
+  "std::bytes": BytesCodec,
+  "std::uuid": UUIDCodec,
+  "cal::local_date": LocalDateCodec,
+  "cal::local_time": LocalTimeCodec,
+  "cal::local_datetime": LocalDateTimeCodec,
+  "std::datetime": DateTimeCodec,
+  "std::duration": DurationCodec,
+  "cal::relative_duration": RelativeDurationCodec,
+  "cal::date_duration": DateDurationCodec,
+  "cfg::memory": ConfigMemoryCodec,
 
-registerScalarCodec("std::float32", Float32Codec);
-registerScalarCodec("std::float64", Float64Codec);
+  "std::pg::json": PgTextJSONCodec,
+  "std::pg::timestamptz": DateTimeCodec,
+  "std::pg::timestamp": LocalDateTimeCodec,
+  "std::pg::date": LocalDateCodec,
+  "std::pg::interval": RelativeDurationCodec,
 
-registerScalarCodec("std::bigint", BigIntCodec);
-registerScalarCodec("std::decimal", DecimalStringCodec);
-
-registerScalarCodec("std::bool", BoolCodec);
-
-registerScalarCodec("std::json", JSONCodec);
-registerScalarCodec("std::str", StrCodec);
-registerScalarCodec("std::bytes", BytesCodec);
-
-registerScalarCodec("std::uuid", UUIDCodec);
-
-registerScalarCodec("cal::local_date", LocalDateCodec);
-registerScalarCodec("cal::local_time", LocalTimeCodec);
-registerScalarCodec("cal::local_datetime", LocalDateTimeCodec);
-registerScalarCodec("std::datetime", DateTimeCodec);
-registerScalarCodec("std::duration", DurationCodec);
-registerScalarCodec("cal::relative_duration", RelativeDurationCodec);
-registerScalarCodec("cal::date_duration", DateDurationCodec);
-
-registerScalarCodec("cfg::memory", ConfigMemoryCodec);
-
-registerScalarCodec("std::pg::json", PgTextJSONCodec);
-registerScalarCodec("std::pg::timestamptz", DateTimeCodec);
-registerScalarCodec("std::pg::timestamp", LocalDateTimeCodec);
-registerScalarCodec("std::pg::date", LocalDateCodec);
-registerScalarCodec("std::pg::interval", RelativeDurationCodec);
-
-registerScalarCodec("ext::pgvector::vector", PgVectorCodec);
-registerScalarCodec("ext::pgvector::halfvec", PgVectorHalfVecCodec);
-registerScalarCodec("ext::pgvector::sparsevec", PgVectorSparseVecCodec);
+  "ext::pgvector::vector": PgVectorCodec,
+  "ext::pgvector::halfvec": PgVectorHalfVecCodec,
+  "ext::pgvector::sparsevec": PgVectorSparseVecCodec,
+});

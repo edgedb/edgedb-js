@@ -29,8 +29,10 @@ import {
   LocalDateToOrdinal,
   localDateInstances,
 } from "../datatypes/datetime";
-import { ymd2ord } from "../datatypes/dateutil";
+import { ymd2ord, ord2ymd } from "../datatypes/dateutil";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { CodecContext } from "./context";
+import type { Codecs } from "./codecs";
 
 /* PostgreSQL UTC epoch starts on "January 1, 2000", whereas
  * in JavaScript, the UTC epoch starts on "January 1, 1970" (the UNIX epoch).
@@ -38,12 +40,26 @@ import { InvalidArgumentError, ProtocolError } from "../errors";
  * which is specified in the below constant (in milliseconds.)
  */
 const TIMESHIFT = 946684800000;
+const BI_TIMESHIFT_US = BigInt(TIMESHIFT) * 1000n;
+
 const DATESHIFT_ORD = ymd2ord(2000, 1, 1);
 
 export class DateTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "Date";
 
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const val = ctx.preEncode<Codecs.DateTimeCodec>(this, object);
+      if (typeof val != "bigint") {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom std::datetime codec`,
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64(val - BI_TIMESHIFT_US);
+      return;
+    }
+
     if (!(object instanceof Date)) {
       throw new InvalidArgumentError(
         `a Date instance was expected, got "${object}"`,
@@ -55,13 +71,20 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
     buf.writeInt64(us);
   }
 
-  decode(buf: ReadBuffer): Date {
+  decode(buf: ReadBuffer, ctx: CodecContext): Date {
+    if (ctx.hasOverload(this)) {
+      const us = buf.readBigInt64();
+      return ctx.postDecode<Codecs.DateTimeCodec>(this, us + BI_TIMESHIFT_US);
+    }
+
     const us = Number(buf.readBigInt64());
     let ms = Math.round(us / 1000);
     if (Math.abs(us % 1000) === 500 && Math.abs(ms) % 2 === 1) {
       ms -= 1;
     }
-    return new Date(ms + TIMESHIFT);
+    ms += TIMESHIFT;
+
+    return new Date(ms);
   }
 }
 
@@ -69,7 +92,20 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDateTime";
   override tsModule = "edgedb";
 
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      let us = ctx.preEncode<Codecs.LocalDateTimeCodec>(this, object);
+      if (typeof us != "bigint") {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cal::local_datetime codec`,
+        );
+      }
+      us -= BI_TIMESHIFT_US;
+      buf.writeInt32(8);
+      buf.writeBigInt64(us);
+      return;
+    }
+
     if (!(object instanceof LocalDateTime)) {
       throw new InvalidArgumentError(
         `a LocalDateTime instance was expected, got "${object}"`,
@@ -95,11 +131,19 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
     }
 
     buf.writeInt32(8);
-    buf.writeBigInt64(us as bigint);
+    buf.writeBigInt64(us);
   }
 
-  decode(buf: ReadBuffer): LocalDateTime {
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalDateTime {
     const bi_us = buf.readBigInt64();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.LocalDateTimeCodec>(
+        this,
+        BigInt(bi_us + BI_TIMESHIFT_US),
+      );
+    }
+
     const bi_ms = bi_us / 1000n;
     let us = Number(bi_us - bi_ms * 1000n);
     let ms = Number(bi_ms);
@@ -107,8 +151,9 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
       us += 1000;
       ms -= 1;
     }
+    ms += TIMESHIFT;
 
-    const date = new Date(Number(ms) + TIMESHIFT);
+    const date = new Date(ms);
     return new LocalDateTime(
       date.getUTCFullYear(),
       date.getUTCMonth() + 1,
@@ -125,26 +170,53 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 export class LocalDateCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDate";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.LocalDateCodec>(this, object);
+      const ord = ymd2ord(...ret);
+      buf.writeInt32(4);
+      buf.writeInt32(ord - DATESHIFT_ORD);
+      return;
+    }
+
     if (!(object instanceof LocalDate)) {
       throw new InvalidArgumentError(
         `a LocalDate instance was expected, got "${object}"`,
       );
     }
+
+    const ord = LocalDateToOrdinal(object);
     buf.writeInt32(4);
-    buf.writeInt32(LocalDateToOrdinal(object) - DATESHIFT_ORD);
+    buf.writeInt32(ord - DATESHIFT_ORD);
   }
 
-  decode(buf: ReadBuffer): LocalDate {
-    const ord = buf.readInt32();
-    return LocalDateFromOrdinal(ord + DATESHIFT_ORD);
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalDate {
+    const ord = buf.readInt32() + DATESHIFT_ORD;
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.LocalDateCodec>(this, ord2ymd(ord));
+    }
+
+    return LocalDateFromOrdinal(ord);
   }
 }
 
 export class LocalTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalTime";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const us = ctx.preEncode<Codecs.LocalTimeCodec>(this, object);
+      if (typeof us != "bigint") {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom cal::local_time codec`,
+        );
+      }
+      buf.writeInt32(8);
+      buf.writeBigInt64(us);
+      return;
+    }
+
     if (!(object instanceof LocalTime)) {
       throw new InvalidArgumentError(
         `a LocalTime instance was expected, got "${object}"`,
@@ -169,8 +241,15 @@ export class LocalTimeCodec extends ScalarCodec implements ICodec {
     buf.writeInt64(us);
   }
 
-  decode(buf: ReadBuffer): LocalTime {
-    let us = Number(buf.readBigInt64());
+  decode(buf: ReadBuffer, ctx: CodecContext): LocalTime {
+    const bius = buf.readBigInt64();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.LocalTimeCodec>(this, bius);
+    }
+
+    let us = Number(bius);
+
     let seconds = Math.floor(us / 1_000_000);
     const ms = Math.floor((us % 1_000_000) / 1000);
     us = (us % 1_000_000) - ms * 1000;
@@ -201,7 +280,22 @@ export function checkValidEdgeDBDuration(duration: Duration): null | string {
 export class DurationCodec extends ScalarCodec implements ICodec {
   override tsType = "Duration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const us = ctx.preEncode<Codecs.DurationCodec>(this, object);
+      if (typeof us != "bigint") {
+        throw new InvalidArgumentError(
+          `a bigint was expected out of a custom std::duration codec`,
+        );
+      }
+
+      buf.writeInt32(16);
+      buf.writeBigInt64(us);
+      buf.writeInt32(0);
+      buf.writeInt32(0);
+      return;
+    }
+
     if (!(object instanceof Duration)) {
       throw new InvalidArgumentError(
         `a Duration instance was expected, got "${object}"`,
@@ -238,7 +332,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(0);
   }
 
-  decode(buf: ReadBuffer): Duration {
+  decode(buf: ReadBuffer, ctx: CodecContext): Duration {
     let bius = buf.readBigInt64();
     const days = buf.readInt32();
     const months = buf.readInt32();
@@ -247,6 +341,10 @@ export class DurationCodec extends ScalarCodec implements ICodec {
     }
     if (months !== 0) {
       throw new ProtocolError("non-zero reserved bytes in duration");
+    }
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.DurationCodec>(this, bius);
     }
 
     let sign = 1;
@@ -285,7 +383,16 @@ export class DurationCodec extends ScalarCodec implements ICodec {
 export class RelativeDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "RelativeDuration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.RelativeDurationCodec>(this, object);
+      buf.writeInt32(16);
+      buf.writeBigInt64(ret[2]);
+      buf.writeInt32(ret[1]);
+      buf.writeInt32(ret[0]);
+      return;
+    }
+
     if (!(object instanceof RelativeDuration)) {
       throw new InvalidArgumentError(`
         a RelativeDuration instance was expected, got "${object}"
@@ -305,10 +412,18 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(object.months + 12 * object.years);
   }
 
-  decode(buf: ReadBuffer): RelativeDuration {
+  decode(buf: ReadBuffer, ctx: CodecContext): RelativeDuration {
     let bius = buf.readBigInt64();
     let days = buf.readInt32();
     let months = buf.readInt32();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.RelativeDurationCodec>(this, [
+        months,
+        days,
+        bius,
+      ]);
+    }
 
     let sign = 1;
     if (Number(bius) < 0) {
@@ -352,7 +467,16 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
 export class DateDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "DateDuration";
   override tsModule = "edgedb";
-  encode(buf: WriteBuffer, object: unknown): void {
+  encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const ret = ctx.preEncode<Codecs.DateDurationCodec>(this, object);
+      buf.writeInt32(16);
+      buf.writeInt64(0);
+      buf.writeInt32(ret[1]);
+      buf.writeInt32(ret[0]);
+      return;
+    }
+
     if (!(object instanceof DateDuration)) {
       throw new InvalidArgumentError(`
         a DateDuration instance was expected, got "${object}"
@@ -365,10 +489,14 @@ export class DateDurationCodec extends ScalarCodec implements ICodec {
     buf.writeInt32(object.months + 12 * object.years);
   }
 
-  decode(buf: ReadBuffer): DateDuration {
+  decode(buf: ReadBuffer, ctx: CodecContext): DateDuration {
     buf.discard(8);
     let days = buf.readInt32();
     let months = buf.readInt32();
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.DateDurationCodec>(this, [months, days]);
+    }
 
     const weeks = Math.trunc(days / 7);
     days = Math.trunc(days % 7);

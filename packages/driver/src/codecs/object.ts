@@ -17,7 +17,7 @@
  */
 
 import { Cardinality } from "../ifaces";
-import type { ICodec, uuid, CodecKind } from "./ifaces";
+import type { ICodec, uuid, CodecKind, IArgsCodec } from "./ifaces";
 import { Codec } from "./ifaces";
 import { ReadBuffer, WriteBuffer } from "../primitives/buffer";
 import {
@@ -27,6 +27,7 @@ import {
   UnknownArgumentError,
   ProtocolError,
 } from "../errors";
+import type { CodecContext } from "./context";
 
 const EDGE_POINTER_IS_IMPLICIT = 1 << 0;
 const EDGE_POINTER_IS_LINKPROP = 1 << 1;
@@ -38,7 +39,7 @@ export interface ObjectFieldInfo {
   cardinality: Cardinality;
 }
 
-export class ObjectCodec extends Codec implements ICodec {
+export class ObjectCodec extends Codec implements ICodec, IArgsCodec {
   private codecs: ICodec[];
   private fields: ObjectFieldInfo[];
   private namesSet: Set<string>;
@@ -76,15 +77,15 @@ export class ObjectCodec extends Codec implements ICodec {
     throw new InvalidArgumentError("Objects cannot be passed as arguments");
   }
 
-  encodeArgs(args: any): Uint8Array {
+  encodeArgs(args: any, ctx: CodecContext): Uint8Array {
     // EdgeQL query parameters start at 0, SQL start at 1.
     if (this.fields[0].name === "0" || this.fields[0].name === "1") {
-      return this._encodePositionalArgs(args);
+      return this._encodePositionalArgs(args, ctx);
     }
-    return this._encodeNamedArgs(args);
+    return this._encodeNamedArgs(args, ctx);
   }
 
-  _encodePositionalArgs(args: any): Uint8Array {
+  _encodePositionalArgs(args: any, ctx: CodecContext): Uint8Array {
     if (!Array.isArray(args)) {
       throw new InvalidArgumentError("an array of arguments was expected");
     }
@@ -114,7 +115,7 @@ export class ObjectCodec extends Codec implements ICodec {
         elemData.writeInt32(-1);
       } else {
         const codec = codecs[i];
-        codec.encode(elemData, arg);
+        codec.encode(elemData, arg, ctx);
       }
     }
 
@@ -126,7 +127,7 @@ export class ObjectCodec extends Codec implements ICodec {
     return buf.unwrap();
   }
 
-  _encodeNamedArgs(args: any): Uint8Array {
+  _encodeNamedArgs(args: any, ctx: CodecContext): Uint8Array {
     if (args == null) {
       throw new MissingArgumentError(
         "One or more named arguments expected, received null",
@@ -164,7 +165,7 @@ export class ObjectCodec extends Codec implements ICodec {
         elemData.writeInt32(-1);
       } else {
         const codec = codecs[i];
-        codec.encode(elemData, val);
+        codec.encode(elemData, val, ctx);
       }
     }
 
@@ -176,7 +177,7 @@ export class ObjectCodec extends Codec implements ICodec {
     return buf.unwrap();
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const codecs = this.codecs;
     const fields = this.fields;
 
@@ -196,7 +197,7 @@ export class ObjectCodec extends Codec implements ICodec {
       let val = null;
       if (elemLen !== -1) {
         buf.sliceInto(elemBuf, elemLen);
-        val = codecs[i].decode(elemBuf);
+        val = codecs[i].decode(elemBuf, ctx);
         elemBuf.finish();
       }
       result[name] = val;

@@ -16,9 +16,18 @@
  * limitations under the License.
  */
 
+import {
+  expect,
+  test,
+  describe,
+  beforeAll,
+  afterAll,
+  it,
+  jest,
+} from "@jest/globals";
 import fc from "fast-check";
 import { parseConnectArguments } from "../src/conUtils.server";
-import type { Client, Executor, _ICodec } from "../src/index.node";
+import type { Executor, _ICodec, Codecs } from "../src/index.node";
 import {
   DivisionByZeroError,
   Duration,
@@ -34,7 +43,7 @@ import {
   QueryArgumentError,
   _CodecsRegistry,
   _ReadBuffer,
-  Session,
+  Options,
   AuthenticationError,
   InvalidReferenceError,
   throwWarnings,
@@ -46,7 +55,7 @@ import {
 } from "../src/index.node";
 
 import { AdminUIFetchConnection } from "../src/fetchConn";
-import type { CustomCodecSpec } from "../src/codecs/registry";
+import { NOOP_CODEC_CONTEXT, CodecValueType } from "../src/codecs/context";
 import {
   getAvailableExtensions,
   getAvailableFeatures,
@@ -59,17 +68,6 @@ import { getHTTPSCRAMAuth } from "../src/httpScram";
 import cryptoUtils from "../src/cryptoUtils";
 import { getAuthenticatedFetch } from "../src/utils";
 import { Language } from "../src/ifaces";
-
-function setCustomCodecs(codecs: (keyof CustomCodecSpec)[], client: Client) {
-  // @ts-ignore
-  const registry = client.pool._codecsRegistry;
-  registry.setCustomCodecs(
-    codecs.reduce((obj, codec) => {
-      obj[codec] = true;
-      return obj;
-    }, {} as any),
-  );
-}
 
 class CancelTransaction extends Error {}
 
@@ -390,47 +388,6 @@ test("fetch: decimal as string", async () => {
     for (let i = 0; i < fetched[0].length; i++) {
       expect(fetched[0][i]).toBe(fetched[2][i]);
       expect(fetched[0][i]).toBe(fetched[1][i]);
-    }
-  } finally {
-    await con.close();
-  }
-});
-
-test("fetch: int64 as bigint", async () => {
-  const con = getClient();
-  setCustomCodecs(["int64_bigint"], con);
-
-  const vals = [
-    "0",
-    "-0",
-    "1",
-    "-1",
-    "11",
-    "-11",
-    "110000",
-    "-1100000",
-    "113",
-    "1152921504594725865",
-    "-1152921504594725865",
-  ];
-
-  try {
-    const fetched = await con.querySingle<any>(
-      `
-      WITH
-        inp := <array<int64>>$0,
-        inpStr := <array<str>>$1,
-        str := <array<str>>inp,
-      SELECT
-        (inp, str, <array<int64>>inpStr)
-    `,
-      [vals.map((v) => BigInt(v)), vals],
-    );
-
-    expect(fetched[0].length).toBe(vals.length);
-    for (let i = 0; i < fetched[0].length; i++) {
-      expect(fetched[0][i]).toBe(fetched[2][i]);
-      expect(fetched[0][i].toString()).toBe(fetched[1][i]);
     }
   } finally {
     await con.close();
@@ -2281,7 +2238,7 @@ function _decodeResultBuffer(outCodec: _ICodec, resultData: Uint8Array) {
 
     buf.sliceInto(codecReadBuf, len - 4);
     codecReadBuf.discard(6);
-    const val = outCodec.decode(codecReadBuf);
+    const val = outCodec.decode(codecReadBuf, NOOP_CODEC_CONTEXT);
     result.push(val);
   }
   return result;
@@ -2306,7 +2263,7 @@ if (getAvailableFeatures().has("binary-over-http")) {
     );
 
     const query = `SELECT Function { name }`;
-    const state = new Session({ module: "schema" });
+    const state = new Options({ module: "schema" });
     const options = {
       injectTypenames: true,
       implicitLimit: BigInt(5),
@@ -2347,8 +2304,274 @@ if (getAvailableFeatures().has("binary-over-http")) {
     );
 
     await expect(
-      fetchConn.rawParse(Language.EDGEQL, `select 1`, Session.defaults()),
+      fetchConn.rawParse(Language.EDGEQL, `select 1`, Options.defaults()),
     ).rejects.toThrow(AuthenticationError);
+  });
+}
+
+if (getEdgeDBVersion().major >= 5) {
+  test("fetch: int64 as bigint", async () => {
+    const con = getClient().withCodecs({
+      "std::int64": {
+        toDatabase(data: bigint) {
+          return data;
+        },
+        fromDatabase(data: bigint) {
+          return data;
+        },
+      },
+    });
+
+    const vals = [
+      "0",
+      "-0",
+      "1",
+      "-1",
+      "11",
+      "-11",
+      "110000",
+      "-1100000",
+      "113",
+      "1152921504594725865",
+      "-1152921504594725865",
+    ];
+
+    try {
+      const fetched = await con.querySingle<any>(
+        `
+        WITH
+          inp := <array<int64>>$0,
+          inpStr := <array<str>>$1,
+          str := <array<str>>inp,
+        SELECT
+          (inp, str, <array<int64>>inpStr)
+      `,
+        [vals.map((v) => BigInt(v)), vals],
+      );
+
+      expect(fetched[0].length).toBe(vals.length);
+      for (let i = 0; i < fetched[0].length; i++) {
+        expect(fetched[0][i]).toBe(fetched[2][i]);
+        expect(fetched[0][i].toString()).toBe(fetched[1][i]);
+      }
+    } finally {
+      await con.close();
+    }
+  });
+
+  describe("withCodecs", () => {
+    const client = getClient();
+
+    beforeAll(async () => {
+      await client.execute("create extension pgvector;");
+      await client.execute(`
+        CREATE SCALAR TYPE default::MyInt extending std::int32;
+        CREATE SCALAR TYPE default::MySuperInt extending default::MyInt;
+      `);
+    });
+
+    afterAll(async () => {
+      await client.execute("drop extension pgvector;");
+      await client.execute(`
+        DROP SCALAR TYPE default::MySuperInt;
+        DROP SCALAR TYPE default::MyInt;
+      `);
+      await client.close();
+    });
+
+    it("custom scalar type overrides", async () => {
+      let r = await client.querySingle("select <MyInt>123");
+      expect(r).toBe(123);
+
+      const c2 = client.withCodecs({
+        "default::MyInt": {
+          toDatabase(val) {
+            throw "not implemented";
+          },
+          fromDatabase(val) {
+            return val + 10000;
+          },
+        } as Codecs.Int32Codec,
+      });
+
+      // c2 settings shouldn't affect the original client
+      r = await client.querySingle("select <MyInt>123");
+      expect(r).toBe(123);
+
+      // let's test c2 now
+      r = await c2.querySingle("select <MyInt>123");
+      expect(r).toBe(10123);
+      r = await c2.querySingle("select <MySuperInt>144");
+      expect(r).toBe(10144);
+      r = await c2.querySingle("select <int32>150");
+      expect(r).toBe(150);
+
+      // let's test again, that c2 settings shouldn't affect
+      // the original client
+      r = await client.querySingle("select <MyInt>123");
+      expect(r).toBe(123);
+    });
+
+    it("supports all types", async () => {
+      // A very simple roundtrip smoke test; checks the overall machinery
+      // health, mundane check that type names are spelled correctly, etc.
+
+      class Value {
+        constructor(
+          public type: string,
+          public value: any,
+        ) {}
+      }
+
+      // TODO: Add tests!
+      type SkipCodecs =
+        // halfvec requires Float16Array and I'm not sure we should
+        // proxy a third-party lib through our API.
+        | "ext::pgvector::halfvec"
+        // just need to write a test
+        | "ext::pgvector::sparsevec"
+        // these are only available in EdgeDB 6, and also re-use the
+        // existing codecs, so I'm not too worried on testing them.
+        | "std::pg::json"
+        | "std::pg::timestamptz"
+        | "std::pg::timestamp"
+        | "std::pg::date"
+        | "std::pg::interval";
+
+      type CodecsToTest = SkipCodecs extends never
+        ? keyof Codecs.KnownCodecs
+        : Exclude<keyof Codecs.KnownCodecs, SkipCodecs>;
+
+      type TestedCodecs = {
+        [key in CodecsToTest]: CodecValueType<Codecs.KnownCodecs[key]>;
+      };
+
+      const allCodecs: TestedCodecs = {
+        "std::int16": -123,
+        "std::int32": 12,
+        "std::int64": 12398890798n,
+        "std::float32": 0.1,
+        "std::float64": -0.1,
+        "std::bigint": 18292881028312n,
+        "std::decimal": "-123121231231200031098082.123123123129083712987",
+        "std::bool": false,
+        "std::json": '{"a": true}',
+        "std::str": "aaaa",
+        "std::bytes": new Uint8Array([1, 2, 3, 4]),
+        "std::uuid": new Uint8Array([
+          1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4,
+        ]),
+        "cal::local_date": [2020, 5, 20],
+        "cal::local_time": 121231213n,
+        "cal::local_datetime": 91312311231088n,
+        "cal::relative_duration": [10, 4, 12312312321n],
+        "cal::date_duration": [2, 3],
+        "std::datetime": 12121223163n,
+        "std::duration": 1000002n,
+        "cfg::memory": 99n,
+        "ext::pgvector::vector": new Float32Array([1, -1, 0.3]),
+      };
+
+      const con = getClient().withCodecs(
+        Object.fromEntries(
+          Object.keys(allCodecs).map((tn) => {
+            return [
+              tn,
+              {
+                toDatabase(data: Value): any {
+                  return data.value;
+                },
+                fromDatabase(data: any): Value {
+                  return new Value(tn, data);
+                },
+              },
+            ];
+          }),
+        ),
+      );
+
+      let args: any[] = [];
+      let query = "select (";
+      for (let [idx, [type, value]] of Object.entries(allCodecs).entries()) {
+        query += `<${type}>\$${idx},`;
+        args.push(new Value(type, value));
+      }
+      query += ")";
+
+      const ret = (await con.querySingle(query, args)) as Array<Value>;
+
+      expect(ret.length).toBe(args.length);
+
+      for (let i = 0; i < ret.length; i++) {
+        const tn = ret[i].type;
+        expect(tn).toBe(args[i].type);
+
+        try {
+          if (ret[i].type.includes("float")) {
+            expect(ret[i].value).toBeCloseTo(args[i].value);
+          } else {
+            expect(ret[i].value).toStrictEqual(args[i].value);
+          }
+        } catch (e) {
+          console.error(`type ${tn}`);
+          throw e;
+        }
+      }
+    });
+  });
+
+  test("codec context invalidation", async () => {
+    const query = `SELECT <CodecInv_01>'123'`;
+
+    const client = getClient().withCodecs({
+      "std::str": {
+        toDatabase() {
+          throw "not implemented";
+        },
+        fromDatabase(val) {
+          return { str: val };
+        },
+      },
+      "std::int32": {
+        toDatabase() {
+          throw "not implemented";
+        },
+        fromDatabase(val) {
+          return { int: val };
+        },
+      },
+    });
+
+    try {
+      await client.transaction(async (tx) => {
+        await tx.execute(`
+          CREATE SCALAR TYPE CodecInv_01 EXTENDING std::str;
+        `);
+
+        let ret = await tx.querySingle(query);
+        expect(ret).toStrictEqual({ str: "123" });
+
+        await tx.execute(`
+          DROP SCALAR TYPE CodecInv_01;
+          CREATE SCALAR TYPE CodecInv_01 EXTENDING std::int32;
+        `);
+
+        // If CodecContext wasn't invalidated and the previous one got
+        // used to after running the above DDL, we'll have ret == {str: '123'},
+        // because we'd still think that the appropriate codec for
+        // 'CodecInv_01' would be one for 'std::str'.
+        ret = await tx.querySingle(query);
+        expect(ret).toStrictEqual({ int: 123 });
+
+        throw new CancelTransaction();
+      });
+    } catch (e) {
+      if (!(e instanceof CancelTransaction)) {
+        throw e;
+      }
+    } finally {
+      await client.close();
+    }
   });
 }
 

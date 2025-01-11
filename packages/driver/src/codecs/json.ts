@@ -23,20 +23,26 @@ import {
 } from "../primitives/buffer";
 import { type ICodec, ScalarCodec } from "./ifaces";
 import { InvalidArgumentError, ProtocolError } from "../errors";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 
 export class JSONCodec extends ScalarCodec implements ICodec {
   override tsType = "unknown";
 
   readonly jsonFormat: number | null = 1;
 
-  encode(buf: WriteBuffer, object: any): void {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     let val: string;
-    try {
-      val = JSON.stringify(object);
-    } catch (_err) {
-      throw new InvalidArgumentError(
-        `a JSON-serializable value was expected, got "${object}"`,
-      );
+    if (ctx.hasOverload(this)) {
+      val = ctx.preEncode<Codecs.JsonCodec>(this, object);
+    } else {
+      try {
+        val = JSON.stringify(object);
+      } catch (_err) {
+        throw new InvalidArgumentError(
+          `a JSON-serializable value was expected, got "${object}"`,
+        );
+      }
     }
 
     // JSON.stringify can return undefined
@@ -56,14 +62,18 @@ export class JSONCodec extends ScalarCodec implements ICodec {
     buf.writeBuffer(strbuf);
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     if (this.jsonFormat !== null) {
       const format = buf.readUInt8();
       if (format !== this.jsonFormat) {
         throw new ProtocolError(`unexpected JSON format ${format}`);
       }
     }
-    return JSON.parse(buf.consumeAsString());
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.JsonCodec>(this, buf.consumeAsString());
+    } else {
+      return JSON.parse(buf.consumeAsString());
+    }
   }
 }
 
@@ -71,35 +81,22 @@ export class PgTextJSONCodec extends JSONCodec {
   override readonly jsonFormat = null;
 }
 
-export class JSONStringCodec extends ScalarCodec implements ICodec {
-  readonly jsonFormat: number | null = 1;
+export class PgTextJSONStringCodec extends ScalarCodec implements ICodec {
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      object = ctx.preEncode<Codecs.JsonCodec>(this, object);
+    }
 
-  encode(buf: WriteBuffer, object: any): void {
     if (typeof object !== "string") {
       throw new InvalidArgumentError(`a string was expected, got "${object}"`);
     }
 
     const strbuf = utf8Encoder.encode(object);
-    if (this.jsonFormat !== null) {
-      buf.writeInt32(strbuf.length + 1);
-      buf.writeChar(this.jsonFormat);
-    } else {
-      buf.writeInt32(strbuf.length);
-    }
+    buf.writeInt32(strbuf.length);
     buf.writeBuffer(strbuf);
   }
 
-  decode(buf: ReadBuffer): any {
-    if (this.jsonFormat !== null) {
-      const format = buf.readUInt8();
-      if (format !== this.jsonFormat) {
-        throw new ProtocolError(`unexpected JSON format ${format}`);
-      }
-    }
-    return buf.consumeAsString();
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    return ctx.postDecode<Codecs.JsonCodec>(this, buf.consumeAsString());
   }
-}
-
-export class PgTextJSONStringCodec extends JSONStringCodec {
-  override readonly jsonFormat = null;
 }
