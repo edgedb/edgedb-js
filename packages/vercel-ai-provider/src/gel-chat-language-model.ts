@@ -24,7 +24,7 @@ import {
 } from "./gel-chat-settings";
 import { gelFailedResponseHandler } from "./gel-error";
 import {
-  mapEdgedbStopReason,
+  mapGelStopReason,
   getResponseMetadata,
   mapOpenAICompletionLogProbs,
 } from "./utils";
@@ -248,7 +248,7 @@ export class GelChatLanguageModel implements LanguageModelV1 {
         toolName: toolCall.name,
         args: JSON.stringify(toolCall.args),
       })),
-      finishReason: mapEdgedbStopReason(finish_reason),
+      finishReason: mapGelStopReason(finish_reason),
       logprobs: mapOpenAICompletionLogProbs(logprobs),
       usage: {
         promptTokens: usage.prompt_tokens,
@@ -427,7 +427,7 @@ export class GelChatLanguageModel implements LanguageModelV1 {
               }
 
               case "message_delta": {
-                finishReason = mapEdgedbStopReason(value.delta.stop_reason);
+                finishReason = mapGelStopReason(value.delta.stop_reason);
                 if (value.usage) {
                   usage.completionTokens = value.usage.completion_tokens;
                 }
