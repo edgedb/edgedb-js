@@ -1,17 +1,15 @@
-export type EdgeDBEmbeddingModelId =
+export type GelEmbeddingModelId =
   | "text-embedding-ada-002"
   | "text-embedding-3-small"
   | "text-embedding-3-large"
   | "mistral-embed"
   | (string & {});
 
-export function isMistralEmbeddingModel(
-  model: EdgeDBEmbeddingModelId,
-): boolean {
+export function isMistralEmbeddingModel(model: GelEmbeddingModelId): boolean {
   return model === "mistral-embed";
 }
 
-export interface EdgeDBEmbeddingSettings {
+export interface GelEmbeddingSettings {
   /**
 Override the maximum number of embeddings per call.
    */
