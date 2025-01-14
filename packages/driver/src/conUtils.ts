@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import {
   validateCredentials,
 } from "./credentials";
 import { Duration, parseHumanDurationString } from "./datatypes/datetime";
-import { checkValidEdgeDBDuration } from "./codecs/datetime";
+import { checkValidGelDuration } from "./codecs/datetime";
 import { InterfaceError } from "./errors";
 import { decodeB64, utf8Decoder, utf8Encoder } from "./primitives/buffer";
 import { crcHqx } from "./primitives/crcHqx";
@@ -137,7 +137,19 @@ export type ResolvedConnectConfigReadonly = Readonly<
 >;
 
 function getEnv(envName: string, _required = false): string | undefined {
-  return process.env[envName];
+  const gelEnv = envName;
+  const edgedbEnv = envName.replace(/^GEL_/, "EDGEDB_");
+
+  const gelValue = process.env[gelEnv];
+  const edgedbValue = process.env[edgedbEnv];
+
+  if (gelValue !== undefined && edgedbValue !== undefined) {
+    console.warn(
+      `Both GEL_w+ and EDGEDB_w+ are set; EDGEDB_w+ will be ignored`,
+    );
+  }
+
+  return gelValue ?? edgedbValue;
 }
 
 export class ResolvedConnectConfig {
@@ -308,13 +320,13 @@ export class ResolvedConnectConfig {
                 .join(", ")}`,
           );
         }
-        const clientSecurity = getEnv("EDGEDB_CLIENT_SECURITY");
+        const clientSecurity = getEnv("GEL_CLIENT_SECURITY");
         if (clientSecurity !== undefined) {
           if (
             !["default", "insecure_dev_mode", "strict"].includes(clientSecurity)
           ) {
             throw new InterfaceError(
-              `invalid EDGEDB_CLIENT_SECURITY value: '${clientSecurity}', ` +
+              `invalid GEL_CLIENT_SECURITY value: '${clientSecurity}', ` +
                 `must be one of 'default', 'insecure_dev_mode' or 'strict'`,
             );
           }
@@ -329,9 +341,9 @@ export class ResolvedConnectConfig {
             ) {
               throw new InterfaceError(
                 `'tlsSecurity' value (${_tlsSecurity}) conflicts with ` +
-                  `EDGEDB_CLIENT_SECURITY value (${clientSecurity}), ` +
+                  `GEL_CLIENT_SECURITY value (${clientSecurity}), ` +
                   `'tlsSecurity' value cannot be lower than security level ` +
-                  `set by EDGEDB_CLIENT_SECURITY`,
+                  `set by GEL_CLIENT_SECURITY`,
               );
             }
             _tlsSecurity = "strict";
@@ -512,7 +524,7 @@ export function parseDuration(duration: string | number | Duration): number {
     }
   }
   if (duration instanceof Duration) {
-    const invalidField = checkValidEdgeDBDuration(duration);
+    const invalidField = checkValidGelDuration(duration);
     if (invalidField) {
       throw new InterfaceError(
         `invalid waitUntilAvailable duration, cannot have a '${invalidField}' value`,
@@ -563,7 +575,7 @@ async function parseConnectDsnAndArgs(
       user: config.user,
       password: config.password,
       secretKey: config.secretKey,
-      cloudProfile: getEnv("EDGEDB_CLOUD_PROFILE"),
+      cloudProfile: getEnv("GEL_CLOUD_PROFILE"),
       tlsCA: config.tlsCA,
       tlsCAFile: config.tlsCAFile,
       tlsServerName: config.tlsServerName,
@@ -586,7 +598,7 @@ async function parseConnectDsnAndArgs(
       user: `'user' option`,
       password: `'password' option`,
       secretKey: `'secretKey' option`,
-      cloudProfile: `'EDGEDB_CLOUD_PROFILE' environment variable`,
+      cloudProfile: `'GEL_CLOUD_PROFILE' environment variable`,
       tlsCA: `'tlsCA' option`,
       tlsCAFile: `'tlsCAFile' option`,
       tlsSecurity: `'tlsSecurity' option`,
@@ -602,12 +614,10 @@ async function parseConnectDsnAndArgs(
   if (!hasCompoundOptions) {
     // resolve config from env vars
 
-    let port: string | undefined = getEnv("EDGEDB_PORT");
+    let port: string | undefined = getEnv("GEL_PORT");
     if (resolvedConfig._port === null && port?.startsWith("tcp://")) {
-      // EDGEDB_PORT is set by 'docker --link' so ignore and warn
-      console.warn(
-        `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`,
-      );
+      // GEL_PORT is set by 'docker --link' so ignore and warn
+      console.warn(`GEL_PORT in 'tcp://host:port' format, so will be ignored`);
       port = undefined;
     }
 
@@ -615,44 +625,44 @@ async function parseConnectDsnAndArgs(
       await resolveConfigOptions(
         resolvedConfig,
         {
-          dsn: getEnv("EDGEDB_DSN"),
-          instanceName: getEnv("EDGEDB_INSTANCE"),
-          credentials: getEnv("EDGEDB_CREDENTIALS"),
-          credentialsFile: getEnv("EDGEDB_CREDENTIALS_FILE"),
-          host: getEnv("EDGEDB_HOST"),
+          dsn: getEnv("GEL_DSN"),
+          instanceName: getEnv("GEL_INSTANCE"),
+          credentials: getEnv("GEL_CREDENTIALS"),
+          credentialsFile: getEnv("GEL_CREDENTIALS_FILE"),
+          host: getEnv("GEL_HOST"),
           port,
-          database: getEnv("EDGEDB_DATABASE"),
-          branch: getEnv("EDGEDB_BRANCH"),
-          user: getEnv("EDGEDB_USER"),
-          password: getEnv("EDGEDB_PASSWORD"),
-          secretKey: getEnv("EDGEDB_SECRET_KEY"),
-          tlsCA: getEnv("EDGEDB_TLS_CA"),
-          tlsCAFile: getEnv("EDGEDB_TLS_CA_FILE"),
-          tlsServerName: getEnv("EDGEDB_TLS_SERVER_NAME"),
-          tlsSecurity: getEnv("EDGEDB_CLIENT_TLS_SECURITY"),
-          waitUntilAvailable: getEnv("EDGEDB_WAIT_UNTIL_AVAILABLE"),
+          database: getEnv("GEL_DATABASE"),
+          branch: getEnv("GEL_BRANCH"),
+          user: getEnv("GEL_USER"),
+          password: getEnv("GEL_PASSWORD"),
+          secretKey: getEnv("GEL_SECRET_KEY"),
+          tlsCA: getEnv("GEL_TLS_CA"),
+          tlsCAFile: getEnv("GEL_TLS_CA_FILE"),
+          tlsServerName: getEnv("GEL_TLS_SERVER_NAME"),
+          tlsSecurity: getEnv("GEL_CLIENT_TLS_SECURITY"),
+          waitUntilAvailable: getEnv("GEL_WAIT_UNTIL_AVAILABLE"),
         },
         {
-          dsn: `'EDGEDB_DSN' environment variable`,
-          instanceName: `'EDGEDB_INSTANCE' environment variable`,
-          credentials: `'EDGEDB_CREDENTIALS' environment variable`,
-          credentialsFile: `'EDGEDB_CREDENTIALS_FILE' environment variable`,
-          host: `'EDGEDB_HOST' environment variable`,
-          port: `'EDGEDB_PORT' environment variable`,
-          database: `'EDGEDB_DATABASE' environment variable`,
-          branch: `'EDGEDB_BRANCH' environment variable`,
-          user: `'EDGEDB_USER' environment variable`,
-          password: `'EDGEDB_PASSWORD' environment variable`,
-          secretKey: `'EDGEDB_SECRET_KEY' environment variable`,
-          tlsCA: `'EDGEDB_TLS_CA' environment variable`,
-          tlsCAFile: `'EDGEDB_TLS_CA_FILE' environment variable`,
-          tlsServerName: `'EDGEDB_TLS_SERVER_NAME' environment variable`,
-          tlsSecurity: `'EDGEDB_CLIENT_TLS_SECURITY' environment variable`,
-          waitUntilAvailable: `'EDGEDB_WAIT_UNTIL_AVAILABLE' environment variable`,
+          dsn: `'GEL_DSN' environment variable`,
+          instanceName: `'GEL_INSTANCE' environment variable`,
+          credentials: `'GEL_CREDENTIALS' environment variable`,
+          credentialsFile: `'GEL_CREDENTIALS_FILE' environment variable`,
+          host: `'GEL_HOST' environment variable`,
+          port: `'GEL_PORT' environment variable`,
+          database: `'GEL_DATABASE' environment variable`,
+          branch: `'GEL_BRANCH' environment variable`,
+          user: `'GEL_USER' environment variable`,
+          password: `'GEL_PASSWORD' environment variable`,
+          secretKey: `'GEL_SECRET_KEY' environment variable`,
+          tlsCA: `'GEL_TLS_CA' environment variable`,
+          tlsCAFile: `'GEL_TLS_CA_FILE' environment variable`,
+          tlsServerName: `'GEL_TLS_SERVER_NAME' environment variable`,
+          tlsSecurity: `'GEL_CLIENT_TLS_SECURITY' environment variable`,
+          waitUntilAvailable: `'GEL_WAIT_UNTIL_AVAILABLE' environment variable`,
         },
         `Cannot have more than one of the following connection environment variables: ` +
-          `'EDGEDB_DSN', 'EDGEDB_INSTANCE', 'EDGEDB_CREDENTIALS', ` +
-          `'EDGEDB_CREDENTIALS_FILE' or 'EDGEDB_HOST'`,
+          `'GEL_DSN', 'GEL_INSTANCE', 'GEL_CREDENTIALS', ` +
+          `'GEL_CREDENTIALS_FILE' or 'GEL_HOST'`,
         serverUtils,
       ));
   }
@@ -671,8 +681,8 @@ async function parseConnectDsnAndArgs(
       throw new errors.ClientConnectionError(
         "no project config file found and no connection options " +
           "specified either via arguments to `createClient()` API or via " +
-          "environment variables EDGEDB_HOST, EDGEDB_INSTANCE, EDGEDB_DSN, " +
-          "EDGEDB_CREDENTIALS or EDGEDB_CREDENTIALS_FILE",
+          "environment variables GEL_HOST, GEL_INSTANCE, GEL_DSN, " +
+          "GEL_CREDENTIALS or GEL_CREDENTIALS_FILE",
       );
     }
     const stashDir = await serverUtils.findStashPath(projectDir);
@@ -725,7 +735,7 @@ async function parseConnectDsnAndArgs(
     } else {
       throw new errors.ClientConnectionError(
         "Found project config file but the project is not initialized. " +
-          "Run 'edgedb project init'.",
+          "Run 'gel project init'.",
       );
     }
   }
@@ -1232,7 +1242,7 @@ async function parseCloudInstanceNameIntoConfig(
     const host = `${domainName}.c-${dnsBucket}.i.${dnsZone}`;
     config.setHost(host, `resolved from 'secretKey' and ${source}`);
   } catch (e) {
-    if (e instanceof errors.EdgeDBError) {
+    if (e instanceof errors.GelError) {
       throw e;
     } else {
       throw new InterfaceError(`Invalid secret key: ${e}`);

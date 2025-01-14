@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ function decodeRange(
 
 export class RangeCodec extends Codec implements ICodec {
   readonly tsType = "Range";
-  readonly tsModule = "edgedb";
+  readonly tsModule = "gel";
 
   private subCodec: ICodec;
   readonly typeName: string;
@@ -134,7 +134,7 @@ export class RangeCodec extends Codec implements ICodec {
 
 export class MultiRangeCodec extends Codec implements ICodec {
   readonly tsType = "MultiRange";
-  readonly tsModule = "edgedb";
+  readonly tsModule = "gel";
 
   private subCodec: ICodec;
   public typeName: string;

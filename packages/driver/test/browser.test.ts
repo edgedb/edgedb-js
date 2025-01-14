@@ -5,7 +5,7 @@
 const { TextEncoder, TextDecoder } = require("util");
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
-import { getEdgeDBVersion } from "./testbase";
+import { getGelVersion } from "./testbase";
 
 const nodeVersion = parseInt(process.version.slice(1).split(".")[0], 10);
 
@@ -14,7 +14,7 @@ if (nodeVersion >= 15) {
   crypto.subtle = require("crypto").webcrypto.subtle;
 }
 
-const version = getEdgeDBVersion();
+const version = getGelVersion();
 
 beforeAll(async () => {
   for (const nodeModule of [
@@ -64,20 +64,16 @@ beforeAll(async () => {
   }
 });
 
-import {
-  createClient,
-  createHttpClient,
-  EdgeDBError,
-} from "../src/index.browser";
+import { createClient, createHttpClient, GelError } from "../src/index.browser";
 
 const brokenConnectOpts = JSON.parse(
   process.env._JEST_EDGEDB_CONNECT_CONFIG || "",
 );
-const edgedbVersion = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
+const gelVersion = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
 
 const connectOpts = {
   ...brokenConnectOpts,
-  user: edgedbVersion.major >= 6 ? "admin" : "edgedb",
+  user: gelVersion.major >= 6 ? "admin" : "edgedb",
   tlsCAFile: undefined,
   tlsSecurity: "insecure",
 };
@@ -86,7 +82,7 @@ const connectOpts = {
 if (nodeVersion >= 15) {
   test("createClient fails", () => {
     if (version.major < 2) return;
-    expect(() => createClient()).toThrowError(EdgeDBError);
+    expect(() => createClient()).toThrowError(GelError);
   });
 
   test("createHttpClient no options", async () => {

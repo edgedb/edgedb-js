@@ -1,15 +1,15 @@
 {
-  "name": "edgedb",
+  "name": "gel",
   "version": "1.5.12",
-  "description": "The official Node.js client library for EdgeDB",
-  "homepage": "https://edgedb.com/docs",
-  "author": "EdgeDB <info@edgedb.com>",
+  "description": "The official Node.js client library for Gel",
+  "homepage": "https://gel.com/docs",
+  "author": "Gel <info@gel.com>",
   "engines": {
     "node": ">= 18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/edgedb/edgedb-js.git"
+    "url": "https://github.com/gel/gel-js.git"
   },
   "main": "./dist/index.node.js",
   "types": "./dist/index.node.d.ts",
@@ -22,7 +22,7 @@
     "./dist/index.node.js": "./dist/index.browser.js"
   },
   "bin": {
-    "edgedb": "./dist/cli.mjs"
+    "gel": "./dist/cli.mjs"
   },
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
@@ -43,13 +43,12 @@
   },
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "echo 'Building edgedb driver...' && rm -rf dist && yarn build:cjs && yarn build:cli",
+    "build": "echo 'Building gel driver...' && rm -rf dist && yarn build:cjs && yarn build:cli",
     "build:cli": "tsc -p tsconfig.cli.json",
     "build:cjs": "tsc -p tsconfig.json",
     "lint": "eslint --quiet",
     "lint:fix": "eslint --fix",
     "test": "NODE_OPTIONS='--experimental-global-webcrypto' npx jest --detectOpenHandles",
-    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
     "gen-errors": "edb gen-errors-json --client | node genErrors.mjs",
     "watch": "nodemon -e js,ts,tsx --ignore dist -x ",
     "dev": "yarn tsc --project tsconfig.json --incremental"

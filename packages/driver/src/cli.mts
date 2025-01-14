@@ -55,13 +55,13 @@ async function main(args: string[]) {
   const maybeCachedCliLocation = await getCliLocationFromCache();
   const cliLocation =
     maybeCachedCliLocation ??
-    (await whichEdgeDbCli()) ??
+    (await whichGelCli()) ??
     (await getCliLocationFromTempCli()) ??
     (await selfInstallFromTempCli()) ??
     null;
 
   if (cliLocation === null) {
-    throw Error("Failed to find or install EdgeDB CLI.");
+    throw Error("Failed to find or install Gel CLI.");
   }
 
   try {
@@ -92,9 +92,13 @@ async function main(args: string[]) {
   process.exit(0);
 }
 
-async function whichEdgeDbCli() {
+async function whichGelCli() {
   debug("Checking if CLI is in PATH...");
-  const locations = (await which("edgedb", { nothrow: true, all: true })) || [];
+  const locations =
+    (await which("gel", { nothrow: true, all: true })) ||
+    (await which("edgedb", { nothrow: true, all: true })) ||
+    [];
+
   for (const location of locations) {
     const actualLocation = await fs.realpath(location);
     debug(
@@ -211,7 +215,7 @@ async function writeCliLocationToCache(cliLocation: string) {
 }
 
 async function selfInstallFromTempCli(): Promise<string | null> {
-  debug("Self-installing EdgeDB CLI...");
+  debug("Self-installing Gel CLI...");
   // n.b. need -y because in the Vercel build container, $HOME and euid-obtained
   // home are different, and the CLI installation requires this as confirmation
   const cmd = ["_self_install", "-y"];
@@ -225,7 +229,7 @@ async function selfInstallFromTempCli(): Promise<string | null> {
 
 async function downloadCliPackage() {
   if (IS_TTY) {
-    console.log("No EdgeDB CLI found, downloading CLI package...");
+    console.log("No Gel CLI found, downloading CLI package...");
   }
   debug("Downloading CLI package...");
   const cliPkg = await findPackage();
@@ -249,7 +253,7 @@ function runEdgeDbCli(
   execOptions: ExecSyncOptions = { stdio: "inherit" },
 ) {
   const command = quote([pathToCli, ...args]);
-  debug(`Running EdgeDB CLI: ${command}`);
+  debug(`Running Gel CLI: ${command}`);
   return execSync(command, execOptions);
 }
 
@@ -270,7 +274,7 @@ async function findPackage(): Promise<Package> {
   );
   if (!pkg) {
     throw Error(
-      `No compatible EdgeDB CLI package found for the current platform ${dist}`,
+      `No compatible Gel CLI package found for the current platform ${dist}`,
     );
   }
   debug("  - Package found:", pkg);
@@ -328,7 +332,7 @@ async function getMatchingPkg(
     return matchingPkg;
   } else {
     throw Error(
-      "no published EdgeDB CLI version matches requested version " +
+      "no published Gel CLI version matches requested version " +
         `'${cliVersionRange}'`,
     );
   }

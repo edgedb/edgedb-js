@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ function getTlsOptions(config: ResolvedConnectConfig): tls.ConnectionOptions {
   const isIPAddress = net.isIP(config.address[0]) !== 0;
   if (!isIPAddress) {
     // XXX Deno doesn't support this and that means it won't
-    // work with EdgeDB Cloud.
+    // work with Gel Cloud.
     tlsOptions.servername = config.tlsServerName || config.address[0];
   }
 
@@ -294,7 +294,7 @@ export class RawConnection extends BaseRawConnection {
           `connection timed out (${config.connectTimeout}ms)`,
         );
       }
-      if (e instanceof errors.EdgeDBError) {
+      if (e instanceof errors.GelError) {
         throw e;
       } else {
         let err: errors.ClientConnectionError;

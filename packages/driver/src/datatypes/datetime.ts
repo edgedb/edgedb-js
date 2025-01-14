@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import {
   isLeapYear,
 } from "./dateutil";
 
-export const DATE_PRIVATE = Symbol.for("edgedb.datetime");
+export const DATE_PRIVATE = Symbol.for("gel.datetime");
 
 // Converts value to number, or if value is NaN returns 0
 // as defined in temporal spec:

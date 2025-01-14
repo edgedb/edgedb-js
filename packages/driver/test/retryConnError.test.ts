@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,10 +85,10 @@ test("transaction retry on connection error after start", async () => {
       currentSocket!.destroy();
     }
 
-    return await tx.querySingle(`select 'Hello EdgeDB!'`);
+    return await tx.querySingle(`select 'Hello Gel!'`);
   });
 
-  expect(result).toBe("Hello EdgeDB!");
+  expect(result).toBe("Hello Gel!");
   expect(retryCount).toBe(2);
 
   await client.close();
@@ -101,7 +101,7 @@ test("transaction retry on connection error before commit", async () => {
   const result = await client.transaction(async (tx) => {
     retryCount++;
 
-    const result = await tx.querySingle(`select 'Hello EdgeDB!'`);
+    const result = await tx.querySingle(`select 'Hello Gel!'`);
 
     if (retryCount === 1) {
       currentSocket!.destroy();
@@ -111,7 +111,7 @@ test("transaction retry on connection error before commit", async () => {
     return result;
   });
 
-  expect(result).toBe("Hello EdgeDB!");
+  expect(result).toBe("Hello Gel!");
   expect(retryCount).toBe(2);
 
   await client.close();
@@ -125,7 +125,7 @@ test("transaction retry on connection error after commit", async () => {
     client.transaction(async (tx) => {
       retryCount++;
 
-      const result = await tx.querySingle(`select 'Hello EdgeDB!'`);
+      const result = await tx.querySingle(`select 'Hello Gel!'`);
 
       if (retryCount === 1) {
         // abort connection on CommandComplete message from 'COMMIT'
@@ -153,13 +153,13 @@ test("retry readonly queries: complete fetch", async () => {
 
   // complete fetch - retrying
   currentSocket!.abortOnNextMessageType(chars.$D);
-  await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
-    "Hello EdgeDB!",
+  await expect(client.querySingle(`select 'Hello Gel!'`)).resolves.toBe(
+    "Hello Gel!",
   );
 
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(
-    nonRetryingClient.query(`select 'Hello edgedb-js!'`),
+    nonRetryingClient.query(`select 'Hello gel-js!'`),
   ).rejects.toThrow();
 });
 
@@ -171,13 +171,13 @@ test("retry readonly queries: optimistic fetch", async () => {
   await client.ensureConnected();
 
   currentSocket!.abortOnNextMessageType(chars.$D);
-  await expect(client.querySingle(`select 'Hello EdgeDB!'`)).resolves.toBe(
-    "Hello EdgeDB!",
+  await expect(client.querySingle(`select 'Hello Gel!'`)).resolves.toBe(
+    "Hello Gel!",
   );
 
   currentSocket!.abortOnNextMessageType(chars.$D);
   await expect(
-    nonRetryingClient.querySingle(`select 'Hello EdgeDB!'`),
+    nonRetryingClient.querySingle(`select 'Hello Gel!'`),
   ).rejects.toThrow();
 
   await client.close();

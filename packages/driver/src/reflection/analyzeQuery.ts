@@ -41,7 +41,7 @@ export async function analyzeQuery(
     cardinality,
     query,
     importMap: imports,
-    imports: imports.get("edgedb") ?? new Set(),
+    imports: imports.get("gel") ?? new Set(),
   };
 }
 
