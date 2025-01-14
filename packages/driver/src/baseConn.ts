@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ export type ParseResult = [
   capabilities: number,
   inCodecBuffer: Uint8Array | null,
   outCodecBuffer: Uint8Array | null,
-  warnings: errors.EdgeDBError[],
+  warnings: errors.GelError[],
 ];
 
 export type connConstructor = new (
@@ -201,6 +201,7 @@ export class BaseRawConnection {
       const value = this.buffer.readString();
       headers[key] = value;
     }
+
     return headers;
   }
 
@@ -233,10 +234,10 @@ export class BaseRawConnection {
     number,
     Uint8Array,
     Uint8Array,
-    errors.EdgeDBError[],
+    errors.GelError[],
   ] {
     let capabilities = -1;
-    let warnings: errors.EdgeDBError[] = [];
+    let warnings: errors.GelError[] = [];
 
     const headers = this._readHeaders();
     if (headers["warnings"] != null) {
@@ -582,7 +583,7 @@ export class BaseRawConnection {
     let outCodec: ICodec | null = null;
     let inCodecBuf: Uint8Array | null = null;
     let outCodecBuf: Uint8Array | null = null;
-    let warnings: errors.EdgeDBError[] = [];
+    let warnings: errors.GelError[] = [];
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -684,7 +685,7 @@ export class BaseRawConnection {
     result: any[] | WriteBuffer,
     capabilitiesFlags: number = RESTRICTED_CAPABILITIES,
     options?: QueryOptions,
-  ): Promise<errors.EdgeDBError[]> {
+  ): Promise<errors.GelError[]> {
     let ctx = state.makeCodecContext();
 
     const wb = new WriteMessageBuffer();
@@ -717,7 +718,7 @@ export class BaseRawConnection {
 
     let error: Error | null = null;
     let parsing = true;
-    let warnings: errors.EdgeDBError[] = [];
+    let warnings: errors.GelError[] = [];
 
     while (parsing) {
       if (!this.buffer.takeMessage()) {
@@ -908,7 +909,7 @@ export class BaseRawConnection {
     state: Options,
     privilegedMode = false,
     language: Language = Language.EDGEQL,
-  ): Promise<{ result: any; warnings: errors.EdgeDBError[] }> {
+  ): Promise<{ result: any; warnings: errors.GelError[] }> {
     if (
       language !== Language.EDGEQL &&
       versionGreaterThan([3, 0], this.protocolVersion)
@@ -934,7 +935,7 @@ export class BaseRawConnection {
     const ret: any[] = [];
     // @ts-ignore
     let _;
-    let warnings: errors.EdgeDBError[] = [];
+    let warnings: errors.GelError[] = [];
 
     let [card, inCodec, outCodec] = this.queryCodecCache.get(key) ?? [];
 

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ export class PgVectorCodec extends ScalarCodec implements ICodec {
 
 export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "Float16Array";
-  override readonly tsModule = "edgedb";
+  override readonly tsModule = "gel";
 
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     object = ctx.preEncode<Codecs.PGVectorHalfCodec>(this, object);
@@ -156,7 +156,7 @@ export class PgVectorHalfVecCodec extends ScalarCodec implements ICodec {
 
 export class PgVectorSparseVecCodec extends ScalarCodec implements ICodec {
   override readonly tsType = "SparseVector";
-  override readonly tsModule = "edgedb";
+  override readonly tsModule = "gel";
 
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     let dims: number;

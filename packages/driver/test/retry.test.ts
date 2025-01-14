@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ async function checkRetries(client: Client, client2: Client, name: string) {
 
       // This magic query makes the test more reliable for some
       // reason. I guess this is because starting a transaction
-      // in EdgeDB (and/or Postgres) is accomplished somewhat
+      // in Gel (and/or Postgres) is accomplished somewhat
       // lazily, i.e. only start transaction on the first query
       // rather than on the `START TRANSACTION`.
       await tx.query(`SELECT 1`);

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,14 +151,14 @@ export class ClientConnectionHolder {
             await transaction._rollback();
           }
         } catch (rollback_err) {
-          if (!(rollback_err instanceof errors.EdgeDBError)) {
-            // We ignore EdgeDBError errors on rollback, retrying
+          if (!(rollback_err instanceof errors.GelError)) {
+            // We ignore GelError errors on rollback, retrying
             // if possible. All other errors are propagated.
             throw rollback_err;
           }
         }
         if (
-          err instanceof errors.EdgeDBError &&
+          err instanceof errors.GelError &&
           err.hasTag(errors.SHOULD_RETRY) &&
           !(commitFailed && err instanceof errors.ClientConnectionError)
         ) {
@@ -200,7 +200,7 @@ export class ClientConnectionHolder {
         return result;
       } catch (err) {
         if (
-          err instanceof errors.EdgeDBError &&
+          err instanceof errors.GelError &&
           err.hasTag(errors.SHOULD_RETRY) &&
           // query is readonly or it's a transaction serialization error
           (conn.getQueryCapabilities(
@@ -630,7 +630,7 @@ export class Client implements Executor {
     action: (transaction: Transaction) => Promise<T>,
   ): Promise<T> {
     if (this.pool.isStateless) {
-      throw new errors.EdgeDBError(
+      throw new errors.GelError(
         `cannot use 'transaction()' API on HTTP client`,
       );
     }

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ export class DateTimeCodec extends ScalarCodec implements ICodec {
 
 export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDateTime";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
 
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
@@ -169,7 +169,7 @@ export class LocalDateTimeCodec extends ScalarCodec implements ICodec {
 
 export class LocalDateCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalDate";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const ret = ctx.preEncode<Codecs.LocalDateCodec>(this, object);
@@ -203,7 +203,7 @@ export class LocalDateCodec extends ScalarCodec implements ICodec {
 
 export class LocalTimeCodec extends ScalarCodec implements ICodec {
   override tsType = "LocalTime";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const us = ctx.preEncode<Codecs.LocalTimeCodec>(this, object);
@@ -268,7 +268,7 @@ const unencodableDurationFields: (keyof Duration)[] = [
   "days",
 ];
 
-export function checkValidEdgeDBDuration(duration: Duration): null | string {
+export function checkValidGelDuration(duration: Duration): null | string {
   for (const field of unencodableDurationFields) {
     if (duration[field] !== 0) {
       return field;
@@ -279,7 +279,7 @@ export function checkValidEdgeDBDuration(duration: Duration): null | string {
 
 export class DurationCodec extends ScalarCodec implements ICodec {
   override tsType = "Duration";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const us = ctx.preEncode<Codecs.DurationCodec>(this, object);
@@ -301,7 +301,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
         `a Duration instance was expected, got "${object}"`,
       );
     }
-    const invalidField = checkValidEdgeDBDuration(object);
+    const invalidField = checkValidGelDuration(object);
     if (invalidField) {
       throw new InvalidArgumentError(
         `Cannot encode a 'Duration' with a non-zero number of ${invalidField}`,
@@ -382,7 +382,7 @@ export class DurationCodec extends ScalarCodec implements ICodec {
 
 export class RelativeDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "RelativeDuration";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const ret = ctx.preEncode<Codecs.RelativeDurationCodec>(this, object);
@@ -466,7 +466,7 @@ export class RelativeDurationCodec extends ScalarCodec implements ICodec {
 
 export class DateDurationCodec extends ScalarCodec implements ICodec {
   override tsType = "DateDuration";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
   encode(buf: WriteBuffer, object: unknown, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {
       const ret = ctx.preEncode<Codecs.DateDurationCodec>(this, object);

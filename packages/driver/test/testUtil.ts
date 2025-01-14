@@ -8,9 +8,9 @@ import * as readline from "node:readline";
 import type { ConnectConfig } from "../src/conUtils";
 
 import { Client, createClient } from "../src/index.node";
-import type { EdgeDBVersion } from "./testbase";
+import type { GelVersion } from "./testbase";
 
-export type { EdgeDBVersion, ConnectConfig };
+export type { GelVersion, ConnectConfig };
 
 interface ServerInfo {
   port: number;
@@ -76,7 +76,7 @@ const generateTempID = (): number => {
 export const generateStatusFileName = (tag: string): string => {
   return path.join(
     os.tmpdir(),
-    `edgedb-js-status-file-${tag}-${generateTempID()}`,
+    `gel-js-status-file-${tag}-${generateTempID()}`,
   );
 };
 
@@ -85,14 +85,12 @@ export const getServerCommand = (
   strictSecurity = true,
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
-  let srvcmd = `edgedb-server`;
-  if (process.env.EDGEDB_SERVER_BIN) {
-    srvcmd = process.env.EDGEDB_SERVER_BIN;
-  }
+  const srvcmd =
+    process.env.GEL_SERVER_BIN || process.env.EDGEDB_SERVER_BIN || "gel-server";
 
   let args = [srvcmd];
   if (process.platform === "win32") {
-    args = ["wsl", "-u", "edgedb", ...args];
+    args = ["wsl", "-u", "gel", ...args];
   }
 
   const helpCmd = [...args, "--help"];
@@ -149,7 +147,9 @@ export const startServer = async (
   }
 
   const maybeEnvWithDevMode =
-    process.env.EDGEDB_SERVER_BIN || process.env.CI
+    process.env.GEL_SERVER_BIN ||
+    process.env.EDGEDB_SERVER_BIN ||
+    process.env.CI
       ? {}
       : {
           __EDGEDB_DEVMODE: "1",
@@ -160,7 +160,7 @@ export const startServer = async (
   });
 
   try {
-    if (process.env.EDGEDB_DEBUG_SERVER) {
+    if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
       proc.stdout.on("data", (data) => {
         process.stdout.write(data.toString());
       });
@@ -168,7 +168,7 @@ export const startServer = async (
 
     let stderrData: string = "";
     proc.stderr.on("data", (data) => {
-      if (process.env.EDGEDB_DEBUG_SERVER) {
+      if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
         process.stderr.write(data.toString());
       } else {
         stderrData += data;
@@ -180,13 +180,12 @@ export const startServer = async (
       new Promise<never>((_, reject) => {
         proc.addListener("exit", (code, signal) => {
           if (stderrData) {
-            console.log("--- EdgeDB output start ---");
+            console.log("--- Gel output start ---");
             console.log(stderrData);
-            console.log("--- EdgeDB output end ---");
+            console.log("--- Gel output end ---");
           }
           reject(
-            `EdgeDB exited prematurely with ` +
-              `code ${code} or signal ${signal}`,
+            `Gel exited prematurely with ` + `code ${code} or signal ${signal}`,
           );
         });
       }),
@@ -226,10 +225,10 @@ export const startServer = async (
 
 export const connectToServer = async (
   config: ConnectConfig,
-): Promise<{ client: Client; version: EdgeDBVersion }> => {
+): Promise<{ client: Client; version: GelVersion }> => {
   const client = createClient(config);
 
-  let version: EdgeDBVersion;
+  let version: GelVersion;
   try {
     await client.execute(`
       CREATE DATABASE jest;
@@ -267,14 +266,14 @@ export const shutdown = async (
   await new Promise<void>((resolve, reject) => {
     const to = setTimeout(() => {
       // tslint:disable-next-line
-      console.error("!!! EdgeDB exit timeout... !!!");
+      console.error("!!! Gel exit timeout... !!!");
       proc.kill("SIGTERM");
     }, 30_000);
 
     proc.on("exit", (_code: number, signal: string) => {
       clearTimeout(to);
       if (signal === "SIGTERM") {
-        reject(new Error("edgedb did not shutdown gracefully"));
+        reject(new Error("gel did not shutdown gracefully"));
       } else {
         resolve();
       }
@@ -296,12 +295,12 @@ export async function applyMigrations(
   if (process.platform === "win32") {
     await runCommand("wsl", [
       "-u",
-      "edgedb",
+      "gel",
       "env",
       ...Object.entries(configToEnv(config)).map(
         ([key, val]) => `${key}=${val}`,
       ),
-      "edgedb",
+      "gel",
       "migrate",
       ...(params?.flags || []),
       "--schema-dir",
@@ -309,7 +308,7 @@ export async function applyMigrations(
     ]);
   } else {
     await runCommand(
-      "edgedb",
+      "gel",
       ["migrate", ...(params?.flags || [])],
       configToEnv(config),
     );

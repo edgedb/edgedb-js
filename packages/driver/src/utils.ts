@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ export function getUniqueId(prefix = ""): string {
     idCounter[prefix] = 0;
   }
   const id = ++idCounter[prefix];
-  return `_edgedb_${prefix}_${id.toString(16)}_`;
+  return `_gel_${prefix}_${id.toString(16)}_`;
 }
 
 export function sleep(durationMillis: number): Promise<void> {
@@ -119,6 +119,7 @@ export async function getAuthenticatedFetch(
     const headers = new Headers(init?.headers);
 
     if (config.user !== undefined) {
+      // TODO: headers.append("X-Gel-User", config.user);
       headers.append("X-EdgeDB-User", config.user);
     }
 
