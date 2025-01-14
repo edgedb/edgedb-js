@@ -86,13 +86,11 @@ export const getServerCommand = (
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
   const srvcmd =
-    process.env.GEL_SERVER_BIN ||
-    process.env.EDGEDB_SERVER_BIN ||
-    "edgedb-server";
+    process.env.GEL_SERVER_BIN || process.env.EDGEDB_SERVER_BIN || "gel-server";
 
   let args = [srvcmd];
   if (process.platform === "win32") {
-    args = ["wsl", "-u", "edgedb", ...args];
+    args = ["wsl", "-u", "gel", ...args];
   }
 
   const helpCmd = [...args, "--help"];

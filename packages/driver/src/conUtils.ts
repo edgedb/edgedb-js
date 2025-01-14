@@ -136,10 +136,6 @@ export type ResolvedConnectConfigReadonly = Readonly<
   >
 >;
 
-// function getEnv(envName: string, _required = false): string | undefined {
-//   return process.env[envName];
-// }
-
 function getEnv(envName: string, _required = false): string | undefined {
   const gelEnv = envName;
   const edgedbEnv = envName.replace(/^GEL_/, "EDGEDB_");

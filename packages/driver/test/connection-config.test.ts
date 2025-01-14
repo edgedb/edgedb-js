@@ -289,7 +289,6 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     if (testcase.warnings) {
       for (const warntype of testcase.warnings) {
         const warning = warningMapping[warntype];
-        console.log("DIDI warn", warning);
         if (!warning) {
           throw new Error(`Unknown warning type: ${warntype}`);
         }
@@ -494,12 +493,29 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromEnv: true,
     },
     {
-      opts: { dsn: "edgedb://", user: "user" }, // todo test gel too
+      opts: { dsn: "edgedb://", user: "user" },
       env: {
         EDGEDB_DATABASE: "testdb",
         EDGEDB_PASSWORD: "passw",
         EDGEDB_HOST: "host",
         EDGEDB_PORT: "123",
+      },
+      result: {
+        ...defaults,
+        user: "user",
+      },
+      logging: true,
+      inProject: false,
+      fromProject: false,
+      fromEnv: false,
+    },
+    {
+      opts: { dsn: "gel://", user: "user" },
+      env: {
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
+        GEL_HOST: "host",
+        GEL_PORT: "123",
       },
       result: {
         ...defaults,
@@ -520,7 +536,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/edgedb.toml": "",
+          "/home/edgedb/test/gel.toml": "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
             "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
