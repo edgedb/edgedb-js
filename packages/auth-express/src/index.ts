@@ -7,9 +7,9 @@ import {
   InvalidDataError,
   OAuthProviderFailureError,
   PKCEError,
-  EdgeDBAuthError,
-} from "@edgedb/auth-core";
-import type { Client } from "edgedb";
+  GelAuthError,
+} from "@gel/auth-core";
+import type { Client } from "gel";
 import {
   type Request as ExpressRequest,
   type Response as ExpressResponse,
@@ -21,7 +21,7 @@ import {
 
 type RouterStack = (RequestHandler | ErrorRequestHandler)[];
 
-export * from "@edgedb/auth-core/errors";
+export * from "@gel/auth-core/errors";
 
 export type BuiltinProviderNames =
   | BuiltinOAuthProviderNames
@@ -84,9 +84,9 @@ export class ExpressAuth {
   ) {
     this.options = {
       baseUrl: options.baseUrl.replace(/\/$/, ""),
-      authCookieName: options.authCookieName ?? "edgedb-session",
+      authCookieName: options.authCookieName ?? "gel-session",
       pkceVerifierCookieName:
-        options.pkceVerifierCookieName ?? "edgedb-pkce-verifier",
+        options.pkceVerifierCookieName ?? "gel-pkce-verifier",
     };
     this.core = Auth.create(client);
     this.isSecure = this.options.baseUrl.startsWith("https");
@@ -397,7 +397,7 @@ export class ExpressAuth {
         const error = searchParams.get("error");
         if (error) {
           const desc = searchParams.get("error_description");
-          throw new EdgeDBAuthError(error + (desc ? `: ${desc}` : ""));
+          throw new GelAuthError(error + (desc ? `: ${desc}` : ""));
         }
         const code = searchParams.get("code");
         const verificationEmailSentAt = searchParams.get(
@@ -610,7 +610,7 @@ export class ExpressAuth {
         const error = searchParams.get("error");
         if (error) {
           const desc = searchParams.get("error_description");
-          throw new EdgeDBAuthError(error + (desc ? `: ${desc}` : ""));
+          throw new GelAuthError(error + (desc ? `: ${desc}` : ""));
         }
         const code = searchParams.get("code");
         if (!code) {
