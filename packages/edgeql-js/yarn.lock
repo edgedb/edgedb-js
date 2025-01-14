@@ -4,10 +4,10 @@
 __metadata:
   version: 4
 
-"edgedb-generate@workspace:.":
+"gel-generate@workspace:.":
   version: 0.0.0-use.local
-  resolution: "edgedb-generate@workspace:."
+  resolution: "gel-generate@workspace:."
   bin:
-    edgedb-generate: ./index.js
+    gel-generate: ./index.js
   languageName: unknown
   linkType: soft
