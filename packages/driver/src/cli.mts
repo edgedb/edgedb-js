@@ -94,7 +94,11 @@ async function main(args: string[]) {
 
 async function whichGelCli() {
   debug("Checking if CLI is in PATH...");
-  const locations = (await which("gel", { nothrow: true, all: true })) || [];
+  const locations =
+    (await which("gel", { nothrow: true, all: true })) ||
+    (await which("edgedb", { nothrow: true, all: true })) ||
+    [];
+
   for (const location of locations) {
     const actualLocation = await fs.realpath(location);
     debug(
