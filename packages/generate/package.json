@@ -1,15 +1,15 @@
 {
-  "name": "@edgedb/generate",
+  "name": "@gel/generate",
   "version": "0.5.6",
-  "description": "EdgeDB code generators for TS/JavaScript",
-  "homepage": "https://edgedb.com/docs",
-  "author": "EdgeDB <info@edgedb.com>",
+  "description": "Gel code generators for TS/JavaScript",
+  "homepage": "https://gel.com/docs",
+  "author": "Gel <info@gel.com>",
   "engines": {
     "node": ">= 18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/edgedb/edgedb-js.git"
+    "url": "https://github.com/gel/gel-js.git"
   },
   "license": "Apache-2.0",
   "sideEffects": false,
@@ -18,14 +18,14 @@
   ],
   "bin": "dist/cli.js",
   "peerDependencies": {
-    "edgedb": "^1.5.10"
+    "gel": "^1.5.10"
   },
   "devDependencies": {
     "@repo/tsconfig": "*",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.13",
     "conditional-type-checks": "^1.0.6",
-    "edgedb": "*",
+    "gel": "*",
     "esbuild": "^0.21.4",
     "globby": "^14.0.1",
     "jest": "^29.7.0",
