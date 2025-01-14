@@ -3,9 +3,9 @@ import {
   DisabledCapabilityError,
   InvalidReferenceError,
 } from "../src/index.node";
-import { getClient, getEdgeDBVersion } from "./testbase";
+import { getClient, getGelVersion } from "./testbase";
 
-if (getEdgeDBVersion().major >= 2) {
+if (getGelVersion().major >= 2) {
   test("with module", async () => {
     const client = getClient({ concurrency: 1 });
 
@@ -205,13 +205,13 @@ if (getEdgeDBVersion().major >= 2) {
         .withGlobals({ userId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" })
         .query("select 1"),
     ).rejects.toThrowError(
-      /setting session state is not supported in this version of EdgeDB/,
+      /setting session state is not supported in this version of Gel/,
     );
 
     await expect(
       client.withModuleAliases({ module: "sys" }).query("select 1"),
     ).rejects.toThrowError(
-      /setting session state is not supported in this version of EdgeDB/,
+      /setting session state is not supported in this version of Gel/,
     );
 
     await expect(
@@ -221,7 +221,7 @@ if (getEdgeDBVersion().major >= 2) {
         })
         .query("select 1"),
     ).rejects.toThrowError(
-      /setting session state is not supported in this version of EdgeDB/,
+      /setting session state is not supported in this version of Gel/,
     );
   });
 }

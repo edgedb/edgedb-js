@@ -42,19 +42,19 @@ export interface SimpleRetryOptions {
   backoff?: BackoffFunction;
 }
 
-export type WarningHandler = (warnings: errors.EdgeDBError[]) => void;
+export type WarningHandler = (warnings: errors.GelError[]) => void;
 
-export function throwWarnings(warnings: errors.EdgeDBError[]) {
+export function throwWarnings(warnings: errors.GelError[]) {
   throw new Error(
     `warnings occurred while running query: ${warnings.map((warn) => warn.message)}`,
     { cause: warnings },
   );
 }
 
-export function logWarnings(warnings: errors.EdgeDBError[]) {
+export function logWarnings(warnings: errors.GelError[]) {
   for (const warning of warnings) {
     console.warn(
-      new Error(`EdgeDB warning: ${warning.message}`, { cause: warning }),
+      new Error(`Gel warning: ${warning.message}`, { cause: warning }),
     );
   }
 }
@@ -87,7 +87,7 @@ export class RetryOptions {
     return result;
   }
 
-  getRuleForException(err: errors.EdgeDBError): RetryRule {
+  getRuleForException(err: errors.GelError): RetryRule {
     let result;
     if (err instanceof errors.TransactionConflictError) {
       result = this.overrides.get(RetryCondition.TransactionConflict);

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,9 +59,9 @@ const __filename = new URL("", import.meta.url).pathname;
   errorsBuf.nl();
   errorsBuf.code("/* tslint:disable */");
   errorsBuf.nl();
-  errorsBuf.code("import {EdgeDBError} from './base'");
+  errorsBuf.code("import {GelError} from './base'");
   errorsBuf.code("import * as tags from './tags'");
-  errorsBuf.code("export {EdgeDBError} from './base'");
+  errorsBuf.code("export {GelError} from './base'");
   errorsBuf.code("export * from './tags'");
   errorsBuf.nl();
 
@@ -89,7 +89,7 @@ const __filename = new URL("", import.meta.url).pathname;
       c4.toString(16).padStart(2, "0");
 
     if (!base) {
-      base = "EdgeDBError";
+      base = "GelError";
     }
 
     let tag_items = tags.map((t) => "[tags." + t + "]: true");
@@ -98,7 +98,7 @@ const __filename = new URL("", import.meta.url).pathname;
     if (tag_items.length > 0) {
       line += `  override protected static tags = {${tag_items.join(", ")}}\n`;
     }
-    if (base !== "EdgeDBError") {
+    if (base !== "GelError") {
       line += `  override get code(): number {\n    return ${code};\n  }\n`;
     } else {
       line += `  get code(): number {\n    return ${code};\n  }\n`;
@@ -116,6 +116,12 @@ const __filename = new URL("", import.meta.url).pathname;
   const errors_ts = prettier.format(errorsBuf.render(), prettierOptions);
   const mapping_ts = prettier.format(mappingBuf.render(), prettierOptions);
 
-  fs.writeFileSync(path.join(__dirname, "./src/errors/index.ts"), await errors_ts);
-  fs.writeFileSync(path.join(__dirname, "./src/errors/map.ts"), await mapping_ts);
+  fs.writeFileSync(
+    path.join(__dirname, "./src/errors/index.ts"),
+    await errors_ts,
+  );
+  fs.writeFileSync(
+    path.join(__dirname, "./src/errors/map.ts"),
+    await mapping_ts,
+  );
 })();

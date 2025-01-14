@@ -1,7 +1,7 @@
 import { utf8Decoder } from "../primitives/buffer";
 import type { tags } from "./tags";
 
-export class EdgeDBError extends Error {
+export class GelError extends Error {
   protected static tags: { [tag in tags]?: boolean } = {};
   private _message: string;
   private _query?: string;
@@ -36,12 +36,12 @@ export class EdgeDBError extends Error {
   }
 
   hasTag(tag: tags): boolean {
-    const error_type = this.constructor as typeof EdgeDBError;
+    const error_type = this.constructor as typeof GelError;
     return error_type.tags[tag] ?? false;
   }
 }
 
-export type ErrorType = new (msg: string) => EdgeDBError;
+export type ErrorType = new (msg: string) => GelError;
 
 export enum ErrorAttr {
   hint = 1,

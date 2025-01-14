@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import type { Executor, _ICodec, Codecs } from "../src/index.node";
 import {
   DivisionByZeroError,
   Duration,
-  EdgeDBError,
+  GelError,
   LocalDate,
   LocalDateTime,
   Range,
@@ -61,7 +61,7 @@ import {
   getAvailableFeatures,
   getClient,
   getConnectOptions,
-  getEdgeDBVersion,
+  getGelVersion,
 } from "./testbase";
 import { PG_VECTOR_MAX_DIM } from "../src/codecs/pgvector";
 import { getHTTPSCRAMAuth } from "../src/httpScram";
@@ -761,7 +761,7 @@ test("fetch: named args", async () => {
   }
 });
 
-if (getEdgeDBVersion().major >= 3) {
+if (getGelVersion().major >= 3) {
   test("fetch: tuples in args", async () => {
     const client = getClient();
     try {
@@ -1388,7 +1388,7 @@ function expandRangeJS(lower: any, upper: any) {
   ];
 }
 
-if (getEdgeDBVersion().major >= 2) {
+if (getGelVersion().major >= 2) {
   test("fetch: ranges", async () => {
     const client = getClient();
 
@@ -1501,7 +1501,7 @@ if (getEdgeDBVersion().major >= 2) {
   });
 }
 
-if (getEdgeDBVersion().major >= 4) {
+if (getGelVersion().major >= 4) {
   test("fetch: multirange", async () => {
     const client = getClient();
     try {
@@ -1971,7 +1971,7 @@ test("execute", async () => {
         expect(e.toString()).toMatch("division by zero");
         expect(e instanceof DivisionByZeroError).toBeTruthy();
         expect(e instanceof MissingRequiredError).toBeFalsy();
-        expect(e instanceof EdgeDBError).toBeTruthy();
+        expect(e instanceof GelError).toBeTruthy();
         expect((<DivisionByZeroError>e).code).toBe(0x05_01_00_01);
       });
   } finally {
@@ -1987,7 +1987,7 @@ test("scripts and args", async () => {
   };`);
 
   try {
-    if (getEdgeDBVersion().major >= 2) {
+    if (getGelVersion().major >= 2) {
       await expect(
         client.execute(
           `
@@ -2069,7 +2069,7 @@ test("scripts and args", async () => {
           { name: "test" },
         ),
       ).rejects.toThrowError(
-        /arguments in execute\(\) is not supported in this version of EdgeDB/,
+        /arguments in execute\(\) is not supported in this version of Gel/,
       );
 
       await expect(
@@ -2080,7 +2080,7 @@ test("scripts and args", async () => {
           { name: "test" },
         ),
       ).rejects.toThrowError(
-        /arguments in execute\(\) is not supported in this version of EdgeDB/,
+        /arguments in execute\(\) is not supported in this version of Gel/,
       );
 
       await expect(
@@ -2188,19 +2188,19 @@ test("pretty error message", async () => {
 });
 
 test("warnings handler", async () => {
-  if (getEdgeDBVersion().major < 6) return;
+  if (getGelVersion().major < 6) return;
 
   let client = getClient();
 
   try {
-    let warnings: EdgeDBError[] | null = null;
+    let warnings: GelError[] | null = null;
     client = client.withWarningHandler((_warnings) => (warnings = _warnings));
 
     await expect(client.query("select _warn_on_call();")).resolves.toEqual([0]);
 
     expect(Array.isArray(warnings)).toBe(true);
     expect(warnings!.length).toBe(1);
-    expect(warnings![0]).toBeInstanceOf(EdgeDBError);
+    expect(warnings![0]).toBeInstanceOf(GelError);
     expect(warnings![0].message.trim()).toBe("Test warning please ignore");
 
     warnings = null;
@@ -2211,7 +2211,7 @@ test("warnings handler", async () => {
 
     expect(Array.isArray(warnings)).toBe(true);
     expect(warnings!.length).toBe(1);
-    expect(warnings![0]).toBeInstanceOf(EdgeDBError);
+    expect(warnings![0]).toBeInstanceOf(GelError);
     expect(warnings![0].message.trim()).toBe("Test warning please ignore");
 
     client = client.withWarningHandler(throwWarnings);
@@ -2252,14 +2252,14 @@ if (getAvailableFeatures().has("binary-over-http")) {
       tlsSecurity: "insecure",
     });
 
-    const edgedbVer = getEdgeDBVersion();
+    const gelVer = getGelVersion();
     const fetchConn = AdminUIFetchConnection.create(
       await getAuthenticatedFetch(
         config.connectionParams,
         getHTTPSCRAMAuth(cryptoUtils),
       ),
       codecsRegistry,
-      [edgedbVer.major, edgedbVer.minor],
+      [gelVer.major, gelVer.minor],
     );
 
     const query = `SELECT Function { name }`;
@@ -2309,7 +2309,7 @@ if (getAvailableFeatures().has("binary-over-http")) {
   });
 }
 
-if (getEdgeDBVersion().major >= 5) {
+if (getGelVersion().major >= 5) {
   test("fetch: int64 as bigint", async () => {
     const con = getClient().withCodecs({
       "std::int64": {
@@ -2430,7 +2430,7 @@ if (getEdgeDBVersion().major >= 5) {
         | "ext::pgvector::halfvec"
         // just need to write a test
         | "ext::pgvector::sparsevec"
-        // these are only available in EdgeDB 6, and also re-use the
+        // these are only available in Gel 6, and also re-use the
         // existing codecs, so I'm not too worried on testing them.
         | "std::pg::json"
         | "std::pg::timestamptz"
@@ -2584,7 +2584,7 @@ if (getEdgeDBVersion().major >= 5) {
   });
 }
 
-if (getEdgeDBVersion().major >= 6) {
+if (getGelVersion().major >= 6) {
   test("querySQL", async () => {
     let client = getClient().withSQLRowMode("array");
 

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ export async function retryingConnect(
               logMsg.push(
                 `\n\n\n` +
                   `Hint: it looks like the program is running from a ` +
-                  `directory initialized with "edgedb project init". ` +
-                  `Consider calling "edgedb.connect()" without arguments.` +
+                  `directory initialized with "gel project init". ` +
+                  `Consider calling "gel.connect()" without arguments.` +
                   `\n`,
               );
             }

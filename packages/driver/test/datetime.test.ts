@@ -9,12 +9,12 @@ import {
 import { Duration, LocalDateTime, LocalTime } from "../src/index.shared";
 import { ReadBuffer, WriteBuffer } from "../src/primitives/buffer";
 
-// EdgeDB date/time types have microsecond precision.
+// Gel date/time types have microsecond precision.
 // JS Date has millisecond precision, Temporal types have nanosecond.
 // When converting from micro -> milli, or nano -> micro, round to nearest even
 // should be used.
 
-// Tests adapted from https://github.com/edgedb/edgedb-rust/blob/master/edgedb-protocol/tests/datetime_chrono.rs
+// Tests adapted from https://github.com/gel/gel-rust/blob/master/gel-protocol/tests/datetime_chrono.rs
 
 test("datetime", () => {
   const codec = new DateTimeCodec(

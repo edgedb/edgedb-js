@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2020-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2020-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ export class TransactionImpl {
 
     const abortError = this._rawConn.getConnAbortError();
     if (
-      abortError instanceof errors.EdgeDBError &&
+      abortError instanceof errors.GelError &&
       abortError.cause instanceof errors.TransactionTimeoutError
     ) {
       throw abortError.cause;
