@@ -1,5 +1,5 @@
 import * as tc from "conditional-type-checks";
-import { Client, createClient } from "edgedb";
+import { Client, createClient } from "gel";
 
 export { tc };
 
