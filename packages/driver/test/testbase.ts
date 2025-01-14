@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 import createClient, { Client, ConnectOptions } from "../src/index.node";
 import * as process from "node:process";
 
-export interface EdgeDBVersion {
+export interface GelVersion {
   major: number;
   minor: number;
   stage: string;
@@ -31,7 +31,7 @@ function _getOpts(opts: ConnectOptions): ConnectOptions {
   try {
     config = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
   } catch {
-    throw new Error("EdgeDB Jest test environment is not initialized");
+    throw new Error("Gel Jest test environment is not initialized");
   }
   if (!opts.user) {
     opts.user = "jest";
@@ -55,7 +55,7 @@ export function getAvailableFeatures(): Set<string> {
   return new Set(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_FEATURES!));
 }
 
-export function getEdgeDBVersion(): EdgeDBVersion {
+export function getGelVersion(): GelVersion {
   return JSON.parse(process.env._JEST_EDGEDB_VERSION!);
 }
 

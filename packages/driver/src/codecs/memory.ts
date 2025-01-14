@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import type { CodecContext } from "./context";
 
 export class ConfigMemoryCodec extends ScalarCodec implements ICodec {
   override tsType = "ConfigMemory";
-  override tsModule = "edgedb";
+  override tsModule = "gel";
 
   encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
     if (ctx.hasOverload(this)) {

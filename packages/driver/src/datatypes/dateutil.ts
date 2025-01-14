@@ -1,5 +1,5 @@
 /*!
- * Portions Copyright (c) 2019 MagicStack Inc. and the EdgeDB authors.
+ * Portions Copyright (c) 2019 MagicStack Inc. and the Gel authors.
  * Portions Copyright (c) 2001-2019 Python Software Foundation.
  * All rights reserved.
  * Licence: PSFL https://docs.python.org/3/license.html

@@ -1,7 +1,7 @@
 /*!
- * This source file is part of the EdgeDB open source project.
+ * This source file is part of the Gel open source project.
  *
- * Copyright 2019-present MagicStack Inc. and the EdgeDB authors.
+ * Copyright 2019-present MagicStack Inc. and the Gel authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-import * as edgedb from "../src/index.node";
+import * as gel from "../src/index.node";
 import { resolveErrorCode } from "../src/errors/resolve";
 
 test("resolve error", () => {
-  expect(resolveErrorCode(0x04_02_01_01)).toBe(edgedb.InvalidLinkTargetError);
-  expect(resolveErrorCode(0x04_02_01_ff)).toBe(edgedb.InvalidTargetError);
-  expect(resolveErrorCode(0x04_02_ff_ff)).toBe(edgedb.InvalidTypeError);
-  expect(resolveErrorCode(0x04_ff_ff_ff)).toBe(edgedb.QueryError);
-  expect(resolveErrorCode(0xfe_ff_ff_ff)).toBe(edgedb.EdgeDBError);
+  expect(resolveErrorCode(0x04_02_01_01)).toBe(gel.InvalidLinkTargetError);
+  expect(resolveErrorCode(0x04_02_01_ff)).toBe(gel.InvalidTargetError);
+  expect(resolveErrorCode(0x04_02_ff_ff)).toBe(gel.InvalidTypeError);
+  expect(resolveErrorCode(0x04_ff_ff_ff)).toBe(gel.QueryError);
+  expect(resolveErrorCode(0xfe_ff_ff_ff)).toBe(gel.GelError);
 });
 
 test("message is set with attrs and query", () => {
-  const error = new edgedb.AccessError("test");
+  const error = new gel.AccessError("test");
   const attrs = new Map<number, Uint8Array>();
 
   const columnStart = 2;
@@ -53,7 +53,7 @@ test("message is set with attrs and query", () => {
 });
 
 test("message is set with attrs and query without position", () => {
-  const error = new edgedb.AccessError("test");
+  const error = new gel.AccessError("test");
   const attrs = new Map<number, Uint8Array>();
 
   // hint

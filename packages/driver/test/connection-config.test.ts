@@ -174,7 +174,7 @@ const errorMapping: { [key: string]: string | RegExp } = {
   env_not_found: /environment variable '.*' doesn't exist/,
   file_not_found: /no such file or directory/,
   invalid_tls_security:
-    /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by EDGEDB_CLIENT_SECURITY/,
+    /^invalid 'tlsSecurity' value|'tlsSecurity' value cannot be lower than security level set by GEL_CLIENT_SECURITY/,
   exclusive_options: /^Cannot specify both .* and .*|are mutually exclusive/,
   secret_key_not_found:
     /^Cannot connect to cloud instances without a secret key/,
@@ -182,7 +182,8 @@ const errorMapping: { [key: string]: string | RegExp } = {
 };
 
 const warningMapping: { [key: string]: string } = {
-  docker_tcp_port: `EDGEDB_PORT in 'tcp://host:port' format, so will be ignored`,
+  docker_tcp_port: `GEL_PORT in 'tcp://host:port' format, so will be ignored`,
+  gel_and_edgedb: `Both GEL_\w+ and EDGEDB_\w+ are set; EDGEDB_\w+ will be ignored`,
 };
 
 interface ConnectionResult {
@@ -288,6 +289,7 @@ async function runConnectionTest(testcase: ConnectionTestCase): Promise<void> {
     if (testcase.warnings) {
       for (const warntype of testcase.warnings) {
         const warning = warningMapping[warntype];
+        console.log("DIDI warn", warning);
         if (!warning) {
           throw new Error(`Unknown warning type: ${warntype}`);
         }
@@ -492,7 +494,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromEnv: true,
     },
     {
-      opts: { dsn: "edgedb://", user: "user" },
+      opts: { dsn: "edgedb://", user: "user" }, // todo test gel too
       env: {
         EDGEDB_DATABASE: "testdb",
         EDGEDB_PASSWORD: "passw",
@@ -549,7 +551,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/edgedb.toml": "",
+          "/home/edgedb/test/gel.toml": "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
             "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
@@ -580,7 +582,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/edgedb.toml": "",
+          "/home/edgedb/test/gel.toml": "",
         },
       },
       result: {

@@ -10,7 +10,7 @@ import {
 
 export default async () => {
   // tslint:disable-next-line
-  console.log("\nStarting EdgeDB test cluster...");
+  console.log("\nStarting Gel test cluster...");
 
   const statusFile = generateStatusFileName("node");
   console.log("Node status file:", statusFile);
@@ -27,14 +27,14 @@ export default async () => {
   };
 
   // @ts-ignore
-  global.edgedbProc = proc;
+  global.gelProc = proc;
 
   process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(jestConfig);
   process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
     JSON.stringify(availableFeatures);
 
   // @ts-ignore
-  global.edgedbConn = client;
+  global.gelConn = client;
   process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
 
   const availableExtensions = (
@@ -47,5 +47,5 @@ export default async () => {
     JSON.stringify(availableExtensions);
 
   // tslint:disable-next-line
-  console.log(`EdgeDB test cluster is up [port: ${jestConfig.port}]...`);
+  console.log(`Gel test cluster is up [port: ${jestConfig.port}]...`);
 };
