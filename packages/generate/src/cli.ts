@@ -2,20 +2,15 @@
 
 import path from "node:path";
 import process from "node:process";
-import {
-  systemUtils,
-  type Client,
-  createClient,
-  createHttpClient,
-} from "edgedb";
+import { systemUtils, type Client, createClient, createHttpClient } from "gel";
 import * as TOML from "@iarna/toml";
 
 import {
   type ConnectConfig,
   validTlsSecurityValues,
   isValidTlsSecurityValue,
-} from "edgedb/dist/conUtils";
-import { parseConnectArguments } from "edgedb/dist/conUtils.server";
+} from "gel/dist/conUtils";
+import { parseConnectArguments } from "gel/dist/conUtils.server";
 import {
   type CommandOptions,
   promptForPassword,
@@ -53,7 +48,7 @@ const run = async () => {
   }
   if (!generator || generator[0] === "-") {
     console.error(
-      `Error: No generator specified.\n  \`npx @edgedb/generate <generator>\`${availableGeneratorsHelp}`,
+      `Error: No generator specified.\n  \`npx @gel/generate <generator>\`${availableGeneratorsHelp}`,
     );
     process.exit();
   }
@@ -303,7 +298,7 @@ const run = async () => {
     if (!projectRoot) {
       throw new Error(
         `Failed to detect project root.
-Run this command inside an EdgeDB project directory or specify the desired target language with \`--target\``,
+Run this command inside an Gel project directory or specify the desired target language with \`--target\``,
       );
     }
 
@@ -320,7 +315,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
 
     // doesn't work with `extends`
     // switch to more robust solution after splitting
-    // @edgedb/generate into separate package
+    // @gel/generate into separate package
     // @ts-ignore
     const isDenoRuntime = typeof Deno !== "undefined";
 
@@ -362,7 +357,7 @@ Run this command inside an EdgeDB project directory or specify the desired targe
       }
     }
     const overrideTargetMessage = `   To override this, use the --target flag.
-   Run \`npx @edgedb/generate --help\` for full options.`;
+   Run \`npx @gel/generate --help\` for full options.`;
     console.log(overrideTargetMessage);
   }
 
@@ -428,12 +423,12 @@ Run this command inside an EdgeDB project directory or specify the desired targe
 };
 
 function printHelp() {
-  console.log(`@edgedb/generate
+  console.log(`@gel/generate
 
-Official EdgeDB code generators for TypeScript/JavaScript
+Official Gel code generators for TypeScript/JavaScript
 
 USAGE
-    npx @edgedb/generate [COMMAND] [OPTIONS]
+    npx @gel/generate [COMMAND] [OPTIONS]
 
 COMMANDS:
     queries         Generate typed functions from .edgeql files

@@ -7,14 +7,14 @@ import {
   DateDuration,
   Range,
   InputDataError,
-} from "edgedb";
+} from "gel";
 import {
   Cardinality,
   ExpressionKind,
   OperatorKind,
   TypeKind,
   util,
-} from "edgedb/dist/reflection/index";
+} from "gel/dist/reflection/index";
 import {
   type $expr_Array,
   type $expr_NamedTuple,
@@ -37,7 +37,7 @@ import type {
   $expr_PathNode,
   $expr_TypeIntersection,
 } from "./path";
-import { reservedKeywords } from "edgedb/dist/reflection/index";
+import { reservedKeywords } from "gel/dist/reflection/index";
 import type { $expr_Cast } from "./cast";
 import type { $expr_Detached } from "./detached";
 import type { $expr_For, $expr_ForVar } from "./for";
@@ -1616,7 +1616,7 @@ function indent(str: string, depth: number) {
 }
 
 // backtick quote identifiers if needed
-// https://github.com/edgedb/edgedb/blob/master/edb/edgeql/quote.py
+// https://github.com/gel/gel/blob/master/edb/edgeql/quote.py
 function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
