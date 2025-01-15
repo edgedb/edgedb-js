@@ -249,13 +249,6 @@ export class RemixServerAuth extends RemixClientAuth {
                 path: "/",
               }),
             );
-            headers.append(
-              "Set-Cookie",
-              cookie.serialize("edgedb-pkce-verifier", "", {
-                maxAge: 0,
-                path: "/",
-              }),
-            );
             return cbCall(
               onOAuthCallback,
               {
@@ -314,13 +307,6 @@ export class RemixServerAuth extends RemixClientAuth {
             headers.append(
               "Set-Cookie",
               cookie.serialize(this.options.pkceVerifierCookieName, "", {
-                maxAge: 0,
-                path: "/",
-              }),
-            );
-            headers.append(
-              "Set-Cookie",
-              cookie.serialize("edgedb-pkce-verifier", "", {
                 maxAge: 0,
                 path: "/",
               }),
@@ -989,13 +975,6 @@ export class RemixServerAuth extends RemixClientAuth {
             path: "/",
           }),
         );
-        headers.append(
-          "Set-Cookie",
-          cookie.serialize("edgedb-pkce-verifier", "", {
-            maxAge: 0,
-            path: "/",
-          }),
-        );
 
         return { tokenData };
       },
@@ -1191,12 +1170,8 @@ function _extractParams(
 function parseCookies(
   req: Request,
   options: {
-    baseUrl: string;
-    authRoutesPath: string;
     authCookieName: string;
     pkceVerifierCookieName: string;
-    passwordResetPath?: string;
-    magicLinkFailurePath?: string;
   },
 ) {
   const cookies = req.headers.get("Cookie") || "";
