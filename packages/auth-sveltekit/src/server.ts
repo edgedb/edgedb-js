@@ -163,17 +163,20 @@ export class ServerRequestAuth extends ClientAuth {
 
   private deleteVerifierCookie() {
     deleteCookie(this.cookies, this.config.pkceVerifierCookieName);
+    deleteCookie(this.cookies, "edgedb-pkce-verifier");
   }
 
   private deleteAuthCookie() {
     deleteCookie(this.cookies, this.config.authCookieName);
+    deleteCookie(this.cookies, "edgedb-session");
   }
 
   get session() {
     if (!this._session) {
       this._session = new AuthSession(
         this.client,
-        this.cookies.get(this.config.authCookieName),
+        this.cookies.get(this.config.authCookieName) ||
+          this.cookies.get("edgedb-session"),
       );
     }
 
@@ -308,7 +311,9 @@ export class ServerRequestAuth extends ClientAuth {
   async emailPasswordResetPassword(
     data: { reset_token: string; password: string } | FormData,
   ): Promise<{ tokenData: TokenData }> {
-    const verifier = this.cookies.get(this.config.pkceVerifierCookieName);
+    const verifier =
+      this.cookies.get(this.config.pkceVerifierCookieName) ||
+      this.cookies.get("edgedb-pkce-verifier");
 
     if (!verifier) {
       throw new PKCEError("no pkce verifier cookie found");
@@ -487,6 +492,18 @@ async function handleAuthRoutes(
   const searchParams = url.searchParams;
   const path = url.pathname.split("/").slice(2).join("/");
 
+  function deleteVerifierCookie() {
+    deleteCookie(cookies, config.pkceVerifierCookieName);
+    deleteCookie(cookies, "edgedb-pkce-verifier");
+  }
+
+  function getVerifierCookie() {
+    return (
+      cookies.get(config.pkceVerifierCookieName) ||
+      cookies.get("edgedb-pkce-verifier")
+    );
+  }
+
   switch (path) {
     case "oauth": {
       if (!onOAuthCallback) {
@@ -532,7 +549,7 @@ async function handleAuthRoutes(
       }
       const code = searchParams.get("code");
       const isSignUp = searchParams.get("isSignUp") === "true";
-      const verifier = cookies.get(config.pkceVerifierCookieName);
+      const verifier = getVerifierCookie();
       if (!code) {
         return onOAuthCallback({
           error: new PKCEError("no pkce code in response"),
@@ -554,7 +571,7 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      deleteVerifierCookie();
 
       return onOAuthCallback({
         error: null,
@@ -594,7 +611,7 @@ async function handleAuthRoutes(
           error: new PKCEError("no pkce code in response"),
         });
       }
-      const verifier = cookies.get(config.pkceVerifierCookieName);
+      const verifier = getVerifierCookie();
 
       if (!verifier) {
         return onBuiltinUICallback({
@@ -646,7 +663,7 @@ async function handleAuthRoutes(
         );
       }
       const verificationToken = searchParams.get("verification_token");
-      const verifier = cookies.get(config.pkceVerifierCookieName);
+      const verifier = getVerifierCookie();
       if (!verificationToken) {
         return onEmailVerify({
           error: new PKCEError("no verification_token in response"),
@@ -672,6 +689,8 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
+      deleteVerifierCookie();
+
       return onEmailVerify({
         error: null,
         tokenData,
@@ -695,7 +714,7 @@ async function handleAuthRoutes(
 
       const code = searchParams.get("code");
       const isSignUp = searchParams.get("isSignUp") === "true";
-      const verifier = cookies.get(config.pkceVerifierCookieName);
+      const verifier = getVerifierCookie();
       if (!code) {
         return onMagicLinkCallback({
           error: new PKCEError("no pkce code in response"),
@@ -719,7 +738,7 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
-      deleteCookie(cookies, config.pkceVerifierCookieName);
+      deleteVerifierCookie();
 
       return onMagicLinkCallback({
         error: null,
@@ -753,7 +772,7 @@ async function handleAuthRoutes(
         );
       }
       const verificationToken = searchParams.get("verification_token");
-      const verifier = cookies.get(config.pkceVerifierCookieName);
+      const verifier = getVerifierCookie();
       if (!verificationToken) {
         return onEmailVerify({
           error: new PKCEError("no verification_token in response"),
@@ -779,6 +798,8 @@ async function handleAuthRoutes(
 
       setAuthCookie(cookies, config, tokenData.auth_token);
 
+      deleteVerifierCookie();
+
       return onEmailVerify({
         error: null,
         tokenData,
@@ -793,6 +814,8 @@ async function handleAuthRoutes(
       }
 
       deleteCookie(cookies, config.authCookieName);
+      deleteCookie(cookies, "edgedb-session");
+
       return onSignout();
     }
 
