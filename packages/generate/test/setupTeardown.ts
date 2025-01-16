@@ -131,7 +131,7 @@ export async function teardownTests(client: Client) {
 }
 
 export const versionGTE = (majorVer: number) => {
-  const version = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
+  const version = JSON.parse(process.env._JEST_GEL_VERSION!);
   return version.major >= majorVer;
 };
 
