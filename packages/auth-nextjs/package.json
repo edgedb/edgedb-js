@@ -2,10 +2,10 @@
   "name": "@gel/auth-nextjs",
   "description": "Helper library to integrate the Gel Auth extension with Next.js",
   "version": "0.3.2",
-  "author": "Gel <info@gel.com>",
+  "author": "Gel <info@geldata.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gel/gel-js.git",
+    "url": "https://github.com/geldata/gel-js.git",
     "directory": "packages/auth-nextjs"
   },
   "license": "Apache-2.0",
