@@ -9,7 +9,7 @@ import { updatePackage } from "write-package";
 import { getPackageManager, copyTemplateFiles } from "../../utils.js";
 import type { Framework, BaseRecipe, BaseOptions } from "../types.js";
 
-const logger = debug("@edgedb/create:recipe:base");
+const logger = debug("@gel/create:recipe:base");
 
 const recipe: BaseRecipe = {
   async getOptions() {
@@ -34,9 +34,9 @@ const recipe: BaseRecipe = {
               { value: "none", label: "None" },
             ],
           }),
-        useEdgeDBAuth: () =>
+        useGelAuth: () =>
           p.confirm({
-            message: "Use the EdgeDB Auth extension?",
+            message: "Use the Gel Auth extension?",
             initialValue: true,
           }),
       },

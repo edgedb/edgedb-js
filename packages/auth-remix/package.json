@@ -2,7 +2,7 @@
   "name": "@gel/auth-remix",
   "description": "Helper library to integrate the Gel Auth extension with Remix",
   "version": "0.2.2",
-  "author": "Gel <info@gel.com>",
+  "author": "Gel <info@geldata.com>",
   "type": "module",
   "repository": {
     "type": "git",
