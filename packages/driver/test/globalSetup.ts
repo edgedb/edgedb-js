@@ -29,13 +29,12 @@ export default async () => {
   // @ts-ignore
   global.gelProc = proc;
 
-  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(jestConfig);
-  process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
-    JSON.stringify(availableFeatures);
+  process.env._JEST_GEL_CONNECT_CONFIG = JSON.stringify(jestConfig);
+  process.env._JEST_GEL_AVAILABLE_FEATURES = JSON.stringify(availableFeatures);
 
   // @ts-ignore
   global.gelConn = client;
-  process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
+  process.env._JEST_GEL_VERSION = JSON.stringify(version);
 
   const availableExtensions = (
     await client.query<{
@@ -43,7 +42,7 @@ export default async () => {
       version: { major: number; minor: number };
     }>(`select sys::ExtensionPackage {name, version}`)
   ).map(({ name, version }) => [name, version]);
-  process.env._JEST_EDGEDB_AVAILABLE_EXTENSIONS =
+  process.env._JEST_GEL_AVAILABLE_EXTENSIONS =
     JSON.stringify(availableExtensions);
 
   // tslint:disable-next-line

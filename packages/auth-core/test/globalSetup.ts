@@ -24,15 +24,14 @@ export default async () => {
   // @ts-ignore
   global.gelProc = proc;
 
-  process.env._JEST_EDGEDB_CONNECT_CONFIG = JSON.stringify(config);
-  process.env._JEST_EDGEDB_AVAILABLE_FEATURES =
-    JSON.stringify(availableFeatures);
+  process.env._JEST_GEL_CONNECT_CONFIG = JSON.stringify(config);
+  process.env._JEST_GEL_AVAILABLE_FEATURES = JSON.stringify(availableFeatures);
 
   const { client, version } = await connectToServer(config);
 
   // @ts-ignore
   global.gelConn = client;
-  process.env._JEST_EDGEDB_VERSION = JSON.stringify(version);
+  process.env._JEST_GEL_VERSION = JSON.stringify(version);
 
   // tslint:disable-next-line
   console.log(`Gel test cluster is up [port: ${config.port}]...`);

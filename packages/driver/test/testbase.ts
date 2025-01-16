@@ -29,7 +29,7 @@ export interface GelVersion {
 function _getOpts(opts: ConnectOptions): ConnectOptions {
   let config;
   try {
-    config = JSON.parse(process.env._JEST_EDGEDB_CONNECT_CONFIG || "");
+    config = JSON.parse(process.env._JEST_GEL_CONNECT_CONFIG || "");
   } catch {
     throw new Error("Gel Jest test environment is not initialized");
   }
@@ -52,16 +52,16 @@ export function getClient(opts: ConnectOptions = {}): Client {
 }
 
 export function getAvailableFeatures(): Set<string> {
-  return new Set(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_FEATURES!));
+  return new Set(JSON.parse(process.env._JEST_GEL_AVAILABLE_FEATURES!));
 }
 
 export function getGelVersion(): GelVersion {
-  return JSON.parse(process.env._JEST_EDGEDB_VERSION!);
+  return JSON.parse(process.env._JEST_GEL_VERSION!);
 }
 
 export function getAvailableExtensions(): Map<
   string,
   { major: number; minor: number }
 > {
-  return new Map(JSON.parse(process.env._JEST_EDGEDB_AVAILABLE_EXTENSIONS!));
+  return new Map(JSON.parse(process.env._JEST_GEL_AVAILABLE_EXTENSIONS!));
 }

@@ -6,7 +6,7 @@ export default async () => {
 
   try {
     // @ts-ignore
-    await shutdown(global.edgedbProc, global.edgedbConn);
+    await shutdown(global.gelProc, global.gelConn);
   } finally {
     // tslint:disable-next-line
     console.log("Gel test cluster is down...");

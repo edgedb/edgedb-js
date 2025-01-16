@@ -142,14 +142,12 @@ export const startServer = async (
   statusFile: string,
   env: { [key: string]: string } = {},
 ): Promise<ServerInst> => {
-  if (process.env.EDGEDB_DEBUG_SERVER) {
+  if (process.env.GEL_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
 
   const maybeEnvWithDevMode =
-    process.env.GEL_SERVER_BIN ||
-    process.env.EDGEDB_SERVER_BIN ||
-    process.env.CI
+    process.env.GEL_SERVER_BIN || process.env.CI
       ? {}
       : {
           __EDGEDB_DEVMODE: "1",
@@ -160,7 +158,7 @@ export const startServer = async (
   });
 
   try {
-    if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
+    if (process.env.GEL_DEBUG_SERVER) {
       proc.stdout.on("data", (data) => {
         process.stdout.write(data.toString());
       });
@@ -168,7 +166,7 @@ export const startServer = async (
 
     let stderrData: string = "";
     proc.stderr.on("data", (data) => {
-      if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
+      if (process.env.GEL_DEBUG_SERVER) {
         process.stderr.write(data.toString());
       } else {
         stderrData += data;
@@ -372,13 +370,13 @@ export function configToEnv(config: ConnectConfig): {
   [key: string]: string | undefined;
 } {
   return {
-    EDGEDB_HOST: config.host,
-    EDGEDB_PORT: config.port?.toString(),
-    EDGEDB_DATABASE: config.database,
-    EDGEDB_USER: config.user,
-    EDGEDB_PASSWORD: config.password,
-    // EDGEDB_TLS_CA_FILE: config.tlsCAFile,
-    // EDGEDB_CLIENT_TLS_SECURITY: config.tlsSecurity,
-    EDGEDB_CLIENT_SECURITY: "insecure_dev_mode",
+    GEL_HOST: config.host,
+    GEL_PORT: config.port?.toString(),
+    GEL_DATABASE: config.database,
+    GEL_USER: config.user,
+    GEL_PASSWORD: config.password,
+    // GEL_TLS_CA_FILE: config.tlsCAFile,
+    // GEL_CLIENT_TLS_SECURITY: config.tlsSecurity,
+    GEL_CLIENT_SECURITY: "insecure_dev_mode",
   };
 }
