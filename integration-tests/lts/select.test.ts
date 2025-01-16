@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import * as edgedb from "edgedb";
+import * as gel from "gel";
 import * as fc from "fast-check";
 
 import * as $ from "./dbschema/edgeql-js/reflection";
 import e, { type $infer } from "./dbschema/edgeql-js";
 import { setupTests, teardownTests, tc, type TestData } from "./setupTeardown";
 
-let client: edgedb.Client;
+let client: gel.Client;
 let data: TestData;
 
 describe("select", () => {
@@ -56,32 +56,32 @@ describe("select", () => {
     assert.equal(dateSelect.__element__, e.datetime);
     assert.equal(dateSelect.__cardinality__, $.Cardinality.One);
 
-    const durationSelect = e.select(new edgedb.Duration());
+    const durationSelect = e.select(new gel.Duration());
     assert.equal(durationSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(durationSelect.__element__, e.duration);
     assert.equal(durationSelect.__cardinality__, $.Cardinality.One);
 
-    const ldrSelect = e.select(new edgedb.LocalDateTime(1, 2, 3));
+    const ldrSelect = e.select(new gel.LocalDateTime(1, 2, 3));
     assert.equal(ldrSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(ldrSelect.__element__, e.cal.local_datetime);
     assert.equal(ldrSelect.__cardinality__, $.Cardinality.One);
 
-    const ldSelect = e.select(new edgedb.LocalDate(1, 2, 3));
+    const ldSelect = e.select(new gel.LocalDate(1, 2, 3));
     assert.equal(ldSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(ldSelect.__element__, e.cal.local_date);
     assert.equal(ldSelect.__cardinality__, $.Cardinality.One);
 
-    const ltSelect = e.select(new edgedb.LocalTime(1, 2, 3));
+    const ltSelect = e.select(new gel.LocalTime(1, 2, 3));
     assert.equal(ltSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(ltSelect.__element__, e.cal.local_time);
     assert.equal(ltSelect.__cardinality__, $.Cardinality.One);
 
-    const rdSelect = e.select(new edgedb.RelativeDuration(1, 2, 3));
+    const rdSelect = e.select(new gel.RelativeDuration(1, 2, 3));
     assert.equal(rdSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(rdSelect.__element__, e.cal.relative_duration);
     assert.equal(rdSelect.__cardinality__, $.Cardinality.One);
 
-    const memSelect = e.select(new edgedb.ConfigMemory(BigInt(1234)));
+    const memSelect = e.select(new gel.ConfigMemory(BigInt(1234)));
     assert.equal(memSelect.__kind__, $.ExpressionKind.Select);
     assert.equal(memSelect.__element__, e.cfg.memory);
     assert.equal(memSelect.__cardinality__, $.Cardinality.One);
@@ -1602,7 +1602,7 @@ SELECT __scope_0_defaultPerson {
       filter_single: e.op(movie.genre, "=", e.Genre.Action),
     }));
 
-    assert.rejects(() => query.run(client), edgedb.CardinalityViolationError);
+    assert.rejects(() => query.run(client), gel.CardinalityViolationError);
   });
 
   test("type union links", async () => {
@@ -1695,7 +1695,7 @@ SELECT __scope_0_defaultPerson {
     }
     const q = e.select(e.json(testString));
 
-    assert.rejects(() => q.run(client), edgedb.InputDataError);
+    assert.rejects(() => q.run(client), gel.InputDataError);
   });
 
   test("arbitrary json literal", async () => {

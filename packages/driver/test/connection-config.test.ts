@@ -475,10 +475,10 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { user: "user" },
       env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
-        EDGEDB_HOST: "host",
-        EDGEDB_PORT: "123",
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
+        GEL_HOST: "host",
+        GEL_PORT: "123",
       },
       result: {
         ...defaults,
@@ -495,10 +495,10 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { dsn: "edgedb://", user: "user" },
       env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
-        EDGEDB_HOST: "host",
-        EDGEDB_PORT: "123",
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
+        GEL_HOST: "host",
+        GEL_PORT: "123",
       },
       result: {
         ...defaults,
@@ -529,8 +529,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { user: "user" },
       env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
@@ -560,8 +560,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { user: "user", database: "db", password: "secret" },
       env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
@@ -591,8 +591,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { host: "test.local" },
       env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
+        GEL_DATABASE: "testdb",
+        GEL_PASSWORD: "passw",
       },
       fs: {
         cwd: "/home/edgedb/test",
@@ -642,7 +642,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
   }
 });
 
-test("EDGEDB_CLIENT_SECURITY env var", async () => {
+test("GEL_CLIENT_SECURITY env var", async () => {
   const truthTable: [string, string, string | null][] = [
     // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
     ["default", "default", "default"],
@@ -663,7 +663,7 @@ test("EDGEDB_CLIENT_SECURITY env var", async () => {
     await envWrap(
       {
         env: {
-          EDGEDB_CLIENT_SECURITY: clientSecurity,
+          GEL_CLIENT_SECURITY: clientSecurity,
         },
       },
       async () => {
