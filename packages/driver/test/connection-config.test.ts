@@ -475,6 +475,26 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { user: "user" },
       env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+        EDGEDB_HOST: "host",
+        EDGEDB_PORT: "123",
+      },
+      result: {
+        ...defaults,
+        address: ["host", 123],
+        user: "user",
+        database: "testdb",
+        password: "passw",
+      },
+      logging: true,
+      inProject: false,
+      fromProject: false,
+      fromEnv: true,
+    },
+    {
+      opts: { user: "user" },
+      env: {
         GEL_DATABASE: "testdb",
         GEL_PASSWORD: "passw",
         GEL_HOST: "host",
@@ -495,10 +515,44 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { dsn: "edgedb://", user: "user" },
       env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+        EDGEDB_HOST: "host",
+        EDGEDB_PORT: "123",
+      },
+      result: {
+        ...defaults,
+        user: "user",
+      },
+      logging: true,
+      inProject: false,
+      fromProject: false,
+      fromEnv: false,
+    },
+    {
+      opts: { dsn: "edgedb://", user: "user" },
+      env: {
         GEL_DATABASE: "testdb",
         GEL_PASSWORD: "passw",
         GEL_HOST: "host",
         GEL_PORT: "123",
+      },
+      result: {
+        ...defaults,
+        user: "user",
+      },
+      logging: true,
+      inProject: false,
+      fromProject: false,
+      fromEnv: false,
+    },
+    {
+      opts: { dsn: "gel://", user: "user" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+        EDGEDB_HOST: "host",
+        EDGEDB_PORT: "123",
       },
       result: {
         ...defaults,
@@ -525,6 +579,37 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       inProject: false,
       fromProject: false,
       fromEnv: false,
+    },
+    {
+      opts: { user: "user" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/gel.toml": "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
+            "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
+            "test_project",
+          "/home/edgedb/.config/edgedb/credentials/test_project.json":
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["localhost", 10702],
+        user: "user",
+        database: "testdb",
+        password: "passw",
+      },
+      logging: true,
+      inProject: true,
+      fromProject: true,
+      fromEnv: true,
     },
     {
       opts: { user: "user" },
@@ -560,6 +645,37 @@ test("logging, inProject, fromProject, fromEnv", async () => {
     {
       opts: { user: "user", database: "db", password: "secret" },
       env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/gel.toml": "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
+            "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
+            "test_project",
+          "/home/edgedb/.config/edgedb/credentials/test_project.json":
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["localhost", 10702],
+        user: "user",
+        database: "db",
+        password: "secret",
+      },
+      logging: true,
+      inProject: true,
+      fromProject: true,
+      fromEnv: false,
+    },
+    {
+      opts: { user: "user", database: "db", password: "secret" },
+      env: {
         GEL_DATABASE: "testdb",
         GEL_PASSWORD: "passw",
       },
@@ -586,6 +702,28 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       logging: true,
       inProject: true,
       fromProject: true,
+      fromEnv: false,
+    },
+    {
+      opts: { host: "test.local" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/gel.toml": "",
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["test.local", 5656],
+      },
+      logging: true,
+      inProject: true,
+      fromProject: false,
       fromEnv: false,
     },
     {
@@ -637,6 +775,46 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         expect(await inProject()).toEqual(testcase.inProject);
         expect(fromProject).toEqual(testcase.fromProject);
         expect(fromEnv).toEqual(testcase.fromEnv);
+      },
+    );
+  }
+});
+
+test("EDGEDB_CLIENT_SECURITY env var", async () => {
+  const truthTable: [string, string, string | null][] = [
+    // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
+    ["default", "default", "default"],
+    ["default", "insecure", "insecure"],
+    ["default", "no_host_verification", "no_host_verification"],
+    ["default", "strict", "strict"],
+    ["insecure_dev_mode", "default", "insecure"],
+    ["insecure_dev_mode", "insecure", "insecure"],
+    ["insecure_dev_mode", "no_host_verification", "no_host_verification"],
+    ["insecure_dev_mode", "strict", "strict"],
+    ["strict", "default", "strict"],
+    ["strict", "insecure", null],
+    ["strict", "no_host_verification", null],
+    ["strict", "strict", "strict"],
+  ];
+
+  for (const [clientSecurity, clientTlsSecurity, result] of truthTable) {
+    await envWrap(
+      {
+        env: {
+          EDGEDB_CLIENT_SECURITY: clientSecurity,
+        },
+      },
+      async () => {
+        const parseConnectArgs = parseConnectArguments({
+          host: "localhost",
+          tlsSecurity: clientTlsSecurity as any,
+        });
+        if (!result) {
+          await expect(parseConnectArgs).rejects.toThrow();
+        } else {
+          const { connectionParams } = await parseConnectArgs;
+          expect(connectionParams._tlsSecurity).toBe(result);
+        }
       },
     );
   }

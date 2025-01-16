@@ -142,7 +142,7 @@ export const startServer = async (
   statusFile: string,
   env: { [key: string]: string } = {},
 ): Promise<ServerInst> => {
-  if (process.env.GEL_DEBUG_SERVER) {
+  if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
 
