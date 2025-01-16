@@ -67,9 +67,9 @@ beforeAll(async () => {
 import { createClient, createHttpClient, GelError } from "../src/index.browser";
 
 const brokenConnectOpts = JSON.parse(
-  process.env._JEST_EDGEDB_CONNECT_CONFIG || "",
+  process.env._JEST_GEL_CONNECT_CONFIG || "",
 );
-const gelVersion = JSON.parse(process.env._JEST_EDGEDB_VERSION!);
+const gelVersion = JSON.parse(process.env._JEST_GEL_VERSION!);
 
 const connectOpts = {
   ...brokenConnectOpts,
