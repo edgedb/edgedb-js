@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gel/gel-js.git",
+    "url": "https://github.com/geldata/gel-js.git",
     "directory": "packages/vercel-ai-provider"
   },
   "sideEffects": false,
