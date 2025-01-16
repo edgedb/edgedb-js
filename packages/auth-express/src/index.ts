@@ -118,8 +118,32 @@ export class ExpressAuth {
     });
   };
 
+  private getVerifier(cookies: Record<string, string>) {
+    return (
+      cookies[this.options.pkceVerifierCookieName] ||
+      cookies["edgedb-pkce-verifier"]
+    );
+  }
+
+  private clearVerifierCookie(res: ExpressResponse) {
+    res.clearCookie(this.options.pkceVerifierCookieName);
+    res.clearCookie("edgedb-pkce-verifier");
+  }
+
+  private clearAuthCookie(res: ExpressResponse) {
+    res.clearCookie(this.options.authCookieName, {
+      httpOnly: true,
+      sameSite: "strict",
+    });
+    res.clearCookie("edgedb-session", {
+      httpOnly: true,
+      sameSite: "strict",
+    });
+  }
+
   getSession = (req: ExpressRequest) => {
-    const authCookie = req.cookies[this.options.authCookieName];
+    const authCookie =
+      req.cookies[this.options.authCookieName] || req.cookies["edgedb-session"];
 
     return new ExpressAuthSession(this.client, authCookie);
   };
@@ -268,10 +292,7 @@ export class ExpressAuth {
     next: NextFunction,
   ) => {
     try {
-      res.clearCookie(this.options.authCookieName, {
-        httpOnly: true,
-        sameSite: "strict",
-      });
+      this.clearAuthCookie(res);
       req.session = new ExpressAuthSession(this.client, undefined);
       req.tokenData = undefined;
       next();
@@ -334,14 +355,14 @@ export class ExpressAuth {
           }
           throw new PKCEError("no pkce code in response");
         }
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verifier) {
           throw new PKCEError("no pkce verifier cookie found");
         }
         const isSignUp = searchParams.get("isSignUp") === "true";
         const tokenData = await (await this.core).getToken(code, verifier);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
+        this.clearVerifierCookie(res);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
@@ -411,7 +432,7 @@ export class ExpressAuth {
           }
           throw new PKCEError("no pkce code in response");
         }
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verifier) {
           throw new PKCEError("no pkce verifier cookie found");
         }
@@ -493,7 +514,7 @@ export class ExpressAuth {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
         const verificationToken = searchParams.get("verification_token");
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verificationToken) {
           throw new PKCEError("no verification_token in response");
         }
@@ -504,7 +525,7 @@ export class ExpressAuth {
           await this.core
         ).verifyEmailPasswordSignup(verificationToken, verifier);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
+        this.clearVerifierCookie(res);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
@@ -538,7 +559,7 @@ export class ExpressAuth {
       next: NextFunction,
     ) => {
       try {
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verifier) {
           throw new PKCEError("no pkce verifier cookie found");
         }
@@ -552,7 +573,7 @@ export class ExpressAuth {
           await this.core
         ).resetPasswordWithResetToken(resetToken, verifier, password);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
+        this.clearVerifierCookie(res);
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         next();
@@ -618,14 +639,13 @@ export class ExpressAuth {
         }
 
         const isSignUp = searchParams.get("isSignUp") === "true";
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verifier) {
           throw new PKCEError("no pkce verifier cookie found");
         }
         const tokenData = await (await this.core).getToken(code, verifier);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
-
+        this.clearVerifierCookie(res);
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;
         req.isSignUp = isSignUp;
@@ -695,7 +715,7 @@ export class ExpressAuth {
       try {
         const searchParams = new URLSearchParams(req.url.split("?")[1]);
         const verificationToken = searchParams.get("verification_token");
-        const verifier = req.cookies[this.options.pkceVerifierCookieName];
+        const verifier = this.getVerifier(req.cookies);
         if (!verificationToken) {
           throw new PKCEError("no verification_token in response");
         }
@@ -706,7 +726,7 @@ export class ExpressAuth {
           await this.core
         ).verifyWebAuthnSignup(verificationToken, verifier);
         this.createAuthCookie(res, tokenData.auth_token);
-        res.clearCookie(this.options.pkceVerifierCookieName);
+        this.clearVerifierCookie(res);
 
         req.session = new ExpressAuthSession(this.client, tokenData.auth_token);
         req.tokenData = tokenData;

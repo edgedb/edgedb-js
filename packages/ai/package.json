@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gel/gel-js.git",
+    "url": "https://github.com/geldata/gel-js.git",
     "directory": "packages/ai"
   },
   "main": "./dist/index.js",

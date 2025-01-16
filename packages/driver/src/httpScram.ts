@@ -46,7 +46,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
 
     // The first request must have status 401 Unauthorized and provide a
     // WWW-Authenticate header with a SCRAM-SHA-256 challenge.
-    // See: https://github.com/gel/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L153-L157
+    // See: https://github.com/geldata/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L153-L157
     const authenticateHeader = serverFirstRes.headers.get("WWW-Authenticate");
     if (serverFirstRes.status !== 401 || !authenticateHeader) {
       const body = await serverFirstRes.text();
@@ -64,7 +64,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
 
     // The server may respond with a 401 Unauthorized and `WWW-Authenticate: SCRAM-SHA-256` with
     // no parameters if authentication fails, e.g., due to an incorrect username.
-    // See: https://github.com/gel/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L112-L120
+    // See: https://github.com/geldata/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L112-L120
     const authParams = authenticateHeader.split(/ (.+)?/, 2)[1] ?? "";
     if (authParams.length === 0) {
       const body = await serverFirstRes.text();
@@ -99,7 +99,7 @@ export function getHTTPSCRAMAuth(cryptoUtils: CryptoUtils): HttpSCRAMAuth {
 
     // The second request is successful if the server responds with a 200 and an
     // Authentication-Info header (see https://datatracker.ietf.org/doc/html/rfc7615#section-3).
-    // See: https://github.com/gel/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L252-L254
+    // See: https://github.com/geldata/gel/blob/09782afd3b759440abbb1b26ee19b6589be04275/edb/server/protocol/auth/scram.py#L252-L254
     const authInfoHeader = serverFinalRes.headers.get("Authentication-Info");
 
     if (!serverFinalRes.ok || !authInfoHeader) {
