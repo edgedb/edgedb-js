@@ -14,7 +14,7 @@ import { ReadBuffer, WriteBuffer } from "../src/primitives/buffer";
 // When converting from micro -> milli, or nano -> micro, round to nearest even
 // should be used.
 
-// Tests adapted from https://github.com/gel/gel-rust/blob/master/gel-protocol/tests/datetime_chrono.rs
+// Tests adapted from https://github.com/geldata/gel-rust/blob/master/gel-protocol/tests/datetime_chrono.rs
 
 test("datetime", () => {
   const codec = new DateTimeCodec(

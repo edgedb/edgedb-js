@@ -6,7 +6,7 @@
   "author": "Gel <info@gel.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gel/gel-js.git",
+    "url": "https://github.com/geldata/gel-js.git",
     "directory": "packages/auth-express"
   },
   "license": "Apache-2.0",

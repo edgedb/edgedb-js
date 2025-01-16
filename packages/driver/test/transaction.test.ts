@@ -144,7 +144,7 @@ test("no transaction statements", async () => {
 
   // This test is broken, first rollback query throws CapabilityError, but
   // then second rollback query doesn't throw any error
-  // https://github.com/gel/gel/issues/3120
+  // https://github.com/geldata/gel/issues/3120
 
   // await client.transaction(async (tx) => {
   //   await expect(tx.execute("rollback")).rejects.toThrow(

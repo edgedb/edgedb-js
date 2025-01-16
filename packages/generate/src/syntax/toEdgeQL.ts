@@ -1616,7 +1616,7 @@ function indent(str: string, depth: number) {
 }
 
 // backtick quote identifiers if needed
-// https://github.com/gel/gel/blob/master/edb/edgeql/quote.py
+// https://github.com/geldata/gel/blob/master/edb/edgeql/quote.py
 function q(ident: string, allowBacklinks = true): string {
   if (
     !ident ||
