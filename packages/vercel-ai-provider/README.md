@@ -43,4 +43,4 @@ console.log(text);
 
 ## Documentation
 
-Please check out the **[Gel provider documentation](https://docs.gel.com/ai/vercel_ai_sdk_provider)** for more information.
+Please check out the **[Gel provider documentation](https://docs.geldata.com/ai/vercel_ai_sdk_provider)** for more information.

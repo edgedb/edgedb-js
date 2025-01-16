@@ -42,7 +42,7 @@ This library provides a few affordances for adding Gel Auth to your existing Exp
 
 ## Configuring the `ExpressAuth` class
 
-After [configuring the Gel Auth extension](https://www.gel.com/docs/guides/auth/index), you can set up the various auth routes with our route builders.
+After [configuring the Gel Auth extension](https://www.geldata.com/docs/guides/auth/index), you can set up the various auth routes with our route builders.
 
 Start by instantiating an `ExpressAuth` object by passing it a configured Gel client and some options:
 
