@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync, SpawnSyncReturns, type ExecSyncOptions } from "node:child_process";
+import { execSync, type ExecSyncOptions } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import * as os from "node:os";
 import * as fs from "node:fs/promises";
@@ -27,18 +27,6 @@ interface Package {
   revision: string;
   installref: string;
 }
-
-interface Ok {
-  tag: "Ok";
-  stdout: string | Buffer;
-}
-
-interface Err {
-  tag: "Err";
-  error: Error & SpawnSyncReturns<string | Buffer>;
-}
-
-type Result = Ok | Err;
 
 debug("Process argv:", process.argv);
 // n.b. Using `npx`, the 3rd argument is the script name, unlike
@@ -77,12 +65,7 @@ async function main(args: string[]) {
   }
 
   try {
-    const result = runEdgeDbCli(args, cliLocation);
-    if (result.tag === "Err") {
-      process.exit(result.error.status);
-      return;
-    }
-
+    runEdgeDbCli(args, cliLocation);
     if (cliLocation !== maybeCachedCliLocation) {
       debug("CLI location not cached.");
       debug(`  - Cached location: ${maybeCachedCliLocation}`);
@@ -92,7 +75,17 @@ async function main(args: string[]) {
       debug("Cache updated.");
     }
   } catch (err) {
-    console.error(err);
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "status" in err &&
+      typeof err.status === "number"
+    ) {
+      process.exit(err.status);
+    } else {
+      console.error(err);
+    }
+
     process.exit(1);
   }
 
@@ -221,12 +214,11 @@ async function selfInstallFromTempCli(): Promise<string | null> {
   debug("Self-installing EdgeDB CLI...");
   // n.b. need -y because in the Vercel build container, $HOME and euid-obtained
   // home are different, and the CLI installation requires this as confirmation
-  const cmd = ["_self_install", "-y", "--quiet"];
-  const result = runEdgeDbCli(cmd, TEMPORARY_CLI_PATH);
-  if (result.tag === "Err") {
-    debug("  - CLI self-installation failed with error:", result.error);
-    return null;
+  const cmd = ["_self_install", "-y"];
+  if (!IS_TTY) {
+    cmd.push("--quiet");
   }
+  runEdgeDbCli(cmd, TEMPORARY_CLI_PATH);
   debug("  - CLI self-installed successfully.");
   return getCliLocationFromCache();
 }
@@ -255,15 +247,10 @@ function runEdgeDbCli(
   args: string[],
   pathToCli: string,
   execOptions: ExecSyncOptions = { stdio: "inherit" },
-): Result {
+) {
   const command = quote([pathToCli, ...args]);
   debug(`Running EdgeDB CLI: ${command}`);
-  try {
-    const result = execSync(command, execOptions);
-    return { tag: "Ok", stdout: result };
-  } catch (error: unknown) {
-    return { tag: "Err", error: error as Error & SpawnSyncReturns<string | Buffer> };
-  }
+  return execSync(command, execOptions);
 }
 
 async function findPackage(): Promise<Package> {
@@ -342,7 +329,7 @@ async function getMatchingPkg(
   } else {
     throw Error(
       "no published EdgeDB CLI version matches requested version " +
-      `'${cliVersionRange}'`,
+        `'${cliVersionRange}'`,
     );
   }
 }
@@ -398,14 +385,11 @@ function getBaseDist(arch: string, platform: string, libc = ""): string {
 
 function getInstallDir(cliPath: string): string {
   debug("Getting install directory for CLI path:", cliPath);
-  const result = runEdgeDbCli(["info", "--get", "install-dir"], cliPath, {
+  const installDir = runEdgeDbCli(["info", "--get", "install-dir"], cliPath, {
     stdio: "pipe",
-  });
-  if (result.tag === "Err") {
-    debug("  - Failed to get install directory from CLI:", result.error);
-    throw result.error;
-  }
-  const installDir = result.stdout.toString().trim();
+  })
+    .toString()
+    .trim();
   debug("  - Install directory:", installDir);
   return installDir;
 }
