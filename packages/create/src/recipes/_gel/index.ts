@@ -58,7 +58,7 @@ const recipe: Recipe<GelOptions> = {
 
         spinner.start("Installing Gel CLI");
         const { stdout, stderr } = await execInLoginShell(
-          "curl --proto '=https' --tlsv1.2 -sSf https://sh.gel.com | sh -s -- -y",
+          "curl --proto '=https' --tlsv1.2 -sSf https://sh.geldata.com | sh -s -- -y",
         );
         logger({ stdout, stderr });
         spinner.stop("Gel CLI installed");

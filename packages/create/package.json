@@ -3,14 +3,14 @@
   "version": "0.2.2",
   "type": "module",
   "description": "Create a new Gel-based project",
-  "homepage": "https://gel.com/docs",
-  "author": "Gel <info@gel.com>",
+  "homepage": "https://geldata.com/docs",
+  "author": "Gel <info@geldata.com>",
   "engines": {
     "node": ">= 18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gel/gel-js.git",
+    "url": "https://github.com/geldata/gel-js.git",
     "directory": "packages/create"
   },
   "license": "Apache-2.0",

@@ -3,7 +3,7 @@
   "description": "Helper library to integrate the Gel Auth extension with Express",
   "version": "0.2.2",
   "type": "module",
-  "author": "Gel <info@gel.com>",
+  "author": "Gel <info@geldata.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/geldata/gel-js.git",

@@ -32,7 +32,7 @@ Enter your project directory using: ${pc.green(
   )} 
 Follow the instructions in the ${pc.green("README.md")} file to get started.
 
-Need help? Join our community at ${pc.green("https://gel.com/community")}`);
+Need help? Join our community at ${pc.green("https://geldata.com/community")}`);
 }
 
 await main();
