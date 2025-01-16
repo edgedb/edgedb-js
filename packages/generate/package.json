@@ -2,8 +2,8 @@
   "name": "@gel/generate",
   "version": "0.5.6",
   "description": "Gel code generators for TS/JavaScript",
-  "homepage": "https://gel.com/docs",
-  "author": "Gel <info@gel.com>",
+  "homepage": "https://geldata.com/docs",
+  "author": "Gel <info@geldata.com>",
   "engines": {
     "node": ">= 18.0.0"
   },

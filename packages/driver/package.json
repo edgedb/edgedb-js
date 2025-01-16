@@ -2,8 +2,8 @@
   "name": "gel",
   "version": "1.5.12",
   "description": "The official Node.js client library for Gel",
-  "homepage": "https://gel.com/docs",
-  "author": "Gel <info@gel.com>",
+  "homepage": "https://geldata.com/docs",
+  "author": "Gel <info@geldata.com>",
   "engines": {
     "node": ">= 18.0.0"
   },
