@@ -73,16 +73,16 @@ async function main(args: string[]) {
     null;
 
   if (cliLocation === null) {
-    throw Error("Failed to find or install EdgeDB CLI.");
+    console.error("Failed to find or install EdgeDB CLI.");
+    process.exit(1);
+  }
+
+  const result = runEdgeDbCli(args, cliLocation);
+  if (result.tag === "Err") {
+    process.exit(result.error.status);
   }
 
   try {
-    const result = runEdgeDbCli(args, cliLocation);
-    if (result.tag === "Err") {
-      process.exit(result.error.status);
-      return;
-    }
-
     if (cliLocation !== maybeCachedCliLocation) {
       debug("CLI location not cached.");
       debug(`  - Cached location: ${maybeCachedCliLocation}`);
