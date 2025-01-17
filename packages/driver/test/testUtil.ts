@@ -85,8 +85,7 @@ export const getServerCommand = (
   strictSecurity = true,
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
-  const srvcmd =
-    process.env.GEL_SERVER_BIN || process.env.EDGEDB_SERVER_BIN || "gel-server";
+  const srvcmd = process.env.GEL_SERVER_BIN || "gel-server";
 
   let args = [srvcmd];
   if (process.platform === "win32") {
@@ -142,7 +141,7 @@ export const startServer = async (
   statusFile: string,
   env: { [key: string]: string } = {},
 ): Promise<ServerInst> => {
-  if (process.env.GEL_DEBUG_SERVER || process.env.EDGEDB_DEBUG_SERVER) {
+  if (process.env.GEL_DEBUG_SERVER) {
     console.log(`running command: ${cmd.join(" ")}`);
   }
 

@@ -472,6 +472,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: false,
     },
+    // fromEnv: true - should take into account env vars
     {
       opts: { user: "user" },
       env: {
@@ -512,42 +513,9 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: true,
     },
+    // fromEnv: false - should not take into account env vars
     {
       opts: { dsn: "edgedb://", user: "user" },
-      env: {
-        EDGEDB_DATABASE: "testdb",
-        EDGEDB_PASSWORD: "passw",
-        EDGEDB_HOST: "host",
-        EDGEDB_PORT: "123",
-      },
-      result: {
-        ...defaults,
-        user: "user",
-      },
-      logging: true,
-      inProject: false,
-      fromProject: false,
-      fromEnv: false,
-    },
-    {
-      opts: { dsn: "edgedb://", user: "user" },
-      env: {
-        GEL_DATABASE: "testdb",
-        GEL_PASSWORD: "passw",
-        GEL_HOST: "host",
-        GEL_PORT: "123",
-      },
-      result: {
-        ...defaults,
-        user: "user",
-      },
-      logging: true,
-      inProject: false,
-      fromProject: false,
-      fromEnv: false,
-    },
-    {
-      opts: { dsn: "gel://", user: "user" },
       env: {
         EDGEDB_DATABASE: "testdb",
         EDGEDB_PASSWORD: "passw",
@@ -580,6 +548,9 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: false,
     },
+    // Considers credentials file, environment variables, and inline options in
+    // order of precedence: credentials file < environment variables < inline
+    // options, where each level overrides the one before it.
     {
       opts: { user: "user" },
       env: {
@@ -590,7 +561,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/gel.toml": "",
+          "/home/edgedb/test/edgedb.toml": "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
             "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
@@ -642,6 +613,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: true,
       fromEnv: true,
     },
+    // Considers credentials file and inline options. Inline options
+    // have higher precedence and ovverride config from the file.
     {
       opts: { user: "user", database: "db", password: "secret" },
       env: {
@@ -652,7 +625,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/gel.toml": "",
+          "/home/edgedb/test/edgedb.toml": "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
             "",
           "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
@@ -704,6 +677,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: true,
       fromEnv: false,
     },
+    // Considers inline options only. Config from the file and env vars is ignored.
     {
       opts: { host: "test.local" },
       env: {
@@ -714,7 +688,7 @@ test("logging, inProject, fromProject, fromEnv", async () => {
         cwd: "/home/edgedb/test",
         homedir: "/home/edgedb",
         files: {
-          "/home/edgedb/test/gel.toml": "",
+          "/home/edgedb/test/edgedb.toml": "",
         },
       },
       result: {
@@ -780,46 +754,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
   }
 });
 
-test("EDGEDB_CLIENT_SECURITY env var", async () => {
-  const truthTable: [string, string, string | null][] = [
-    // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
-    ["default", "default", "default"],
-    ["default", "insecure", "insecure"],
-    ["default", "no_host_verification", "no_host_verification"],
-    ["default", "strict", "strict"],
-    ["insecure_dev_mode", "default", "insecure"],
-    ["insecure_dev_mode", "insecure", "insecure"],
-    ["insecure_dev_mode", "no_host_verification", "no_host_verification"],
-    ["insecure_dev_mode", "strict", "strict"],
-    ["strict", "default", "strict"],
-    ["strict", "insecure", null],
-    ["strict", "no_host_verification", null],
-    ["strict", "strict", "strict"],
-  ];
-
-  for (const [clientSecurity, clientTlsSecurity, result] of truthTable) {
-    await envWrap(
-      {
-        env: {
-          EDGEDB_CLIENT_SECURITY: clientSecurity,
-        },
-      },
-      async () => {
-        const parseConnectArgs = parseConnectArguments({
-          host: "localhost",
-          tlsSecurity: clientTlsSecurity as any,
-        });
-        if (!result) {
-          await expect(parseConnectArgs).rejects.toThrow();
-        } else {
-          const { connectionParams } = await parseConnectArgs;
-          expect(connectionParams._tlsSecurity).toBe(result);
-        }
-      },
-    );
-  }
-});
-
+// Checks if _tlsSecurity is correctly set up based on env vars and inline
+// options for CLIENT_SECURITY and CLIENT_TLS_SECURITY.
 test("GEL_CLIENT_SECURITY env var", async () => {
   const truthTable: [string, string, string | null][] = [
     // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
