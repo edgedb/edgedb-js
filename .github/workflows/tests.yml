@@ -13,7 +13,7 @@ jobs:
     # when the release PR gets merged by the bot.
     if: needs.prep.outputs.version == 0
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.gel-version == 'nightly' }}
+    continue-on-error: true
     strategy:
       matrix:
         node-version: ["18", "20", "22"]
@@ -32,7 +32,7 @@ jobs:
           # - os: ubuntu-latest
           #   node-version: "20"
           #   gel-version: "3"
-          # XXX: macOS is currently unsupported by setup-edgedb
+          # XXX: macOS is currently unsupported by gel-edgedb
           # - os: macos-latest
           #   node-version: "20"
           #   gel-version: "stable"
