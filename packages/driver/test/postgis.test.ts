@@ -5,6 +5,7 @@ import {
   Box2D,
   Box3D,
   CircularString,
+  Codecs,
   CompoundCurve,
   CurvePolygon,
   Geometry,
@@ -22,6 +23,7 @@ import {
   TriangulatedIrregularNetwork,
   parseWKT,
 } from "../src/index.shared";
+import { CodecValueType } from "../src/codecs/context";
 
 const geomTestcases: [string, any][] = [
   ["POINT EMPTY", Point],
@@ -348,6 +350,97 @@ if (getAvailableExtensions().get("postgis")) {
             },
           ),
         ).resolves.not.toThrow();
+      }
+    });
+
+    it("withCodecs", async () => {
+      class Value {
+        constructor(
+          public type: string,
+          public value: any,
+        ) {}
+      }
+
+      const geomBuf = new Uint8Array([
+        1, 3, 0, 0, 96, 230, 16, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        16, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 16, 64, 0, 0, 0, 0, 0, 0, 16, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 240, 63, 0, 0, 0, 0, 0, 0, 240, 63, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 240, 63, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240, 63, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 240, 63, 0, 0, 0, 0, 0, 0, 240, 63,
+        0, 0, 0, 0, 0, 0, 0, 0,
+      ]);
+
+      const postgisCodecs: {
+        [key in
+          | "ext::postgis::geometry"
+          | "ext::postgis::geography"
+          | "ext::postgis::box3d"
+          | "ext::postgis::box2d"]: CodecValueType<Codecs.KnownCodecs[key]>;
+      } = {
+        "ext::postgis::geometry": geomBuf,
+        "ext::postgis::geography": geomBuf,
+        "ext::postgis::box2d": [
+          [5, 6],
+          [10, 11],
+        ],
+        "ext::postgis::box3d": [
+          [5, 6, 7],
+          [10, 11, 12],
+        ],
+      };
+
+      const con = getClient().withCodecs(
+        Object.fromEntries(
+          Object.keys(postgisCodecs).map((tn) => {
+            return [
+              tn,
+              {
+                toDatabase(data: Value): any {
+                  return data.value;
+                },
+                fromDatabase(data: any): Value {
+                  return new Value(tn, data);
+                },
+              },
+            ];
+          }),
+        ),
+      );
+
+      let args: any[] = [];
+      let query = "select (";
+      for (let [idx, [type, value]] of Object.entries(
+        postgisCodecs,
+      ).entries()) {
+        query += `<${type}>\$${idx},`;
+        args.push(new Value(type, value));
+      }
+      query += ")";
+
+      try {
+        const ret = (await con.querySingle(query, args)) as Array<Value>;
+
+        expect(ret.length).toBe(args.length);
+
+        for (let i = 0; i < ret.length; i++) {
+          const tn = ret[i].type;
+          expect(tn).toBe(args[i].type);
+
+          try {
+            expect(ret[i].value).toStrictEqual(args[i].value);
+          } catch (e) {
+            console.error(`type ${tn}`);
+            throw e;
+          }
+        }
+      } finally {
+        await con.close();
       }
     });
   });

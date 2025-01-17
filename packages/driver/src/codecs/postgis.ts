@@ -21,32 +21,55 @@ import {
 } from "../datatypes/postgis";
 import { InternalClientError, InvalidArgumentError } from "../errors";
 import type { ReadBuffer, WriteBuffer } from "../primitives/buffer";
+import type { Codecs } from "./codecs";
+import type { CodecContext } from "./context";
 import { type ICodec, ScalarCodec } from "./ifaces";
 
 export class PostgisGeometryCodec extends ScalarCodec implements ICodec {
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof Geometry)) {
-      throw new InvalidArgumentError(
-        `a Geometry object was expected, got "${object}"`,
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    if (ctx.hasOverload(this)) {
+      const geomBuf = ctx.preEncode<Codecs.PostgisGeometryCodec>(this, object);
+      buf.writeBytes(geomBuf);
+    } else {
+      if (!(object instanceof Geometry)) {
+        throw new InvalidArgumentError(
+          `a Geometry object was expected, got "${object}"`,
+        );
+      }
+
+      const finalise = buf.writeDeferredSize();
+      _encodeGeometry(buf, object as AnyGeometry);
+      finalise();
+    }
+  }
+
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.PostgisGeometryCodec>(
+        this,
+        buf.consumeAsBuffer(),
       );
     }
 
-    const finalise = buf.writeDeferredSize();
-    _encodeGeometry(buf, object as AnyGeometry);
-    finalise();
-  }
-
-  decode(buf: ReadBuffer): any {
     return _parseGeometry(buf);
   }
 }
 
 export class PostgisBox2dCodec extends ScalarCodec implements ICodec {
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof Box2D)) {
-      throw new InvalidArgumentError(
-        `a Box2D object was expected, got "${object}"`,
-      );
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    let min: [number, number];
+    let max: [number, number];
+
+    if (ctx.hasOverload(this)) {
+      [min, max] = ctx.preEncode<Codecs.PostgisBox2dCodec>(this, object);
+    } else {
+      if (!(object instanceof Box2D)) {
+        throw new InvalidArgumentError(
+          `a Box2D object was expected, got "${object}"`,
+        );
+      }
+      min = object.min;
+      max = object.max;
     }
 
     const finalise = buf.writeDeferredSize();
@@ -56,10 +79,10 @@ export class PostgisBox2dCodec extends ScalarCodec implements ICodec {
         [
           new LineString(
             [
-              new Point(object.min[0], object.min[1]),
-              new Point(object.min[0], object.max[1]),
-              new Point(object.max[0], object.max[1]),
-              new Point(object.min[0], object.min[1]),
+              new Point(min[0], min[1]),
+              new Point(min[0], max[1]),
+              new Point(max[0], max[1]),
+              new Point(min[0], min[1]),
             ],
             false,
             false,
@@ -74,7 +97,7 @@ export class PostgisBox2dCodec extends ScalarCodec implements ICodec {
     finalise();
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const poly = _parseGeometry(buf);
     if (
       poly.constructor !== Polygon ||
@@ -87,16 +110,32 @@ export class PostgisBox2dCodec extends ScalarCodec implements ICodec {
       );
     }
     const points = poly.rings[0].points;
-    return new Box2D([points[0].x, points[0].y], [points[2].x, points[2].y]);
+    const min = [points[0].x, points[0].y] as [number, number];
+    const max = [points[2].x, points[2].y] as [number, number];
+
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.PostgisBox2dCodec>(this, [min, max]);
+    }
+
+    return new Box2D(min, max);
   }
 }
 
 export class PostgisBox3dCodec extends ScalarCodec implements ICodec {
-  encode(buf: WriteBuffer, object: any): void {
-    if (!(object instanceof Box3D)) {
-      throw new InvalidArgumentError(
-        `a Box3D object was expected, got "${object}"`,
-      );
+  encode(buf: WriteBuffer, object: any, ctx: CodecContext): void {
+    let min: [number, number, number];
+    let max: [number, number, number];
+
+    if (ctx.hasOverload(this)) {
+      [min, max] = ctx.preEncode<Codecs.PostgisBox3dCodec>(this, object);
+    } else {
+      if (!(object instanceof Box3D)) {
+        throw new InvalidArgumentError(
+          `a Box3D object was expected, got "${object}"`,
+        );
+      }
+      min = object.min;
+      max = object.max;
     }
 
     const finalise = buf.writeDeferredSize();
@@ -106,10 +145,10 @@ export class PostgisBox3dCodec extends ScalarCodec implements ICodec {
         [
           new LineString(
             [
-              new Point(object.min[0], object.min[1], object.min[2]),
-              new Point(object.min[0], object.max[1], object.max[2]),
-              new Point(object.max[0], object.max[1], object.max[2]),
-              new Point(object.min[0], object.min[1], object.min[2]),
+              new Point(min[0], min[1], min[2]),
+              new Point(min[0], max[1], max[2]),
+              new Point(max[0], max[1], max[2]),
+              new Point(min[0], min[1], min[2]),
             ],
             true,
             false,
@@ -124,31 +163,41 @@ export class PostgisBox3dCodec extends ScalarCodec implements ICodec {
     finalise();
   }
 
-  decode(buf: ReadBuffer): any {
+  decode(buf: ReadBuffer, ctx: CodecContext): any {
     const poly = _parseGeometry(buf);
+
+    let min: Point;
+    let max: Point;
     if (
       poly.constructor === Polygon &&
       poly.rings.length === 1 &&
       poly.rings[0].points.length === 5
     ) {
       const points = poly.rings[0].points;
-      return new Box3D(
-        [points[0].x, points[0].y, points[0].z ?? 0],
-        [points[2].x, points[2].y, points[2].z ?? 0],
-      );
-    }
-    if (
+      min = points[0];
+      max = points[2];
+    } else if (
       poly.constructor === PolyhedralSurface &&
       poly.geometries.length === 6 &&
       poly.geometries[0].rings.length === 1 &&
       poly.geometries[0].rings[0].points.length === 5
     ) {
-      const min = poly.geometries[0].rings[0].points[0];
-      const max = poly.geometries[5].rings[0].points[2];
-      return new Box3D([min.x, min.y, min.z ?? 0], [max.x, max.y, max.z ?? 0]);
+      min = poly.geometries[0].rings[0].points[0];
+      max = poly.geometries[5].rings[0].points[2];
+    } else {
+      throw new InternalClientError(
+        `failed to decode ext::postgis::box3d type`,
+      );
     }
 
-    throw new InternalClientError(`failed to decode ext::postgis::box3d type`);
+    if (ctx.hasOverload(this)) {
+      return ctx.postDecode<Codecs.PostgisBox3dCodec>(this, [
+        [min.x, min.y, min.z ?? 0],
+        [max.x, max.y, max.z ?? 0],
+      ]);
+    }
+
+    return new Box3D([min.x, min.y, min.z ?? 0], [max.x, max.y, max.z ?? 0]);
   }
 }
 

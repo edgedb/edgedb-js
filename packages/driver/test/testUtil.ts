@@ -265,15 +265,17 @@ export const shutdown = async (
   await client.close();
 
   await new Promise<void>((resolve, reject) => {
+    let timedout = false;
     const to = setTimeout(() => {
       // tslint:disable-next-line
       console.error("!!! EdgeDB exit timeout... !!!");
+      timedout = true;
       proc.kill("SIGTERM");
-    }, 30_000);
+    }, 20_000);
 
-    proc.on("exit", (_code: number, signal: string) => {
+    proc.on("exit", (code: number, signal: string) => {
       clearTimeout(to);
-      if (signal === "SIGTERM") {
+      if (signal === "SIGTERM" || code !== 0 || timedout) {
         reject(new Error("edgedb did not shutdown gracefully"));
       } else {
         resolve();
