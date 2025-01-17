@@ -16,6 +16,8 @@ import Debug from "debug";
 import which from "which";
 import { quote } from "shell-quote";
 
+import { type Result } from "./typeutil.js";
+
 const debug = Debug("edgedb:cli");
 
 const IS_TTY = process.stdout.isTTY;
@@ -31,18 +33,6 @@ interface Package {
   revision: string;
   installref: string;
 }
-
-interface Ok {
-  tag: "Ok";
-  stdout: string | Buffer;
-}
-
-interface Err {
-  tag: "Err";
-  error: Error & SpawnSyncReturns<string | Buffer>;
-}
-
-type Result = Ok | Err;
 
 debug("Process argv:", process.argv);
 // n.b. Using `npx`, the 3rd argument is the script name, unlike
@@ -259,12 +249,12 @@ function runEdgeDbCli(
   args: string[],
   pathToCli: string,
   execOptions: ExecSyncOptions = { stdio: "inherit" },
-): Result {
+): Result<string | Buffer, Error & SpawnSyncReturns<string | Buffer>> {
   const command = quote([pathToCli, ...args]);
   debug(`Running EdgeDB CLI: ${command}`);
   try {
     const result = execSync(command, execOptions);
-    return { tag: "Ok", stdout: result };
+    return { tag: "Ok", value: result };
   } catch (error: unknown) {
     return {
       tag: "Err",
@@ -412,7 +402,7 @@ function getInstallDir(cliPath: string): string {
     debug("  - Failed to get install directory from CLI:", result.error);
     throw result.error;
   }
-  const installDir = result.stdout.toString().trim();
+  const installDir = result.value.toString().trim();
   debug("  - Install directory:", installDir);
   return installDir;
 }
