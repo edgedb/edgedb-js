@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-import { execSync, type SpawnSyncReturns, type ExecSyncOptions } from "node:child_process";
+import {
+  execSync,
+  type SpawnSyncReturns,
+  type ExecSyncOptions,
+} from "node:child_process";
 import { createWriteStream } from "node:fs";
 import * as os from "node:os";
 import * as fs from "node:fs/promises";
@@ -262,7 +266,10 @@ function runEdgeDbCli(
     const result = execSync(command, execOptions);
     return { tag: "Ok", stdout: result };
   } catch (error: unknown) {
-    return { tag: "Err", error: error as Error & SpawnSyncReturns<string | Buffer> };
+    return {
+      tag: "Err",
+      error: error as Error & SpawnSyncReturns<string | Buffer>,
+    };
   }
 }
 
@@ -342,7 +349,7 @@ async function getMatchingPkg(
   } else {
     throw Error(
       "no published EdgeDB CLI version matches requested version " +
-      `'${cliVersionRange}'`,
+        `'${cliVersionRange}'`,
     );
   }
 }
