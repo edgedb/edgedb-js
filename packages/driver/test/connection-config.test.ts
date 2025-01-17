@@ -472,6 +472,27 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: false,
     },
+    // fromEnv: true - should take into account env vars
+    {
+      opts: { user: "user" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+        EDGEDB_HOST: "host",
+        EDGEDB_PORT: "123",
+      },
+      result: {
+        ...defaults,
+        address: ["host", 123],
+        user: "user",
+        database: "testdb",
+        password: "passw",
+      },
+      logging: true,
+      inProject: false,
+      fromProject: false,
+      fromEnv: true,
+    },
     {
       opts: { user: "user" },
       env: {
@@ -492,13 +513,14 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       fromProject: false,
       fromEnv: true,
     },
+    // fromEnv: false - should not take into account env vars
     {
       opts: { dsn: "edgedb://", user: "user" },
       env: {
-        GEL_DATABASE: "testdb",
-        GEL_PASSWORD: "passw",
-        GEL_HOST: "host",
-        GEL_PORT: "123",
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+        EDGEDB_HOST: "host",
+        EDGEDB_PORT: "123",
       },
       result: {
         ...defaults,
@@ -525,6 +547,40 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       inProject: false,
       fromProject: false,
       fromEnv: false,
+    },
+    // Considers credentials file, environment variables, and inline options in
+    // order of precedence: credentials file < environment variables < inline
+    // options, where each level overrides the one before it.
+    {
+      opts: { user: "user" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/edgedb.toml": "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
+            "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
+            "test_project",
+          "/home/edgedb/.config/edgedb/credentials/test_project.json":
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["localhost", 10702],
+        user: "user",
+        database: "testdb",
+        password: "passw",
+      },
+      logging: true,
+      inProject: true,
+      fromProject: true,
+      fromEnv: true,
     },
     {
       opts: { user: "user" },
@@ -556,6 +612,39 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       inProject: true,
       fromProject: true,
       fromEnv: true,
+    },
+    // Considers credentials file and inline options. Inline options
+    // have higher precedence and ovverride config from the file.
+    {
+      opts: { user: "user", database: "db", password: "secret" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/edgedb.toml": "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158":
+            "",
+          "/home/edgedb/.config/edgedb/projects/test-cf3c86df8fc33fbb73a47671ac5762eda8219158/instance-name":
+            "test_project",
+          "/home/edgedb/.config/edgedb/credentials/test_project.json":
+            '{"port": 10702, "user": "test3n", "password": "lZTBy1RVCfOpBAOwSCwIyBIR", "database": "test3n"}',
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["localhost", 10702],
+        user: "user",
+        database: "db",
+        password: "secret",
+      },
+      logging: true,
+      inProject: true,
+      fromProject: true,
+      fromEnv: false,
     },
     {
       opts: { user: "user", database: "db", password: "secret" },
@@ -586,6 +675,29 @@ test("logging, inProject, fromProject, fromEnv", async () => {
       logging: true,
       inProject: true,
       fromProject: true,
+      fromEnv: false,
+    },
+    // Considers inline options only. Config from the file and env vars is ignored.
+    {
+      opts: { host: "test.local" },
+      env: {
+        EDGEDB_DATABASE: "testdb",
+        EDGEDB_PASSWORD: "passw",
+      },
+      fs: {
+        cwd: "/home/edgedb/test",
+        homedir: "/home/edgedb",
+        files: {
+          "/home/edgedb/test/edgedb.toml": "",
+        },
+      },
+      result: {
+        ...defaults,
+        address: ["test.local", 5656],
+      },
+      logging: true,
+      inProject: true,
+      fromProject: false,
       fromEnv: false,
     },
     {
@@ -642,6 +754,8 @@ test("logging, inProject, fromProject, fromEnv", async () => {
   }
 });
 
+// Checks if _tlsSecurity is correctly set up based on env vars and inline
+// options for CLIENT_SECURITY and CLIENT_TLS_SECURITY.
 test("GEL_CLIENT_SECURITY env var", async () => {
   const truthTable: [string, string, string | null][] = [
     // CLIENT_SECURITY, CLIENT_TLS_SECURITY, result
