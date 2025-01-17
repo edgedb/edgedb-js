@@ -85,8 +85,7 @@ export const getServerCommand = (
   strictSecurity = true,
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
-  const srvcmd =
-    process.env.GEL_SERVER_BIN || process.env.EDGEDB_SERVER_BIN || "gel-server";
+  const srvcmd = process.env.GEL_SERVER_BIN || "gel-server";
 
   let args = [srvcmd];
   if (process.platform === "win32") {
