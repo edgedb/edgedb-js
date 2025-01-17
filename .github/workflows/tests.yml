@@ -13,29 +13,29 @@ jobs:
     # when the release PR gets merged by the bot.
     if: needs.prep.outputs.version == 0
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
+    continue-on-error: ${{ matrix.gel-version == 'nightly' }}
     strategy:
       matrix:
         node-version: ["18", "20", "22"]
         os: [ubuntu-latest]
-        edgedb-version: ["stable"]
+        gel-version: ["stable"]
         include:
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "nightly"
+            gel-version: "nightly"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "5"
+            gel-version: "5"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "4"
+            gel-version: "4"
           # - os: ubuntu-latest
           #   node-version: "20"
-          #   edgedb-version: "3"
+          #   gel-version: "3"
           # XXX: macOS is currently unsupported by setup-edgedb
           # - os: macos-latest
           #   node-version: "20"
-          #   edgedb-version: "stable"
+          #   gel-version: "stable"
 
     steps:
       - uses: actions/checkout@v4
@@ -77,35 +77,35 @@ jobs:
         run: |
           yarn format
 
-      - name: Install EdgeDB
+      - name: Install Gel
         uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
         with:
           instance-name: test
-          server-version: ${{ matrix.edgedb-version }}
+          server-version: ${{ matrix.gel-version }}
 
-      - name: Show actual EdgeDB server version
+      - name: Show actual Gel server version
         run: |
-          echo ACTIVE_EDGEDB_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
+          echo ACTIVE_GEL_VERSION=$(gel query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
 
       - name: Run package tests
         run: |
           yarn ci:test
 
       - name: Run query builder integration tests lts
-        if: ${{ matrix.edgedb-version == '3' || matrix.edgedb-version == '4' || matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
+        if: ${{ matrix.gel-version == '3' || matrix.gel-version == '4' || matrix.gel-version == 'stable' || matrix.gel-version == 'nightly' }}
         run: |
-          turbo run ci:integration-test --filter=@edgedb/integration-lts
-          turbo run bench:types --filter=@edgedb/integration-lts || echo "Benchmark types script failed, proceeding anyway."
+          turbo run ci:integration-test --filter=@gel/integration-lts
+          turbo run bench:types --filter=@gel/integration-lts || echo "Benchmark types script failed, proceeding anyway."
 
       - name: Run query builder integration tests stable
-        if: ${{ matrix.edgedb-version == 'stable' || matrix.edgedb-version == 'nightly' }}
+        if: ${{ matrix.gel-version == 'stable' || matrix.gel-version == 'nightly' }}
         run: |
-          turbo run ci:integration-test --filter=@edgedb/integration-stable
+          turbo run ci:integration-test --filter=@gel/integration-stable
 
       - name: Run query builder integration tests nightly
-        if: ${{ matrix.edgedb-version == 'nightly' }}
+        if: ${{ matrix.gel-version == 'nightly' }}
         run: |
-          turbo run ci:integration-test --filter=@edgedb/integration-nightly
+          turbo run ci:integration-test --filter=@gel/integration-nightly
 
       - name: Typecheck other packages
         run: |
@@ -144,28 +144,28 @@ jobs:
 
       - name: Build and pack CLI wrapper
         run: |
-          yarn workspace edgedb run build
-          yarn workspace edgedb pack --filename=${{ github.workspace }}/edgedb-cli.tar.gz
+          yarn workspace gel run build
+          yarn workspace gel pack --filename=${{ github.workspace }}/gel-cli.tar.gz
 
       - name: Test CLI wrapper with npm
         run: |
           mkdir ${{ runner.temp }}/temp-npm
           cd ${{ runner.temp }}/temp-npm
           npm init -y
-          npm install ${{ github.workspace }}/edgedb-cli.tar.gz
-          npm exec edgedb -- project init --non-interactive
-          npm exec edgedb -- --version
-          npm exec edgedb -- query 'select sys::get_version_as_str()'
+          npm install ${{ github.workspace }}/gel-cli.tar.gz
+          npm exec gel -- project init --non-interactive
+          npm exec gel -- --version
+          npm exec gel -- query 'select sys::get_version_as_str()'
 
       - name: Test CLI wrapper with yarn
         run: |
           mkdir ${{ runner.temp }}/temp-yarn
           cd ${{ runner.temp }}/temp-yarn
           yarn init -y
-          yarn add ${{ github.workspace}}/edgedb-cli.tar.gz
-          yarn edgedb project init --non-interactive
-          yarn edgedb --version
-          yarn edgedb query 'select sys::get_version_as_str()'
+          yarn add ${{ github.workspace}}/gel-cli.tar.gz
+          yarn gel project init --non-interactive
+          yarn gel --version
+          yarn gel query 'select sys::get_version_as_str()'
 
       - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
         with:
@@ -178,10 +178,10 @@ jobs:
           yarn set version berry
           yarn init -y
           touch yarn.lock
-          yarn add ${{ github.workspace }}/edgedb-cli.tar.gz
-          yarn edgedb project init --non-interactive
-          yarn edgedb --version
-          yarn edgedb query 'select sys::get_version_as_str()'
+          yarn add ${{ github.workspace }}/gel-cli.tar.gz
+          yarn gel project init --non-interactive
+          yarn gel --version
+          yarn gel query 'select sys::get_version_as_str()'
 
       - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
         with:
@@ -192,10 +192,10 @@ jobs:
           mkdir ${{ runner.temp }}/temp-pnpm
           cd ${{ runner.temp}}/temp-pnpm
           pnpm init
-          pnpm add ${{ github.workspace }}/edgedb-cli.tar.gz
-          pnpm exec edgedb project init --non-interactive
-          pnpm exec edgedb --version
-          pnpm exec edgedb query 'select sys::get_version_as_str()'
+          pnpm add ${{ github.workspace }}/gel-cli.tar.gz
+          pnpm exec gel project init --non-interactive
+          pnpm exec gel --version
+          pnpm exec gel query 'select sys::get_version_as_str()'
 
       - uses: oven-sh/setup-bun@8f24390df009a496891208e5e36b8a1de1f45135
       - name: Test CLI wrapper with bun
@@ -203,7 +203,7 @@ jobs:
           mkdir temp-bun
           cd temp-bun
           bun init
-          bun add ${{ github.workspace }}/edgedb-cli.tar.gz
-          bun edgedb project init --non-interactive
-          bun edgedb --version
-          bun edgedb query 'select sys::get_version_as_str()'
+          bun add ${{ github.workspace }}/gel-cli.tar.gz
+          bun gel project init --non-interactive
+          bun gel --version
+          bun gel query 'select sys::get_version_as_str()'
