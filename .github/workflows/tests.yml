@@ -78,7 +78,7 @@ jobs:
           yarn format
 
       - name: Install Gel
-        uses: edgedb/setup-edgedb@6763b6de72782d9c2e5ecc1095986a1c707da68f
+        uses: edgedb/setup-edgedb@2f1c0c768766b0411f1f3ec3a92f36a319097664
         with:
           instance-name: test
           server-version: ${{ matrix.gel-version }}
@@ -167,8 +167,8 @@ jobs:
           yarn gel --version
           yarn gel query 'select sys::get_version_as_str()'
 
-      - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
-        with:
+          - uses: threeal/setup-yarn-action@ec8c075e62bc497968de40011c2b766f5e8f1ac5
+          with:
           version: latest
           cache: false
       - name: Test CLI wrapper with yarn-berry
