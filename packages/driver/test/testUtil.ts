@@ -294,12 +294,12 @@ export async function applyMigrations(
   if (process.platform === "win32") {
     await runCommand("wsl", [
       "-u",
-      "gel",
+      "edgedb",
       "env",
       ...Object.entries(configToEnv(config)).map(
         ([key, val]) => `${key}=${val}`,
       ),
-      "gel",
+      "edgedb",
       "migrate",
       ...(params?.flags || []),
       "--schema-dir",
@@ -307,7 +307,7 @@ export async function applyMigrations(
     ]);
   } else {
     await runCommand(
-      "gel",
+      "edgedb",
       ["migrate", ...(params?.flags || [])],
       configToEnv(config),
     );
