@@ -85,7 +85,10 @@ export const getServerCommand = (
   strictSecurity = true,
 ): { args: string[]; availableFeatures: string[] } => {
   const availableFeatures: string[] = [];
-  const srvcmd = process.env.GEL_SERVER_BIN || "gel-server";
+
+  // we can check version here and use gel-server for newer versions
+  // but edgedb-server works for all versions
+  const srvcmd = process.env.GEL_SERVER_BIN || "edgedb-server";
 
   let args = [srvcmd];
   if (process.platform === "win32") {
@@ -127,7 +130,6 @@ export const getServerCommand = (
     `--security=${strictSecurity ? "strict" : "insecure_dev_mode"}`,
     "--bootstrap-command=ALTER ROLE edgedb { SET password := 'edgedbtest' }",
   ];
-
   return { args, availableFeatures };
 };
 
@@ -295,12 +297,12 @@ export async function applyMigrations(
   if (process.platform === "win32") {
     await runCommand("wsl", [
       "-u",
-      "gel",
+      "edgedb",
       "env",
       ...Object.entries(configToEnv(config)).map(
         ([key, val]) => `${key}=${val}`,
       ),
-      "gel",
+      "edgedb",
       "migrate",
       ...(params?.flags || []),
       "--schema-dir",
@@ -308,7 +310,7 @@ export async function applyMigrations(
     ]);
   } else {
     await runCommand(
-      "gel",
+      "edgedb",
       ["migrate", ...(params?.flags || [])],
       configToEnv(config),
     );
