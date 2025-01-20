@@ -148,9 +148,7 @@ export const startServer = async (
   }
 
   const maybeEnvWithDevMode =
-    process.env.GEL_SERVER_BIN ||
-    process.env.EDGEDB_SERVER_BIN ||
-    process.env.CI
+    process.env.GEL_SERVER_BIN || process.env.CI
       ? {}
       : {
           __EDGEDB_DEVMODE: "1",
