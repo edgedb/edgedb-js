@@ -1,0 +1,27 @@
+{
+  "name": "@edgedb/auth-express",
+  "version": "2.0.0",
+  "description": "This package has been renamed to @gel/auth-express. Please update your dependencies.",
+  "author": "Gel <info@geldata.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geldata/gel-js.git",
+    "directory": "edgedb/auth-express"
+  },
+  "license": "Apache-2.0",
+  "main": "./node_modules/@gel/auth-express/dist/index.js",
+  "types": "./node_modules/@gel/auth-express/dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./node_modules/@gel/auth-express/dist/index.d.ts",
+      "default": "./node_modules/@gel/auth-express/dist/index.js"
+    },
+    "./*": {
+      "types": "./node_modules/@gel/auth-express/dist/*.d.ts",
+      "default": "./node_modules/@gel/auth-express/dist/*.js"
+    }
+  },
+  "dependencies": {
+    "@gel/auth-express": "2.0.0"
+  }
+}
