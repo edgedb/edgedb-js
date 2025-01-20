@@ -9,7 +9,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/geldata/gel-js.git"
+    "url": "https://github.com/geldata/gel-js.git",
+    "directory": "packages/gel"
   },
   "main": "./dist/index.node.js",
   "types": "./dist/index.node.d.ts",
