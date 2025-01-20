@@ -2436,7 +2436,12 @@ if (getEdgeDBVersion().major >= 5) {
         | "std::pg::timestamptz"
         | "std::pg::timestamp"
         | "std::pg::date"
-        | "std::pg::interval";
+        | "std::pg::interval"
+        // postgis codecs need ext installed + already tested in postgis.test.ts
+        | "ext::postgis::geometry"
+        | "ext::postgis::geography"
+        | "ext::postgis::box2d"
+        | "ext::postgis::box3d";
 
       type CodecsToTest = SkipCodecs extends never
         ? keyof Codecs.KnownCodecs
@@ -2498,24 +2503,28 @@ if (getEdgeDBVersion().major >= 5) {
       }
       query += ")";
 
-      const ret = (await con.querySingle(query, args)) as Array<Value>;
+      try {
+        const ret = (await con.querySingle(query, args)) as Array<Value>;
 
-      expect(ret.length).toBe(args.length);
+        expect(ret.length).toBe(args.length);
 
-      for (let i = 0; i < ret.length; i++) {
-        const tn = ret[i].type;
-        expect(tn).toBe(args[i].type);
+        for (let i = 0; i < ret.length; i++) {
+          const tn = ret[i].type;
+          expect(tn).toBe(args[i].type);
 
-        try {
-          if (ret[i].type.includes("float")) {
-            expect(ret[i].value).toBeCloseTo(args[i].value);
-          } else {
-            expect(ret[i].value).toStrictEqual(args[i].value);
+          try {
+            if (ret[i].type.includes("float")) {
+              expect(ret[i].value).toBeCloseTo(args[i].value);
+            } else {
+              expect(ret[i].value).toStrictEqual(args[i].value);
+            }
+          } catch (e) {
+            console.error(`type ${tn}`);
+            throw e;
           }
-        } catch (e) {
-          console.error(`type ${tn}`);
-          throw e;
         }
+      } finally {
+        await con.close();
       }
     });
   });

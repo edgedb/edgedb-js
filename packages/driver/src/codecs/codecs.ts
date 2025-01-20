@@ -48,6 +48,11 @@ import {
   PgVectorHalfVecCodec,
   PgVectorSparseVecCodec,
 } from "./pgvector";
+import {
+  PostgisBox2dCodec,
+  PostgisBox3dCodec,
+  PostgisGeometryCodec,
+} from "./postgis";
 import { InternalClientError } from "../errors";
 
 import type { CodecContext } from "./context";
@@ -98,6 +103,18 @@ export namespace Codecs {
   // on an external package for Float16Array.
   export type PGVectorHalfCodec = Codec<Float16Array>;
 
+  export type PostgisGeometryCodec = Codec<Uint8Array>;
+  export type PostgisGeographyCodec = Codec<Uint8Array>;
+  export type PostgisBox2dCodec = Codec<
+    [min: [x: number, y: number], max: [x: number, y: number]]
+  >;
+  export type PostgisBox3dCodec = Codec<
+    [
+      min: [x: number, y: number, z: number],
+      max: [x: number, y: number, z: number],
+    ]
+  >;
+
   export type KnownCodecs = {
     ["std::bool"]: BoolCodec;
     ["std::int16"]: Int16Codec;
@@ -131,6 +148,11 @@ export namespace Codecs {
     ["ext::pgvector::vector"]: PgVectorCodec;
     ["ext::pgvector::halfvec"]: PGVectorHalfCodec;
     ["ext::pgvector::sparsevec"]: PGVectorSparseCodec;
+
+    ["ext::postgis::geometry"]: PostgisGeometryCodec;
+    ["ext::postgis::geography"]: PostgisGeometryCodec;
+    ["ext::postgis::box2d"]: PostgisBox2dCodec;
+    ["ext::postgis::box3d"]: PostgisBox3dCodec;
   };
 
   export type CodecSpec = Partial<KnownCodecs> & {
@@ -219,4 +241,9 @@ registerScalarCodecs({
   "ext::pgvector::vector": PgVectorCodec,
   "ext::pgvector::halfvec": PgVectorHalfVecCodec,
   "ext::pgvector::sparsevec": PgVectorSparseVecCodec,
+
+  "ext::postgis::geometry": PostgisGeometryCodec,
+  "ext::postgis::geography": PostgisGeometryCodec,
+  "ext::postgis::box2d": PostgisBox2dCodec,
+  "ext::postgis::box3d": PostgisBox3dCodec,
 });
