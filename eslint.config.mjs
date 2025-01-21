@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 
 const DRIVER_PATH = "packages/gel/src/**/*.?(m)ts";
 const GENERATE_PATH = "packages/generate/src/**/*.?(m)ts";
-const FEATURE_LIBRARIES_PATH = "packages/!(driver|generate)/src/**/*.?(m)ts";
+const FEATURE_LIBRARIES_PATH = "packages/!(gel|generate)/src/**/*.?(m)ts";
 const INTEGRATION_TESTS_PATH = "integration-tests/*/*.test.?(m)ts";
 
 const ALL_PATHS = [

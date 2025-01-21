@@ -5,7 +5,7 @@ import {
   getServerCommand,
   getWSLPath,
   startServer,
-} from "../../driver/test/testUtil";
+} from "../../gel/test/testUtil";
 
 export default async () => {
   // tslint:disable-next-line
