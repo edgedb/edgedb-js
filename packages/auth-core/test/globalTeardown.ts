@@ -1,4 +1,4 @@
-import { shutdown } from "../../driver/test/testUtil";
+import { shutdown } from "../../gel/test/testUtil";
 
 export default async () => {
   // tslint:disable-next-line
