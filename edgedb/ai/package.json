@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/ai",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "This package has been renamed to @gel/ai. Please update your dependencies.",
   "author": "Gel <info@geldata.com>",
   "type": "module",
@@ -10,6 +10,7 @@
     "directory": "edgedb/ai"
   },
   "license": "Apache-2.0",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -32,7 +33,7 @@
     "prepare": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@gel/ai": "0.1.0-alpha.2"
+    "@gel/ai": "0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.5.2"

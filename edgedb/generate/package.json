@@ -1,6 +1,6 @@
 {
   "name": "@edgedb/generate",
-  "version": "2.0.0",
+  "version": "0.6.0",
   "description": "This package has been renamed to @gel/generate. Please update your dependencies.",
   "author": "Gel <info@geldata.com>",
   "repository": {
@@ -9,19 +9,22 @@
     "directory": "edgedb/generate"
   },
   "license": "Apache-2.0",
-  "main": "./node_modules/@gel/generate/dist/index.js",
-  "types": "./node_modules/@gel/generate/dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./node_modules/@gel/generate/dist/index.d.ts",
-      "default": "./node_modules/@gel/generate/dist/index.js"
-    },
-    "./*": {
-      "types": "./node_modules/@gel/generate/dist/*.d.ts",
-      "default": "./node_modules/@gel/generate/dist/*.js"
-    }
+  "sideEffects": false,
+  "bin": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@gel/generate": "2.0.0"
-  }
+    "@gel/generate": "0.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2"
+  },
+  "deprecated": "This package has been renamed to @gel/generate"
 }

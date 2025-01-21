@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/tsconfig/base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "preserveSymlinks": true,
+    "noUnusedLocals": false
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}

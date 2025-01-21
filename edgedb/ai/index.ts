@@ -1,1 +1,1 @@
-export * from "@edgedb/ai";
+export * from "@gel/ai";

@@ -1,7 +1,8 @@
 {
-  "extends": "@repo/tsconfig/client.json",
+  "extends": "@repo/tsconfig/base.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "downlevelIteration": true
   },
   "include": ["**/*.ts"],
   "exclude": ["dist", "node_modules"]

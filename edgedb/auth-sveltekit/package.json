@@ -1,27 +1,42 @@
 {
   "name": "@edgedb/auth-sveltekit",
-  "version": "2.0.0",
+  "version": "0.3.0",
   "description": "This package has been renamed to @gel/auth-sveltekit. Please update your dependencies.",
   "author": "Gel <info@geldata.com>",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/geldata/gel-js.git",
     "directory": "edgedb/auth-sveltekit"
   },
   "license": "Apache-2.0",
-  "main": "./node_modules/@gel/auth-sveltekit/dist/index.js",
-  "types": "./node_modules/@gel/auth-sveltekit/dist/index.d.ts",
+  "sideEffects": false,
+  "mauth-sveltekitn": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./node_modules/@gel/auth-sveltekit/dist/index.d.ts",
-      "default": "./node_modules/@gel/auth-sveltekit/dist/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./*": {
-      "types": "./node_modules/@gel/auth-sveltekit/dist/*.d.ts",
-      "default": "./node_modules/@gel/auth-sveltekit/dist/*.js"
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "npm run clean && npm run build"
+  },
   "dependencies": {
-    "@gel/auth-sveltekit": "2.0.0"
-  }
+    "@gel/auth-sveltekit": "0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2"
+  },
+  "deprecated": "This package has been renamed to @gel/auth-sveltekit"
 }
