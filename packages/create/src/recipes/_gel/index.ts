@@ -4,7 +4,7 @@ import path from "node:path";
 import debug from "debug";
 
 import type { BaseOptions, Recipe } from "../types.js";
-import { copyTemplateFiles, execInLoginShell } from "../../utils.js";
+import { copyTemplateFiles, ProjectManager } from "../../utils.js";
 
 const logger = debug("@gel/create:recipe:gel");
 
@@ -28,78 +28,44 @@ const recipe: Recipe<GelOptions> = {
     { initializeProject }: GelOptions,
   ) {
     logger("Running gel recipe");
-    logger("Checking for existing Gel CLI");
 
     const spinner = p.spinner();
+    const manager = new ProjectManager();
 
     if (initializeProject) {
-      let gelCliVersion: string | null = null;
-      let shouldInstallCli: boolean | symbol = true;
-      try {
-        const { stdout } = await execInLoginShell("gel --version");
-        gelCliVersion = stdout.trim();
-        logger(gelCliVersion);
-      } catch (_error) {
-        logger("No Gel CLI detected");
-        shouldInstallCli = await p.confirm({
-          message:
-            "The Gel CLI is required to initialize a project. Install now?",
-          initialValue: true,
-        });
-      }
-
-      if (gelCliVersion === null) {
-        if (shouldInstallCli === false) {
-          logger("User declined to install Gel CLI");
-          throw new Error("Gel CLI is required");
-        }
-
-        logger("Installing Gel CLI");
-
-        spinner.start("Installing Gel CLI");
-        const { stdout, stderr } = await execInLoginShell(
-          "curl --proto '=https' --tlsv1.2 -sSf https://sh.geldata.com | sh -s -- -y",
-        );
-        logger({ stdout, stderr });
-        spinner.stop("Gel CLI installed");
-      }
-
-      try {
-        const { stdout } = await execInLoginShell("gel --version");
-        gelCliVersion = stdout.trim();
-        logger(gelCliVersion);
-      } catch (error) {
-        logger("Gel CLI could not be installed.");
-        logger(error);
-        throw new Error("Gel CLI could not be installed.");
-      }
-
       spinner.start("Initializing Gel project");
       try {
-        await execInLoginShell("gel project init --non-interactive", {
-          cwd: projectDir,
-        });
-        const { stdout, stderr } = await execInLoginShell(
-          "gel query 'select sys::get_version_as_str()'",
+        await manager.runPackageBin(
+          "gel",
+          ["project", "init", "--non-interactive"],
+          {
+            cwd: projectDir,
+          },
+        );
+
+        const { stdout, stderr } = await manager.runPackageBin(
+          "gel",
+          ["query", "select sys::get_version_as_str()"],
           { cwd: projectDir },
         );
+
         const serverVersion = JSON.parse(stdout.trim());
         logger(`Gel server version: ${serverVersion}`);
+
         if (serverVersion === "") {
           const err = new Error(
             "There was a problem initializing the Gel project",
           );
           spinner.stop(err.message);
           logger({ stdout, stderr });
-
           throw err;
         }
+
         spinner.stop(`Gel v${serverVersion} project initialized`);
       } catch (error) {
         logger(error);
+        spinner.stop("Failed to initialize Gel project");
         throw error;
-      } finally {
-        spinner.stop();
       }
     } else {
       logger("Skipping gel project init");
@@ -122,16 +88,17 @@ const recipe: Recipe<GelOptions> = {
         logger("Creating and applying initial migration");
         spinner.start("Creating and applying initial migration");
         try {
-          await execInLoginShell("gel migration create", {
+          await manager.runPackageBin("gel", ["migration", "create"], {
             cwd: projectDir,
           });
-          await execInLoginShell("gel migrate", { cwd: projectDir });
+          await manager.runPackageBin("gel", ["migrate"], {
+            cwd: projectDir,
+          });
           spinner.stop("Initial migration created and applied");
         } catch (error) {
           logger(error);
+          spinner.stop("Failed to create and apply migration");
           throw error;
-        } finally {
-          spinner.stop();
         }
       }
     }

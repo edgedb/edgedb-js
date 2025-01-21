@@ -153,3 +153,35 @@ stdout: ${stdout}`,
     });
   });
 }
+
+export class ProjectManager {
+  public packageManager: PackageManager;
+
+  constructor() {
+    this.packageManager = getPackageManager();
+  }
+
+  private getPackageRunner(): string {
+    switch (this.packageManager) {
+      case "yarn":
+        // yarn-berry and modern yarn 1.x support dlx
+        return "yarn dlx";
+      case "pnpm":
+        return "pnpm dlx";
+      case "bun":
+        return "bunx";
+      default:
+        return "npx";
+    }
+  }
+
+  async runPackageBin(
+    binName: string,
+    args: string[] = [],
+    options?: SpawnOptionsWithoutStdio,
+  ): Promise<{ stdout: string; stderr: string }> {
+    const runner = this.getPackageRunner();
+    const command = `${runner} ${binName} ${args.join(" ")}`;
+    return execInLoginShell(command, options);
+  }
+}
