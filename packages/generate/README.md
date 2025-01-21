@@ -98,7 +98,7 @@ Execute `playground.ts` (uses `tsx`). Useful for testing things quickly in devel
 yarn play
 ```
 
-> ⚠️ All imports from `"gel"` resolve to the local build version of the driver in `packages/driver/dist`. This imports the _built_ library, not the so you need to re-run `yarn workspace gel build` for changes to be reflected in your playground code. Run `yarn dev` watcher inside `packages/driver` to rebuild the project anytime you make a change.
+> ⚠️ All imports from `"gel"` resolve to the local build version of the driver in `packages/gel/dist`. This imports the _built_ library, not the so you need to re-run `yarn workspace gel build` for changes to be reflected in your playground code. Run `yarn dev` watcher inside `packages/gel` to rebuild the project anytime you make a change.
 
 Run commands in watch mode. Useful when in development. The following command rebuilds the package and executes the playground whenever a file change is detected.
 

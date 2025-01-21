@@ -9,7 +9,7 @@ import {
   startServer,
   runCommand,
   configToEnv,
-} from "../../packages/driver/test/testUtil";
+} from "../../packages/gel/test/testUtil";
 
 (async function main() {
   console.log("\nStarting Gel test cluster...");
