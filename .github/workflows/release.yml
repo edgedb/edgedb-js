@@ -28,7 +28,7 @@ jobs:
       # gel
 
       - name: Copy readme
-        run: cp README.md packages/driver/README.md
+        run: cp README.md packages/gel/README.md
 
       - name: Build gel
         run: yarn workspace gel run build
@@ -37,7 +37,7 @@ jobs:
         name: Dry-run publish 'gel' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
-          package: packages/driver/package.json
+          package: packages/gel/package.json
           token: ${{ secrets.NPM_TOKEN }}
           dry-run: true
 
@@ -46,13 +46,13 @@ jobs:
         run: |
           echo "Version in package.json has not changed. Creating canary release."
           yarn workspace gel version --no-git-tag-version --minor
-          CURRENT_VERSION=$(node -p "require('./packages/driver/package.json').version")
+          CURRENT_VERSION=$(node -p "require('./packages/gel/package.json').version")
           yarn workspace gel version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
       - name: Publish 'gel'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
-          package: packages/driver/package.json
+          package: packages/gel/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
           tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
