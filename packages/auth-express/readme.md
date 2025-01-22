@@ -17,7 +17,6 @@ npm install @edgedb/auth-express
 **Prerequisites**:
 - Node v18+
   - **Note**: Due to using the `crypto` global, you will need to start Node with `--experimental-global-webcrypto`. You can add this option to your `NODE_OPTIONS` environment variable, like `NODE_OPTIONS='--experimental-global-webcrypto'` in the appropriate `.env` file.
-- Before adding EdgeDB auth to your Express app, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers (you can do this in CLI or EdgeDB UI). Refer to the auth extension docs for details on how to do this.
 - We depend on the following middleware being installed in your Express app:
   - `body-parser`: both JSON and urlencoded
   - `cookie-parser`
@@ -39,7 +38,95 @@ This library provides a few affordances for adding EdgeDB Auth to your existing 
 - Middleware to attach sessions to requests.
 - Some additional utility functions for handling various auth related concerns.
 
-## Configuring the `ExpressAuth` class
+### EdgeDB Auth Setup
+
+Before adding EdgeDB auth to your Express server, you will first need to enable the `auth` extension in your EdgeDB schema, and have configured the extension with some providers.
+
+1. Enable the EdgeDB Auth extension in your schema:
+   
+   Add the following to your EdgeDB schema:
+
+   ```esdl
+   using extension auth;
+   ```
+
+  Once added, make sure to apply the schema changes by migrating your database schema:
+
+  ```sh
+  $ edgedb migration create
+  $ edgedb migrate
+  ```
+
+2. Configure EdgeDB Auth settings:
+
+  Next, you'll need to configure the EdgeDB Auth extension. This involves setting up essential parameters, such as signing keys and allowed redirect URLs.
+
+  _Below, we're showing how to set up the EdgeDB authentication using EdgeQL queries. To run these commands, you need to start the EdgeDB instance first (`edgedb`). Alternatively, you can use the EdgeDB UI (`edgedb ui`) to configure the authentication settings interactively._
+
+  **Signing Key** 
+  
+  This key is used to sign JWT tokens. You can generate one using OpenSSL:
+
+  ```sh
+  $ openssl rand -base64 32
+  ```
+
+  Once generated, configure the signing key in EdgeDB:
+
+  ```esdl
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::AuthConfig::auth_signing_key := '<your-generated-key>';
+  ```
+
+  **Allowed Redirect URLs**
+
+  This setting ensures that redirects are limited to the URLs under your control. Configure the allowed URLs with the following command:
+
+  ```esdl
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::AuthConfig::allowed_redirect_urls := {
+      'http://localhost:3000',
+      'https://example.trycloudflare.com',
+      'https://example.ngrok.io',
+  };
+  ```
+
+  **Authentication providers**
+
+  You need to configure at least one authentication provider. For example, to add an email/password provider, use the following command:
+
+  ```esdl
+  CONFIGURE CURRENT BRANCH
+  INSERT ext::auth::EmailPasswordProviderConfig {
+      require_verification := false
+  };
+  ```
+
+  > [!CAUTION]
+  > In production environments, it is recommended to set require_verification to true to ensure users verify their email addresses.
+
+  **SMTP for email verification (optional)**
+
+  If using the email/password provider, you need to configure SMTP for email verification and password reset emails. Here's an example using a local SMTP server like Mailpit for development purposes:
+
+  ```esdl
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::sender := 'hello@example.com';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::host := 'localhost';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::port := <int32>1025;
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::security := 'STARTTLSOrPlainText';
+
+  CONFIGURE CURRENT BRANCH SET
+  ext::auth::SMTPConfig::validate_certs := false;
+  ```
+
+### Configuring the `ExpressAuth` class
 
 After [configuring the EdgeDB Auth extension](https://www.edgedb.com/docs/guides/auth/index), you can set up the various auth routes with our route builders.
 
@@ -56,7 +143,7 @@ const auth = createExpressAuth(client, {
 });
 ```
 
-## Using the session middleware: `createSessionMiddleware`
+### Using the session middleware: `createSessionMiddleware`
 
 We provide a middleware factory that will attach an `ExpressAuthSession` object to your request object, which you can use to make authenticated queries, or protect routes.
 
@@ -80,7 +167,7 @@ app.get("/dashboard", (req: expressAuth.SessionRequest, res) => {
 });
 ```
 
-### Create your own `requireAuth` middleware
+#### Create your own `requireAuth` middleware
 
 You can centralize the logic to redirect unauthenticated routes into a custom middleware like this:
 
@@ -110,7 +197,7 @@ app.get("/dashboard", requireAuth, (req: expressAuth.SessionRequest, res) => {
 });
 ```
 
-## Adding route handlers
+### Adding route handlers
 
 Route handlers can be added either using one or more of our "router factories", or by constructing your own Express `Router` object, and attaching the necessary middleware to routes that you configure yourself. The factory pattern makes it easy to quickly get a standardized set of routes to handle either the built-in UI, or some combination of email/password and/or OAuth routes. For maximum control over route locations, custom middleware patterns, or integration into existing router structures, you can use the router middleware.
 
