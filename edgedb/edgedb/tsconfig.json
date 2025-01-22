@@ -5,5 +5,5 @@
     "downlevelIteration": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["src/cli.mts", "dist", "node_modules"]
 }

@@ -1,5 +1,6 @@
 # @edgedb/ai
 
-⚠️ **This package has been renamed** ⚠️
+⚠️ **This Package Has Been Renamed and Deprecated** ⚠️
 
-This package has been renamed to `@gel/ai`. Please update your dependencies.
+The `@edgedb/ai` package is now officially renamed to [@gel/ai](https://www.npmjs.com/package/@gel/ai)
+and is no longer maintained under the name `@edgedb/ai`.

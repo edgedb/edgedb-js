@@ -5,20 +5,18 @@
   "author": "Gel <info@geldata.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/geldata/gel-js.git",
+    "url": "git+https://github.com/geldata/gel-js.git",
     "directory": "edgedb/generate"
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "bin": "./dist/index.js",
+  "bin": "./dist/cli.js",
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepare": "npm run clean && npm run build"
+    "build": "rm -rf dist && tsc && chmod +x dist/cli.js"
   },
   "dependencies": {
     "@gel/generate": "0.6.0"

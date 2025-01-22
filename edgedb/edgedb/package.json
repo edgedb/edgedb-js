@@ -13,26 +13,20 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
-    }
+  "main": "./dist/index.node.js",
+  "types": "./dist/index.node.d.ts",
+  "browser": {
+    "./dist/index.node.js": "./dist/index.browser.js"
   },
+  "bin": "./dist/cli.mjs",
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "prepare": "npm run clean && npm run build"
+    "build": "echo 'Building edgedb driver...' && rm -rf dist && yarn build:cjs && yarn build:cli",
+    "build:cli": "tsc -p tsconfig.cli.json",
+    "build:cjs": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "gel": "2.0.0"

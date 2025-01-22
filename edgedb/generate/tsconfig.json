@@ -3,7 +3,8 @@
   "compilerOptions": {
     "declaration": true,
     "preserveSymlinks": true,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "outDir": "./dist"
   },
   "include": ["**/*.ts"],
   "exclude": ["dist", "node_modules"]

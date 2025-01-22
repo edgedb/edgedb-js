@@ -1,5 +1,6 @@
 # @edgedb/auth-sveltekit
 
-⚠️ **This package has been renamed** ⚠️
+⚠️ **This Package Has Been Renamed and Deprecated** ⚠️
 
-This package has been renamed to `@gel/auth-sveltekit`. Please update your dependencies.
+The `@edgedb/auth-sveltekit` package is now officially renamed to [@gel/auth-sveltekit](https://www.npmjs.com/package/@gel/auth-sveltekit)
+and is no longer maintained under the name `@edgedb/auth-sveltekit`.

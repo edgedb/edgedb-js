@@ -14,7 +14,7 @@
   },
   "license": "Apache-2.0",
   "sideEffects": false,
-  "bin": "./dist/index.js",
+  "bin": "dist/cli.js",
   "files": [
     "dist",
     "README.md"

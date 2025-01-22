@@ -22,9 +22,7 @@
   "browser": {
     "./dist/index.node.js": "./dist/index.browser.js"
   },
-  "bin": {
-    "gel": "./dist/cli.mjs"
-  },
+  "bin": "./dist/cli.mjs",
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
     "@repo/tsconfig": "*",

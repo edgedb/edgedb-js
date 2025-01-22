@@ -1,5 +1,6 @@
 # @edgedb/auth-nextjs
 
-⚠️ **This package has been renamed** ⚠️
+⚠️ **This Package Has Been Renamed and Deprecated** ⚠️
 
-This package has been renamed to `@gel/auth-nextjs`. Please update your dependencies.
+The `@edgedb/auth-nextjs` package is now officially renamed to [@gel/auth-nextjs](https://www.npmjs.com/package/@gel/auth-nextjs)
+and is no longer maintained under the name `@edgedb/auth-nextjs`.

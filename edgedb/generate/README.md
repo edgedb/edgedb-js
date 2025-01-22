@@ -1,5 +1,6 @@
 # @edgedb/generate
 
-⚠️ **This package has been renamed** ⚠️
+⚠️ **This Package Has Been Renamed and Deprecated** ⚠️
 
-This package has been renamed to `@gel/generate`. Please update your dependencies.
+The `@edgedb/generate` package is now officially renamed to [@gel/generate](https://www.npmjs.com/package/@gel/generate)
+and is no longer maintained under the name `@edgedb/generate`.

@@ -1,5 +1,6 @@
 # @edgedb/auth-express
 
-⚠️ **This package has been renamed** ⚠️
+⚠️ **This Package Has Been Renamed and Deprecated** ⚠️
 
-This package has been renamed to `@gel/auth-express`. Please update your dependencies.
+The `@edgedb/auth-express` package is now officially renamed to [@gel/auth-express](https://www.npmjs.com/package/@gel/auth-express)
+and is no longer maintained under the name `@edgedb/auth-express`.
