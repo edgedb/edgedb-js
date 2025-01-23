@@ -1,2 +1,2 @@
-export { createGel, gel } from "./gel-provider";
-export type { GelProvider } from "./gel-provider";
+export { createGel, gel } from "./gel-provider.js";
+export type { GelProvider } from "./gel-provider.js";
