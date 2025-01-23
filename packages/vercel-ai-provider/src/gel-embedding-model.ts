@@ -13,8 +13,8 @@ import {
   isMistralEmbeddingModel,
   type GelEmbeddingModelId,
   type GelEmbeddingSettings,
-} from "./gel-embedding-settings";
-import { gelFailedResponseHandler } from "./gel-error";
+} from "./gel-embedding-settings.js";
+import { gelFailedResponseHandler } from "./gel-error.js";
 
 interface GelEmbeddingConfig {
   provider: string;

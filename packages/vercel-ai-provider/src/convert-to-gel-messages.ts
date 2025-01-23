@@ -1,5 +1,5 @@
 import { type LanguageModelV1Prompt } from "@ai-sdk/provider";
-import type { GelMessage } from "./gel-chat-settings";
+import type { GelMessage } from "./gel-chat-settings.js";
 
 export function convertToGelMessages(
   prompt: LanguageModelV1Prompt,

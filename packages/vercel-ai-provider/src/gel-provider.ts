@@ -7,13 +7,13 @@ import type {
   LanguageModelV1,
   ProviderV1,
 } from "@ai-sdk/provider";
-import { GelChatLanguageModel } from "./gel-chat-language-model";
-import type { GelChatModelId, GelChatSettings } from "./gel-chat-settings";
-import { GelEmbeddingModel } from "./gel-embedding-model";
+import { GelChatLanguageModel } from "./gel-chat-language-model.js";
+import type { GelChatModelId, GelChatSettings } from "./gel-chat-settings.js";
+import { GelEmbeddingModel } from "./gel-embedding-model.js";
 import type {
   GelEmbeddingModelId,
   GelEmbeddingSettings,
-} from "./gel-embedding-settings";
+} from "./gel-embedding-settings.js";
 
 const httpSCRAMAuth = getHTTPSCRAMAuth(cryptoUtils);
 
