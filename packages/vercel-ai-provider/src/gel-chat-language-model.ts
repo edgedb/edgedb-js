@@ -21,15 +21,15 @@ import {
   type GelChatSettings,
   type GelMessage,
   isAnthropicModel,
-} from "./gel-chat-settings";
-import { gelFailedResponseHandler } from "./gel-error";
+} from "./gel-chat-settings.js";
+import { gelFailedResponseHandler } from "./gel-error.js";
 import {
   mapGelStopReason,
   getResponseMetadata,
   mapOpenAICompletionLogProbs,
-} from "./utils";
-import { convertToGelMessages } from "./convert-to-gel-messages";
-import { prepareTools } from "./gel-prepare-tools";
+} from "./utils.js";
+import { convertToGelMessages } from "./convert-to-gel-messages.js";
+import { prepareTools } from "./gel-prepare-tools.js";
 
 export interface GelChatConfig {
   provider: string;

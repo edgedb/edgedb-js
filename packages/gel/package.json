@@ -1,6 +1,6 @@
 {
   "name": "gel",
-  "version": "1.5.12",
+  "version": "2.0.0",
   "description": "The official Node.js client library for Gel",
   "homepage": "https://geldata.com/docs",
   "author": "Gel <info@geldata.com>",
@@ -22,9 +22,7 @@
   "browser": {
     "./dist/index.node.js": "./dist/index.browser.js"
   },
-  "bin": {
-    "gel": "./dist/cli.mjs"
-  },
+  "bin": "./dist/cli.mjs",
   "devDependencies": {
     "@js-temporal/polyfill": "0.4.3",
     "@repo/tsconfig": "*",

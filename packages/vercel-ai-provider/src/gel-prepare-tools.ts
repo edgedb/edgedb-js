@@ -8,7 +8,7 @@ import {
   type GelChatModelId,
   isAnthropicModel,
   isOpenAIModel,
-} from "./gel-chat-settings";
+} from "./gel-chat-settings.js";
 
 interface OpenAILikeTool {
   type: "function";
