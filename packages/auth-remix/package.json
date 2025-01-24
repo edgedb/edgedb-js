@@ -1,7 +1,7 @@
 {
   "name": "@gel/auth-remix",
   "description": "Helper library to integrate the Gel Auth extension with Remix",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "author": "Gel <info@geldata.com>",
   "type": "module",
   "repository": {
@@ -27,10 +27,10 @@
     "typescript": "^5.5.2"
   },
   "peerDependencies": {
-    "gel": "^1.3.6"
+    "gel": "^2.0.0"
   },
   "dependencies": {
-    "@gel/auth-core": "^0.2.1",
+    "@gel/auth-core": "^0.3.0",
     "@remix-run/server-runtime": "^2.9.2",
     "cookie": "^0.6.0"
   },
