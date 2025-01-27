@@ -61,6 +61,11 @@ export class RecordCodec extends Codec implements ICodec {
       result[i] = val;
     }
 
+    const overload = ctx.getContainerOverload("sql_row");
+    if (overload != null) {
+      return overload.fromDatabase(result, { names: this.names });
+    }
+
     return result;
   }
 

@@ -19,6 +19,11 @@ const NOOP: Codecs.AnyCodec = {
 
 export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
 
+type ContainerNames = keyof Codecs.ContainerCodecs;
+type ContainerOverload<T extends ContainerNames> =
+  | Codecs.ContainerCodecs[T]
+  | undefined;
+
 export class CodecContext {
   private readonly spec: ReadonlyCodecMap | null;
   private readonly map: Map<string, Codecs.AnyCodec>;
@@ -60,6 +65,19 @@ export class CodecContext {
 
     this.map.set(targetTypeName, NOOP);
     return NOOP;
+  }
+
+  getContainerOverload<T extends ContainerNames>(
+    kind: T,
+  ): ContainerOverload<T> {
+    if (this.spec === null || !this.spec.size) {
+      return;
+    }
+    // Look inside 'this.spec' directly (not in 'this.map')
+    // as we don't need to find the "closest" codec --
+    // containers like 'sql row' don't support inheritance
+    // and have no "resolution order".
+    return this.spec.get(kind) as ContainerOverload<T>;
   }
 
   hasOverload(codec: ScalarCodec): boolean {

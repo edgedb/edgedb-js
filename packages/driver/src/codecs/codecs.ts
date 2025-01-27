@@ -68,7 +68,10 @@ export namespace Codecs {
     fromDatabase: (data: T) => any;
   };
 
-  export type AnyCodec = Codec<any>;
+  export type AnyCodec = {
+    toDatabase: (data: any, ...extras: any[]) => any;
+    fromDatabase: (data: any, ...extras: any[]) => any;
+  };
 
   export type BoolCodec = Codec<boolean>;
   export type Int16Codec = Codec<number>;
@@ -115,7 +118,7 @@ export namespace Codecs {
     ]
   >;
 
-  export type KnownCodecs = {
+  export type ScalarCodecs = {
     ["std::bool"]: BoolCodec;
     ["std::int16"]: Int16Codec;
     ["std::int32"]: Int32Codec;
@@ -154,6 +157,17 @@ export namespace Codecs {
     ["ext::postgis::box2d"]: PostgisBox2dCodec;
     ["ext::postgis::box3d"]: PostgisBox3dCodec;
   };
+
+  export type SQLRowCodec = {
+    fromDatabase: (data: any[], desc: { names: string[] }) => any;
+    toDatabase: (data: never) => never;
+  };
+
+  export type ContainerCodecs = {
+    sql_row: SQLRowCodec;
+  };
+
+  export type KnownCodecs = ScalarCodecs & ContainerCodecs;
 
   export type CodecSpec = Partial<KnownCodecs> & {
     [key: string]: AnyCodec;
@@ -196,7 +210,7 @@ type ScalarCodecType = {
 };
 
 type CodecsToRegister = {
-  [key in keyof Codecs.KnownCodecs]: ScalarCodecType;
+  [key in keyof Codecs.ScalarCodecs]: ScalarCodecType;
 };
 
 function registerScalarCodecs(codecs: CodecsToRegister): void {

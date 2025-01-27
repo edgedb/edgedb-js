@@ -2444,11 +2444,11 @@ if (getEdgeDBVersion().major >= 5) {
         | "ext::postgis::box3d";
 
       type CodecsToTest = SkipCodecs extends never
-        ? keyof Codecs.KnownCodecs
-        : Exclude<keyof Codecs.KnownCodecs, SkipCodecs>;
+        ? keyof Codecs.ScalarCodecs
+        : Exclude<keyof Codecs.ScalarCodecs, SkipCodecs>;
 
       type TestedCodecs = {
-        [key in CodecsToTest]: CodecValueType<Codecs.KnownCodecs[key]>;
+        [key in CodecsToTest]: CodecValueType<Codecs.ScalarCodecs[key]>;
       };
 
       const allCodecs: TestedCodecs = {
@@ -2594,6 +2594,42 @@ if (getEdgeDBVersion().major >= 6) {
 
       res = await client.querySQL("select 1 AS foo, 2 AS bar");
       expect(JSON.stringify(res)).toEqual("[[1,2]]");
+
+      res = await client.querySQL("select 1 + $1::int8", [41]);
+      expect(JSON.stringify(res)).toEqual("[[42]]");
+    } finally {
+      await client.close();
+    }
+  });
+
+  test("querySQL codec", async () => {
+    let client = getClient();
+
+    try {
+      let res = await client.querySQL("select 1");
+      expect(JSON.stringify(res)).toEqual("[[1]]");
+
+      res = await client
+        .withCodecs({
+          sql_row: {
+            fromDatabase(data, desc) {
+              return Object.fromEntries(
+                desc.names.map((key, index) => [key, data[index]]),
+              );
+            },
+            toDatabase() {
+              // toDatabase is required to be specified (limitation
+              // of TypeScript type system). This isn't super elegant
+              // and most likely we'll need a higher-level nicer API
+              // in top of this.
+              //
+              // Maybe `client.withCodecs(gel.SQLRowAsObject)`?
+              throw "cannot encode SQL record as a query argument";
+            },
+          },
+        })
+        .querySQL("select 1 AS foo, 2 AS bar");
+      expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
 
       res = await client.querySQL("select 1 + $1::int8", [41]);
       expect(JSON.stringify(res)).toEqual("[[42]]");
