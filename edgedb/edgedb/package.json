@@ -1,6 +1,6 @@
 {
   "name": "edgedb",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "description": "This package has been renamed to gel. Please update your dependencies.",
   "author": "Gel <info@geldata.com>",
   "repository": {
@@ -29,7 +29,7 @@
     "build:cjs": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "gel": "2.0.0"
+    "gel": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "^5.5.2"
