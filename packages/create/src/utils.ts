@@ -162,13 +162,13 @@ stdout: ${stdout}`,
 }
 
 export class PackageManager {
-  public runner: string;
+  readonly runner: string;
 
-  constructor(public packageManager = getPackageManager()) {
+  constructor(readonly packageManager = getPackageManager()) {
     this.runner = PM_TO_RUNNER_MAP[packageManager];
   }
 
-  public toString(): string {
+  toString() {
     return this.packageManager;
   }
 
