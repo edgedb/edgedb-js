@@ -1,7 +1,5 @@
 # @gel/auth-nextjs: Helper library to integrate the Gel Auth extension with Next.js
 
-> Warning: This library is still in an alpha state, and so, bugs are likely and the api's should be considered unstable and may change in future releases.
-
 ### Setup
 
 **Prerequisites**:

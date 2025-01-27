@@ -1,6 +1,6 @@
 {
   "name": "@gel/generate",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "Gel code generators for TS/JavaScript",
   "homepage": "https://geldata.com/docs",
   "author": "Gel <info@geldata.com>",
@@ -18,7 +18,7 @@
   ],
   "bin": "dist/cli.js",
   "peerDependencies": {
-    "gel": "^1.5.10"
+    "gel": "^2.0.0"
   },
   "devDependencies": {
     "@repo/tsconfig": "*",
