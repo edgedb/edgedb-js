@@ -77,7 +77,7 @@ export class RecordCodec extends Codec implements ICodec {
     const elemBuf = ReadBuffer.alloc();
     const overload = ctx.getContainerOverload("_private_sql_row");
 
-    if (overload !== SQLRowObjectCodec) {
+    if (overload != null && overload !== SQLRowObjectCodec) {
       const result: any[] = new Array(els);
       for (let i = 0; i < els; i++) {
         buf.discard(4); // reserved
@@ -91,7 +91,7 @@ export class RecordCodec extends Codec implements ICodec {
         result[i] = val;
       }
 
-      if (overload != null) {
+      if (overload !== SQLRowArrayCodec) {
         return overload.fromDatabase(result, { names: this.names });
       }
 
