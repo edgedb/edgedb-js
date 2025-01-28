@@ -18,10 +18,37 @@
 
 import type { ICodec, uuid, CodecKind } from "./ifaces";
 import { Codec } from "./ifaces";
+import type { Codecs } from "./codecs";
 import type { WriteBuffer } from "../primitives/buffer";
 import { ReadBuffer } from "../primitives/buffer";
 import { InvalidArgumentError, ProtocolError } from "../errors";
 import type { CodecContext } from "./context";
+
+const SQLRowArrayCodec: Codecs.SQLRowCodec = {
+  fromDatabase(values: any[], _desc: { names: string[] }): any[] {
+    return values;
+  },
+  toDatabase() {
+    throw "cannot encode SQL record as a query argument";
+  },
+};
+
+const SQLRowObjectCodec: Codecs.SQLRowCodec = {
+  fromDatabase(values: any[], { names }: { names: string[] }): any {
+    return Object.fromEntries(names.map((key, index) => [key, values[index]]));
+  },
+  toDatabase() {
+    throw "cannot encode SQL record as a query argument";
+  },
+};
+
+export const SQLRowModeArray = {
+  _private_sql_row: SQLRowArrayCodec,
+};
+
+export const SQLRowModeObject = {
+  _private_sql_row: SQLRowObjectCodec,
+};
 
 export class RecordCodec extends Codec implements ICodec {
   private subCodecs: ICodec[];
@@ -48,25 +75,44 @@ export class RecordCodec extends Codec implements ICodec {
     }
 
     const elemBuf = ReadBuffer.alloc();
-    const result: any[] = new Array(els);
-    for (let i = 0; i < els; i++) {
-      buf.discard(4); // reserved
-      const elemLen = buf.readInt32();
-      let val = null;
-      if (elemLen !== -1) {
-        buf.sliceInto(elemBuf, elemLen);
-        val = subCodecs[i].decode(elemBuf, ctx);
-        elemBuf.finish();
+    const overload = ctx.getContainerOverload("_private_sql_row");
+
+    if (overload !== SQLRowObjectCodec) {
+      const result: any[] = new Array(els);
+      for (let i = 0; i < els; i++) {
+        buf.discard(4); // reserved
+        const elemLen = buf.readInt32();
+        let val = null;
+        if (elemLen !== -1) {
+          buf.sliceInto(elemBuf, elemLen);
+          val = subCodecs[i].decode(elemBuf, ctx);
+          elemBuf.finish();
+        }
+        result[i] = val;
       }
-      result[i] = val;
-    }
 
-    const overload = ctx.getContainerOverload("sql_row");
-    if (overload != null) {
-      return overload.fromDatabase(result, { names: this.names });
-    }
+      if (overload != null) {
+        return overload.fromDatabase(result, { names: this.names });
+      }
 
-    return result;
+      return result;
+    } else {
+      // Parsing code is basically duplicated to make things fast.
+      const names = this.names;
+      const result: Record<string, any> = {};
+      for (let i = 0; i < els; i++) {
+        buf.discard(4); // reserved
+        const elemLen = buf.readInt32();
+        let val = null;
+        if (elemLen !== -1) {
+          buf.sliceInto(elemBuf, elemLen);
+          val = subCodecs[i].decode(elemBuf, ctx);
+          elemBuf.finish();
+        }
+        result[names[i]] = val;
+      }
+      return result;
+    }
   }
 
   getSubcodecs(): ICodec[] {
