@@ -2586,10 +2586,10 @@ if (getEdgeDBVersion().major >= 5) {
 
 if (getEdgeDBVersion().major >= 6) {
   test("querySQL", async () => {
-    let client = getClient();
+    let client = getClient().withSQLRowMode("array");
 
     try {
-      let res = await client.querySQL("select 1");
+      let res = await client.querySQL("select 1 as c");
       expect(JSON.stringify(res)).toEqual("[[1]]");
 
       res = await client.querySQL("select 1 AS foo, 2 AS bar");
@@ -2606,8 +2606,8 @@ if (getEdgeDBVersion().major >= 6) {
     let client = getClient();
 
     try {
-      let res = await client.querySQL("select 1");
-      expect(JSON.stringify(res)).toEqual("[[1]]");
+      let res = await client.querySQL("select 1 as A");
+      expect(JSON.stringify(res)).toEqual('[{"a":1}]');
 
       for (let i = 0; i < 2; i++) {
         res = await client
@@ -2638,8 +2638,8 @@ if (getEdgeDBVersion().major >= 6) {
           .querySQL("select 1 AS foo, 2 AS bar");
         expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
 
-        res = await client.querySQL("select 1 + $1::int8", [41]);
-        expect(JSON.stringify(res)).toEqual("[[42]]");
+        res = await client.querySQL('select 1 + $1::int8 as "B"', [41]);
+        expect(JSON.stringify(res)).toEqual('[{"B":42}]');
       }
     } finally {
       await client.close();
@@ -2664,21 +2664,21 @@ if (getEdgeDBVersion().major >= 6) {
     try {
       await client.transaction(async (tx) => {
         await tx.execute(`
-        CREATE TYPE ${typename} {
-          CREATE REQUIRED PROPERTY prop1 -> std::str;
-        };
-      `);
+          CREATE TYPE ${typename} {
+            CREATE REQUIRED PROPERTY prop1 -> std::str;
+          };
+        `);
 
         await tx.executeSQL(`
-        INSERT INTO "${typename}" (prop1) VALUES (123);
-      `);
+          INSERT INTO "${typename}" (prop1) VALUES (123);
+        `);
 
         let res = await tx.querySingle(query);
         expect(res).toBe("123");
 
         await tx.querySQL(`
-        UPDATE "${typename}" SET prop1 = '345';
-      `);
+          UPDATE "${typename}" SET prop1 = '345';
+        `);
 
         res = await tx.querySingle(query);
         expect(res).toBe("345");
@@ -2711,7 +2711,7 @@ if (getEdgeDBVersion().major >= 6) {
           `select $1::${typename} as "val"`,
           [val],
         );
-        expect(JSON.stringify(res[0][0])).toEqual(JSON.stringify(val));
+        expect(JSON.stringify(res[0].val)).toEqual(JSON.stringify(val));
       }
     } finally {
       await client.close();

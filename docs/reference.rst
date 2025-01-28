@@ -343,7 +343,26 @@ Client
         Run a SQL query and return the results as an array.
         This method **always** returns an array.
 
+        The array will contain the returned rows. By default, rows are
+        ``Objects`` with columns addressable by name.
+
+        This can controlled with ``client.withSQLRowMode('array' | 'object')``
+        API.
+
         This method takes optional query arguments.
+
+        Example:
+
+        .. code-block:: js
+
+            let vals = await client.querySQL(`SELECT 1 as foo`)
+            console.log(vals); // [{'foo': 1}]
+
+            vals = await client
+              .withSQLRowMode('array')
+              .querySQL(`SELECT 1 as foo`);
+
+            console.log(vals); // [[1]]
 
     .. js:method:: transaction<T>( \
             action: (tx: Transaction) => Promise<T> \

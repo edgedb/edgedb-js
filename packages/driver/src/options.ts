@@ -2,7 +2,7 @@ import * as errors from "./errors/index";
 import { utf8Encoder } from "./primitives/buffer";
 import type { Mutable } from "./typeutil";
 import type { Codecs } from "./codecs/codecs";
-import { SQLRowModeObject } from "./codecs/record";
+import { SQLRowModeArray } from "./codecs/record";
 import type { ReadonlyCodecMap, MutableCodecMap } from "./codecs/context";
 import { CodecContext, NOOP_CODEC_CONTEXT } from "./codecs/context";
 
@@ -280,9 +280,9 @@ export class Options {
 
     if (mergeOptions._dropSQLRowCodec && clone.codecs.has("sql_row")) {
       // This is an optimization -- if "sql_row" is the only codec defined
-      // and it's set to "array mode", the we want the codec mapping to be
+      // and it's set to "object mode", the we want the codec mapping to be
       // empty instead. Why? Empty codec mapping short circuits a lot of
-      // custom codec code, and array is the default behavior anyway.
+      // custom codec code, and object is the default behavior anyway.
       (clone.codecs as MutableCodecMap).delete("sql_row");
     }
 
@@ -334,10 +334,10 @@ export class Options {
   }
 
   withSQLRowMode(mode: "array" | "object"): Options {
-    if (mode === "array") {
+    if (mode === "object") {
       return this._cloneWith({ _dropSQLRowCodec: true });
-    } else if (mode === "object") {
-      return this._cloneWith({ codecs: SQLRowModeObject });
+    } else if (mode === "array") {
+      return this._cloneWith({ codecs: SQLRowModeArray });
     } else {
       throw new errors.InterfaceError(`invalid mode=${mode}`);
     }
