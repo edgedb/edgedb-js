@@ -6,7 +6,7 @@ import { updatePackage } from "write-package";
 import type { BaseOptions, Recipe } from "../types.js";
 import { copyTemplateFiles } from "../../utils.js";
 
-const logger = debug("@edgedb/create:recipe:nextjs");
+const logger = debug("@gel/create:recipe:nextjs");
 
 interface NextjsOptions {
   useTS: boolean;
@@ -49,7 +49,7 @@ const recipe: Recipe<NextjsOptions> = {
     });
   },
   async apply(
-    { projectDir, useEdgeDBAuth }: BaseOptions,
+    { projectDir, useGelAuth }: BaseOptions,
     { useTS, router, useTailwind, useSrcDir }: NextjsOptions,
   ) {
     logger("Running nextjs recipe");
@@ -58,7 +58,7 @@ const recipe: Recipe<NextjsOptions> = {
 
     const tags = new Set<string>([router, useTailwind ? "tw" : "no-tw"]);
 
-    if (useEdgeDBAuth) {
+    if (useGelAuth) {
       tags.add("auth");
     }
 
@@ -97,8 +97,8 @@ const recipe: Recipe<NextjsOptions> = {
         lint: "next lint",
       },
       dependencies: {
-        ...(useEdgeDBAuth ? { "@edgedb/auth-nextjs": "^0.1.0" } : {}),
-        edgedb: "^1.4.1",
+        ...(useGelAuth ? { "@gel/auth-nextjs": "^0.1.0" } : {}),
+        gel: "^1.4.1",
         react: "^18",
         "react-dom": "^18",
         next: "14.0.4",

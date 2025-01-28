@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "edgedb": "1.x"
+    "gel": "1.x"
   },
   "devDependencies": {
-    "@edgedb/generate": "0.x",
+    "@gel/generate": "0.x",
     "@typescript-eslint/eslint-plugin": "6.x",
     "@typescript-eslint/parser": "6.x",
     "@eslint/eslintrc": "2.x",

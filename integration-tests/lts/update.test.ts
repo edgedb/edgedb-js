@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import type * as edgedb from "edgedb";
+import type * as gel from "gel";
 
 import e from "./dbschema/edgeql-js";
 import type { UpdateShape } from "./dbschema/edgeql-js/syntax";
 import { setupTests, tc, teardownTests, type TestData } from "./setupTeardown";
 
 describe("update", () => {
-  let client: edgedb.Client;
+  let client: gel.Client;
   let data: TestData;
 
   const $Hero = e.Hero.__element__;
