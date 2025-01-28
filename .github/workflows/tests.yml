@@ -83,15 +83,15 @@ jobs:
           instance-name: test
           server-version: ${{ matrix.gel-version }}
           cli-version: ${{ matrix.gel-version == 'nightly' && 'nightly' || 'stable' }}
-
+      # should be updated to use gel cli
       - name: Show actual Gel server version
         run: |
-          echo ACTIVE_GEL_VERSION=$(gel query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
-
+          echo ACTIVE_GEL_VERSION=$(edgedb query 'select sys::get_version_as_str()' -I test) >> $GITHUB_ENV
+      # should be updated to use gel cli
       - name: Install postgis extension
         if: ${{ matrix.gel-version == 'nightly' }}
         run: |
-          gel extension install -E postgis -I test --slot 6-alpha-3
+          edgedb extension install -E postgis -I test --slot 6-alpha-3
 
       - name: Run package tests
         run: |
