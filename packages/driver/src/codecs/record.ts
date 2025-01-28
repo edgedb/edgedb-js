@@ -21,7 +21,11 @@ import { Codec } from "./ifaces";
 import type { Codecs } from "./codecs";
 import type { WriteBuffer } from "../primitives/buffer";
 import { ReadBuffer } from "../primitives/buffer";
-import { InvalidArgumentError, ProtocolError } from "../errors";
+import {
+  InternalClientError,
+  InvalidArgumentError,
+  ProtocolError,
+} from "../errors";
 import type { CodecContext } from "./context";
 
 const SQLRowArrayCodec: Codecs.SQLRowCodec = {
@@ -29,7 +33,9 @@ const SQLRowArrayCodec: Codecs.SQLRowCodec = {
     return values;
   },
   toDatabase() {
-    throw "cannot encode SQL record as a query argument";
+    throw new InternalClientError(
+      "cannot encode SQL record as a query argument",
+    );
   },
 };
 
@@ -38,7 +44,9 @@ const SQLRowObjectCodec: Codecs.SQLRowCodec = {
     return Object.fromEntries(names.map((key, index) => [key, values[index]]));
   },
   toDatabase() {
-    throw "cannot encode SQL record as a query argument";
+    throw new InternalClientError(
+      "cannot encode SQL record as a query argument",
+    );
   },
 };
 
