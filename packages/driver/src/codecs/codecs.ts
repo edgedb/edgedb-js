@@ -160,11 +160,11 @@ export namespace Codecs {
 
   export type SQLRowCodec = {
     fromDatabase: (data: any[], desc: { names: string[] }) => any;
-    toDatabase: (data: never) => never;
+    toDatabase: (data: any, ...extras: any[]) => any;
   };
 
   export type ContainerCodecs = {
-    sql_row: SQLRowCodec;
+    _private_sql_row: SQLRowCodec;
   };
 
   export type KnownCodecs = ScalarCodecs & ContainerCodecs;

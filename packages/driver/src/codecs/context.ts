@@ -17,6 +17,7 @@ const NOOP: Codecs.AnyCodec = {
   },
 };
 
+export type MutableCodecMap = Map<string, Codecs.AnyCodec>;
 export type ReadonlyCodecMap = ReadonlyMap<string, Codecs.AnyCodec>;
 
 type ContainerNames = keyof Codecs.ContainerCodecs;

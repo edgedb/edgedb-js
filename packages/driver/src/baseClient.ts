@@ -593,6 +593,10 @@ export class Client implements Executor {
     return new Client(this.pool, this.options.withCodecs(codecs));
   }
 
+  withSQLRowMode(mode: "array" | "object"): Client {
+    return new Client(this.pool, this.options.withSQLRowMode(mode));
+  }
+
   withGlobals(globals: Record<string, any>): Client {
     return new Client(this.pool, this.options.withGlobals(globals));
   }

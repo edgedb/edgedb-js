@@ -2609,30 +2609,38 @@ if (getEdgeDBVersion().major >= 6) {
       let res = await client.querySQL("select 1");
       expect(JSON.stringify(res)).toEqual("[[1]]");
 
-      res = await client
-        .withCodecs({
-          sql_row: {
-            fromDatabase(data, desc) {
-              return Object.fromEntries(
-                desc.names.map((key, index) => [key, data[index]]),
-              );
+      for (let i = 0; i < 2; i++) {
+        res = await client
+          .withCodecs({
+            _private_sql_row: {
+              fromDatabase(data, desc) {
+                const ret = Object.fromEntries(
+                  desc.names.map((key, index) => [key, data[index]]),
+                );
+                ret.added = true;
+                return ret;
+              },
+              toDatabase() {
+                throw "cannot encode SQL record as a query argument";
+              },
             },
-            toDatabase() {
-              // toDatabase is required to be specified (limitation
-              // of TypeScript type system). This isn't super elegant
-              // and most likely we'll need a higher-level nicer API
-              // in top of this.
-              //
-              // Maybe `client.withCodecs(gel.SQLRowAsObject)`?
-              throw "cannot encode SQL record as a query argument";
-            },
-          },
-        })
-        .querySQL("select 1 AS foo, 2 AS bar");
-      expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
+          })
+          .querySQL("select 1 AS foo, 2 AS bar");
+        expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2,"added":true}]');
 
-      res = await client.querySQL("select 1 + $1::int8", [41]);
-      expect(JSON.stringify(res)).toEqual("[[42]]");
+        res = await client
+          .withSQLRowMode("array")
+          .querySQL("select 1 AS foo, 2 AS bar");
+        expect(JSON.stringify(res)).toEqual("[[1,2]]");
+
+        res = await client
+          .withSQLRowMode("object")
+          .querySQL("select 1 AS foo, 2 AS bar");
+        expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
+
+        res = await client.querySQL("select 1 + $1::int8", [41]);
+        expect(JSON.stringify(res)).toEqual("[[42]]");
+      }
     } finally {
       await client.close();
     }
