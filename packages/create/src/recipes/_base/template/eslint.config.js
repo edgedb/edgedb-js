@@ -1,24 +1,11 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import js from "@eslint/js";
+// @ts-check
 
-const compat = new FlatCompat();
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import eslintConfigPrettier from "eslint-config-prettier";
 
-export default [
-  {
-    ...compat
-      .extends(
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended-type-checked",
-        "plugin:@typescript-eslint/stylistic-type-checked",
-        "prettier"
-      )
-      .map((c) => ({
-        ...c,
-        files: ["**/*.{ts,tsx,mts}"],
-      })),
-  },
-  {
-    files: ["**/*.{js,jsx,cjs,mjs}"],
-    ...js.configs.recommended,
-  },
-];
+export default tseslint.config(
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  eslintConfigPrettier
+);
