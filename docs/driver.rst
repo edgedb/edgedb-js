@@ -92,7 +92,7 @@ value specified below is the *default value* for that setting.
       },
     })
     .withTransactionOptions({
-      isolation: IsolationLevel.Serializable, // only supported value
+      isolation: IsolationLevel.Serializable, // or .RepeatableRead if readonly
       deferrable: false,
       readonly: false,
     });

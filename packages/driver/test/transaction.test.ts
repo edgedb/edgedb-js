@@ -87,12 +87,18 @@ function* all_options(): Generator<
   void,
   void
 > {
-  const levels = [undefined, IsolationLevel.Serializable];
+  const levels = [
+    undefined,
+    IsolationLevel.Serializable,
+    IsolationLevel.RepeatableRead,
+  ];
   const booleans = [undefined, true, false];
   for (const isolation of levels) {
     for (const readonly of booleans) {
       for (const deferred of booleans) {
-        yield [isolation, readonly, deferred];
+        if (isolation != IsolationLevel.RepeatableRead || readonly) {
+          yield [isolation, readonly, deferred];
+        }
       }
     }
   }
