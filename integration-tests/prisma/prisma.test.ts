@@ -114,7 +114,7 @@ describe("prisma", () => {
     const res = await prisma.user.findMany({
       select: {
         name: true,
-        back_to_Post: {
+        bk_author_Post: {
           select: {
             body: true,
           },
@@ -125,27 +125,27 @@ describe("prisma", () => {
     assert.deepEqual(res, [
       {
         name: "Alice",
-        back_to_Post: [{ body: "Hello" }, { body: "I'm Alice" }],
+        bk_author_Post: [{ body: "Hello" }, { body: "I'm Alice" }],
       },
       {
         name: "Billie",
-        back_to_Post: [],
+        bk_author_Post: [],
       },
       {
         name: "Cameron",
-        back_to_Post: [{ body: "I'm Cameron" }],
+        bk_author_Post: [{ body: "I'm Cameron" }],
       },
       {
         name: "Dana",
-        back_to_Post: [],
+        bk_author_Post: [],
       },
       {
         name: "Elsa",
-        back_to_Post: [{ body: "*magic stuff*" }],
+        bk_author_Post: [{ body: "*magic stuff*" }],
       },
       {
         name: "Zoe",
-        back_to_Post: [],
+        bk_author_Post: [],
       },
     ]);
   });
@@ -185,7 +185,7 @@ describe("prisma", () => {
     const res = await prisma.user.findMany({
       select: {
         name: true,
-        back_to_GameSession: {
+        bk_players_GameSession: {
           select: {
             source: {
               select: {
@@ -200,27 +200,27 @@ describe("prisma", () => {
     assert.deepEqual(res, [
       {
         name: "Alice",
-        back_to_GameSession: [{ source: { num: 123 } }],
+        bk_players_GameSession: [{ source: { num: 123 } }],
       },
       {
         name: "Billie",
-        back_to_GameSession: [{ source: { num: 123 } }],
+        bk_players_GameSession: [{ source: { num: 123 } }],
       },
       {
         name: "Cameron",
-        back_to_GameSession: [],
+        bk_players_GameSession: [],
       },
       {
         name: "Dana",
-        back_to_GameSession: [{ source: { num: 456 } }],
+        bk_players_GameSession: [{ source: { num: 456 } }],
       },
       {
         name: "Elsa",
-        back_to_GameSession: [],
+        bk_players_GameSession: [],
       },
       {
         name: "Zoe",
-        back_to_GameSession: [],
+        bk_players_GameSession: [],
       },
     ]);
   });
@@ -266,7 +266,7 @@ describe("prisma", () => {
     const res = await prisma.user.findMany({
       select: {
         name: true,
-        back_to_UserGroup: {
+        bk_users_UserGroup: {
           select: {
             source: {
               select: {
@@ -281,33 +281,52 @@ describe("prisma", () => {
     assert.deepEqual(res, [
       {
         name: "Alice",
-        back_to_UserGroup: [
+        bk_users_UserGroup: [
           { source: { name: "red" } },
           { source: { name: "green" } },
         ],
       },
       {
         name: "Billie",
-        back_to_UserGroup: [
+        bk_users_UserGroup: [
           { source: { name: "red" } },
           { source: { name: "green" } },
         ],
       },
       {
         name: "Cameron",
-        back_to_UserGroup: [{ source: { name: "red" } }],
+        bk_users_UserGroup: [{ source: { name: "red" } }],
       },
       {
         name: "Dana",
-        back_to_UserGroup: [{ source: { name: "red" } }],
+        bk_users_UserGroup: [{ source: { name: "red" } }],
       },
       {
         name: "Elsa",
-        back_to_UserGroup: [],
+        bk_users_UserGroup: [],
       },
       {
         name: "Zoe",
-        back_to_UserGroup: [],
+        bk_users_UserGroup: [],
+      },
+    ]);
+  });
+
+  testIfVersionGTE(6)("check read models 12", async () => {
+    const res = await prisma.assortedScalars.findMany({
+      select: {
+        name: true,
+        vals: true,
+        bstr: true,
+        ts: true,
+      },
+    });
+    assert.deepEqual(res, [
+      {
+        name: "hello world",
+        vals: ["brown", "fox"],
+        bstr: new Uint8Array([119, 111, 114, 100, 0, 11]),
+        ts: new Date("2025-01-26T20:13:45Z"),
       },
     ]);
   });
@@ -359,7 +378,7 @@ describe("prisma", () => {
               name: name,
             },
             include: {
-              back_to_UserGroup: {
+              bk_users_UserGroup: {
                 include: {
                   source: true,
                 },
@@ -368,7 +387,7 @@ describe("prisma", () => {
           });
 
           assert.equal(res!.name, name);
-          assert.equal(res!.back_to_UserGroup[0].source.name, "cyan");
+          assert.equal(res!.bk_users_UserGroup[0].source.name, "cyan");
           assert.ok(res!.id);
         }
 
@@ -501,12 +520,12 @@ describe("prisma", () => {
           },
           select: {
             name: true,
-            back_to_Post: true,
+            bk_author_Post: true,
           },
         });
         assert.deepEqual(res, {
           name: "Elsa",
-          back_to_Post: [],
+          bk_author_Post: [],
         });
 
         throw new Rollback();
@@ -617,6 +636,68 @@ describe("prisma", () => {
         assert.equal(res.length, 1);
         assert.equal(res[0]?.name, "Xander");
         assert.equal(res[0]?.id, user_id);
+
+        throw new Rollback();
+      });
+    } catch (err) {
+      if (!(err instanceof Rollback)) {
+        throw err;
+      }
+    }
+  });
+
+  testIfVersionGTE(6)("check update models 02", async () => {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const scal = await tx.assortedScalars.findFirst({
+          where: {
+            name: "hello world",
+          },
+        });
+
+        const scal_id = scal!.id;
+        assert.ok(scal_id);
+        assert.equal(scal?.name, "hello world");
+
+        // name is not unique so deleteMany is used
+        await tx.assortedScalars.update({
+          where: {
+            id: scal.id,
+          },
+          data: {
+            name: "New Name",
+            vals: scal.vals.concat("jumped"),
+            bstr: new Uint8Array([1, 115, 117, 99, 99, 101, 115, 115, 2]),
+            ts: new Date("2025-01-20T20:13:45Z"),
+          },
+        });
+
+        const nope = await tx.assortedScalars.findMany({
+          where: {
+            name: "hello world",
+          },
+        });
+        assert.deepEqual(nope, []);
+
+        const res = await tx.assortedScalars.findMany({
+          select: {
+            name: true,
+            vals: true,
+            bstr: true,
+            ts: true,
+          },
+          where: {
+            name: "New Name",
+          },
+        });
+        assert.deepEqual(res, [
+          {
+            name: "New Name",
+            vals: ["brown", "fox", "jumped"],
+            bstr: new Uint8Array([1, 115, 117, 99, 99, 101, 115, 115, 2]),
+            ts: new Date("2025-01-20T20:13:45Z"),
+          },
+        ]);
 
         throw new Rollback();
       });

@@ -55,6 +55,12 @@ export async function setupTests() {
         author := assert_single((select User filter .name = 'Elsa')),
         body := '*magic stuff*',
     };
+    insert AssortedScalars {
+        name:= 'hello world',
+        vals := ['brown', 'fox'],
+        bstr := b'word\x00\x0b',
+        ts:=<datetime>'2025-01-26T20:13:45+00:00',
+    };
   `);
 
   return {
