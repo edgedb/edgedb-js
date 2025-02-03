@@ -20,4 +20,11 @@ module default {
     type UserGroup extending Named {
         multi link users: User;
     }
+
+    type AssortedScalars {
+        required name: str;
+        vals: array<str>;
+        ts: datetime;
+        bstr: bytes;
+    }
 }

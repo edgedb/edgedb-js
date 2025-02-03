@@ -78,7 +78,6 @@ interface JSONType {
   links: JSONLink[];
   properties: JSONField[];
   backlinks: JSONLink[];
-  backlink_renames?: { [key: string]: string };
 }
 
 interface LinkTable {
@@ -111,6 +110,8 @@ interface MappedSpec {
 }
 
 const CLEAN_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const ARRAY_RE = /^array<(.+)>$/;
+const NAME_RE = /^(\w+?)(\d*)$/;
 
 function warn(msg: string) {
   // This function exists in case we want to do something more with all the
@@ -184,7 +185,6 @@ function processLinks(types: JSONType[], modules: string[]): ProcessedSpec {
   types = _skipInvalidNames(types, ["properties", "links"]);
   for (const spec of types) {
     type_map[spec.name] = spec;
-    spec.backlink_renames = {};
   }
 
   for (const spec of types) {
@@ -240,7 +240,7 @@ function processLinks(types: JSONType[], modules: string[]): ProcessedSpec {
 
         const objtype = type_map[target];
         objtype.backlinks.push({
-          name: `back_to_${sql_source}`,
+          name: `bk_${name}_${sql_source}`,
           fwname: name,
           // flip cardinality and exclusivity
           cardinality: exclusive ? "One" : "Many",
@@ -285,37 +285,6 @@ function processLinks(types: JSONType[], modules: string[]): ProcessedSpec {
         }
       }
     }
-
-    // Go over backlinks and resolve any name collisions using the type map.
-    for (const spec of types) {
-      // Find collisions in backlink names
-      const bk: { [key: string]: JSONLink[] } = {};
-
-      for (const link of spec.backlinks) {
-        if (link.name.search(/^back_to_/) >= 0) {
-          if (!bk[link.name]) {
-            bk[link.name] = [];
-          }
-          bk[link.name].push(link);
-        }
-      }
-
-      for (const bklinks of Object.values(bk)) {
-        if (bklinks.length > 1) {
-          // We have a collision, so each backlink in it must now be disambiguated
-          for (const link of bklinks) {
-            const origsrc = getSQLName(link.target.name);
-            const lname = link.name;
-            const fwname = link.fwname;
-            link.name = `$follow_${fwname}_${lname}`;
-
-            // Also update the original source of the link with the special backlink name
-            const source = type_map[link.target.name];
-            source.backlink_renames[fwname] = link.name;
-          }
-        }
-      }
-    }
   }
 
   return {
@@ -345,6 +314,7 @@ const GEL_SCALAR_MAP: { [key: string]: string } = {
 
 const BASE_STUB = `\
 // Automatically generated from Gel schema.
+// Do not edit directly as re-generating this file will overwrite any changes.
 
 generator client {
   provider = "prisma-client-js"
@@ -356,6 +326,22 @@ datasource db {
 }
 `;
 
+function field_name_sort(a: unknown[], b: unknown[]) {
+  const a_match = NAME_RE.exec(<string>a[0]);
+  const b_match = NAME_RE.exec(<string>b[0]);
+
+  const a_val = [a_match![1], Number(a_match![2] || -1)];
+  const b_val = [b_match![1], Number(b_match![2] || -1)];
+
+  if (a_val < b_val) {
+    return -1;
+  } else if (a_val > b_val) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 class ModelClass {
   name: string;
   table?: string;
@@ -363,7 +349,6 @@ class ModelClass {
   links: { [key: string]: string } = {};
   mlinks: { [key: string]: string } = {};
   backlinks: { [key: string]: string } = {};
-  backlink_renames: { [key: string]: string } = {};
   isLinkTable: boolean = false;
 
   constructor(name: string) {
@@ -371,7 +356,7 @@ class ModelClass {
   }
 
   getBacklinkName(src_link: string, src_name: string): string {
-    return this.backlink_renames[src_link] || `back_to_${src_name}`;
+    return `bk_${src_link}_${src_name}`;
   }
 }
 
@@ -463,9 +448,6 @@ class ModelGenerator {
     for (const [name, rec] of Object.entries(maps.object_types)) {
       const mod: ModelClass = new ModelClass(name);
       mod.table = name;
-      if (rec.backlink_renames !== undefined) {
-        mod.backlink_renames = rec.backlink_renames;
-      }
 
       // copy backlink information
       for (const link of rec.backlinks) {
@@ -568,7 +550,14 @@ class ModelGenerator {
   }
 
   renderProp(prop: JSONField): string {
-    const target = prop.target.name;
+    let target = prop.target.name;
+    let is_array = false;
+    const match = ARRAY_RE.exec(target);
+    if (match) {
+      is_array = true;
+      target = match[1];
+    }
+
     const type: string | undefined = GEL_SCALAR_MAP[target];
 
     if (type === undefined) {
@@ -576,7 +565,11 @@ class ModelGenerator {
       return "";
     }
     // make props opional and let gel deal with the actual requirements
-    return type + "?";
+    if (is_array) {
+      return type + "[]";
+    } else {
+      return type + "?";
+    }
   }
 
   renderSingleLink(link: JSONLink, bklink: string): string {
@@ -632,8 +625,18 @@ class ModelGenerator {
 
     const maps = this.specToModulesDict(spec);
     const modmap = this.buildModels(maps);
+    const values = Object.values(modmap);
+    values.sort((a, b) => {
+      if (a.name < b.name) {
+        return -1;
+      } else if (a.name == b.name) {
+        return 0;
+      } else {
+        return 1;
+      }
+    });
 
-    for (const mod of Object.values(modmap)) {
+    for (const mod of values) {
       this.write();
       this.renderModelClass(mod);
     }
@@ -660,7 +663,9 @@ class ModelGenerator {
     if (Object.keys(mod.props).length > 0) {
       this.write();
       this.write("// properties");
-      for (const [name, val] of Object.entries(mod.props)) {
+      const props = Object.entries(mod.props);
+      props.sort(field_name_sort);
+      for (const [name, val] of props) {
         this.write(`${name}    ${val}`);
       }
     }
@@ -668,7 +673,9 @@ class ModelGenerator {
     if (Object.keys(mod.links).length > 0) {
       this.write();
       this.write("// links");
-      for (const [name, val] of Object.entries(mod.links)) {
+      const links = Object.entries(mod.links);
+      links.sort(field_name_sort);
+      for (const [name, val] of links) {
         this.write(`${name}    ${val}`);
       }
     }
@@ -676,7 +683,9 @@ class ModelGenerator {
     if (Object.keys(mod.mlinks).length > 0) {
       this.write();
       this.write("// multi-links");
-      for (const [name, val] of Object.entries(mod.mlinks)) {
+      const mlinks = Object.entries(mod.mlinks);
+      mlinks.sort(field_name_sort);
+      for (const [name, val] of mlinks) {
         this.write(`${name}    ${val}`);
       }
     }
@@ -684,7 +693,9 @@ class ModelGenerator {
     if (Object.keys(mod.backlinks).length > 0) {
       this.write();
       this.write("// backlinks");
-      for (const [name, val] of Object.entries(mod.backlinks)) {
+      const backlinks = Object.entries(mod.backlinks);
+      backlinks.sort(field_name_sort);
+      for (const [name, val] of backlinks) {
         this.write(`${name}    ${val}`);
       }
     }
