@@ -432,4 +432,26 @@ describe("insert", () => {
 
     await query.run(client);
   });
+
+  test("insert many-to-one and select one", async () => {
+    e.params(
+      {
+        name: e.str,
+        nemeses: e.array(e.tuple({ name: e.str })),
+      },
+      (params) => {
+        const hero = e.insert(e.Hero, {
+          name: params.name,
+        });
+        const villains = e.for(e.array_unpack(params.nemeses), (nemesis) => {
+          return e.insert(e.Villain, {
+            name: nemesis.name,
+            nemesis: hero,
+          });
+        });
+
+        return e.with([villains], e.select(hero));
+      },
+    ).toEdgeQL();
+  });
 });
