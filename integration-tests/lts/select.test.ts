@@ -1712,4 +1712,31 @@ SELECT __scope_0_defaultPerson {
     const result = await e.select(e.json(-0)).run(client);
     assert.equal(result, 0);
   });
+
+  test("select using scoped expr directly (not a field/path on that scoped expr)", async () => {
+    const query = e.select(
+      e.select(e.Movie, (movie) => ({
+        filter: e.op(movie.title, "=", "Dune"),
+      })),
+      (movie) => ({
+        comp: movie.is(e.Movie),
+      }),
+    );
+    await query.run(client);
+
+    const user = e.select(e.User, () => ({
+      filter_single: { id: "4d0f90b1-de94-4c79-ba56-3e0acdfbd06d" },
+    }));
+    const movies = e.select(user.favourite_movies, (movie) => ({
+      filter: e.op(movie.title, "=", user.username),
+    }));
+    const query2 = e.with(
+      [user, movies],
+      e.select(movies, (movie) => ({
+        isFav: e.op(movie, "in", user.favourite_movies),
+      })),
+    );
+
+    await query2.run(client);
+  });
 });
