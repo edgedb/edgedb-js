@@ -397,6 +397,13 @@ function walkExprTree(
 
   const expr = _expr as SomeExpression;
 
+  if ((expr as any).__scopedFrom__ != null) {
+    // If expr is marked as being a scoped copy of another expr, treat it as
+    // an opaque reference and don't walk it. The enclosing select/update that
+    // owns the scope will walk the actual unscoped expr.
+    return [expr];
+  }
+
   function walkShape(shape: object) {
     for (let param of Object.values(shape)) {
       if (param.__kind__ === ExpressionKind.PolyShapeElement) {
@@ -473,16 +480,9 @@ function walkExprTree(
     case ExpressionKind.PathLeaf:
     case ExpressionKind.PathNode:
       if (expr.__parent__) {
-        if ((expr.__parent__.type as any).__scopedFrom__) {
-          // if parent is scoped expr then don't walk expr
-          // since it will already be walked by enclosing select/update
-
-          childExprs.push(expr.__parent__.type as any);
-        } else {
-          childExprs.push(
-            ...walkExprTree(expr.__parent__.type, parentScope, ctx),
-          );
-        }
+        childExprs.push(
+          ...walkExprTree(expr.__parent__.type, parentScope, ctx),
+        );
 
         if (
           // is link prop
@@ -1226,7 +1226,7 @@ ${indent(groupStatement.join("\n"), 4)}
         );
     }
   } else if (expr.__kind__ === ExpressionKind.TypeIntersection) {
-    return `${renderEdgeQL(expr.__expr__, ctx)}[IS ${
+    return `${renderEdgeQL(expr.__expr__, ctx, false)}[IS ${
       expr.__element__.__name__
     }]`;
   } else if (expr.__kind__ === ExpressionKind.For) {
