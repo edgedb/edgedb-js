@@ -209,7 +209,8 @@ export function $toEdgeQL(this: any) {
       refData.aliases.length > 0
     ) {
       // first, check if expr is bound to scope
-      let withBlock = refData.boundScope;
+      let withBlock = (refData.boundScope?.__expr__ ??
+        null) as WithScopeExpr | null;
 
       const parentScopes = [...refData.parentScopes];
 
@@ -275,13 +276,31 @@ export function $toEdgeQL(this: any) {
         withBlocks.set(withBlock, new Set());
       }
 
+      if (
+        refData.boundScope &&
+        refData.boundScope.__refs__.some(
+          (ref: any) =>
+            ref !== expr &&
+            seen.has(ref) &&
+            walkExprCtx.seen.get(ref)?.childExprs.includes(expr),
+        )
+      ) {
+        // if expr is bound to a e.with, and any of it's siblings in the e.with
+        // refs contain this expr as a child and haven't been resolved yet,
+        // return this expr to `seen` to be resolved later
+        seen.set(expr, refData);
+        continue;
+      }
+
       // check all references and aliases are within this block
-      const validScopes = new Set([
-        withBlock,
-        // expressions already explictly bound to with block are also valid scopes
-        ...(withBlocks.get(withBlock) ?? []),
-        ...walkExprCtx.seen.get(withBlock)!.childExprs,
-      ]);
+      const validScopes = new Set(
+        [
+          withBlock,
+          // expressions already explictly bound to with block are also valid scopes
+          ...(withBlocks.get(withBlock) ?? []),
+        ] // expand out child exprs of valid with scopes
+          .flatMap((expr) => [expr, ...walkExprCtx.seen.get(expr)!.childExprs]),
+      );
       for (const scope of [
         ...refData.parentScopes,
         ...util.flatMap(refData.aliases, (alias) => [
@@ -350,7 +369,7 @@ interface WalkExprTreeCtx {
       // tracks all child exprs
       childExprs: SomeExpression[];
       // tracks bound scope from e.with
-      boundScope: WithScopeExpr | null;
+      boundScope: $expr_With | null;
       // tracks aliases from e.alias
       aliases: SomeExpression[];
       linkProps: $expr_PathLeaf[];
@@ -444,7 +463,7 @@ function walkExprTree(
         if (seenRef.boundScope) {
           throw new Error(`Expression bound to multiple 'WITH' blocks`);
         }
-        seenRef.boundScope = expr.__expr__;
+        seenRef.boundScope = expr;
       }
       break;
     case ExpressionKind.Literal:
