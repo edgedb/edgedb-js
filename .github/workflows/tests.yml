@@ -16,7 +16,7 @@ jobs:
     continue-on-error: ${{ matrix.edgedb-version == 'nightly' }}
     strategy:
       matrix:
-        node-version: ["20", "22"]
+        node-version: ["18", "20", "22"]
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
@@ -25,19 +25,18 @@ jobs:
             edgedb-version: "nightly"
           - os: ubuntu-latest
             node-version: "20"
-            edgedb-version: "6"
+            edgedb-version: "5"
           - os: ubuntu-latest
             node-version: "20"
             edgedb-version: "4"
-          - os: macos-latest
-            node-version: "20"
-            edgedb-version: "stable"
-          - os: ubuntu-latest
-            node-version: "23"
-            edgedb-version: "stable"
-          - os: ubuntu-latest
-            node-version: "18"
-            edgedb-version: "stable"
+          # - os: ubuntu-latest
+          #   node-version: "20"
+          #   edgedb-version: "3"
+          # XXX: macOS is currently unsupported by setup-edgedb
+          # - os: macos-latest
+          #   node-version: "20"
+          #   edgedb-version: "stable"
+
     steps:
       - uses: actions/checkout@v4
         with:
