@@ -21,7 +21,7 @@ import { type Client } from "../src/index.node";
 import { IsolationLevel, TransactionOptions } from "../src/options";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
-import { getClient } from "./testbase";
+import { getClient, getEdgeDBVersion } from "./testbase";
 
 const typename = "TransactionTest";
 
@@ -82,17 +82,24 @@ test("transaction: regular 01", async () => {
   });
 }, 10_000);
 
+const levels = [
+  undefined,
+  IsolationLevel.Serializable,
+  ...(getEdgeDBVersion().major >= 6 ? [IsolationLevel.RepeatableRead] : []),
+];
+
 function* all_options(): Generator<
   [IsolationLevel | undefined, boolean | undefined, boolean | undefined],
   void,
   void
 > {
-  const levels = [undefined, IsolationLevel.Serializable];
   const booleans = [undefined, true, false];
   for (const isolation of levels) {
     for (const readonly of booleans) {
       for (const deferred of booleans) {
-        yield [isolation, readonly, deferred];
+        if (isolation != IsolationLevel.RepeatableRead || readonly) {
+          yield [isolation, readonly, deferred];
+        }
       }
     }
   }
