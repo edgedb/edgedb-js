@@ -20,23 +20,29 @@ jobs:
         os: [ubuntu-latest]
         edgedb-version: ["stable"]
         include:
+          # Nightly server
           - os: ubuntu-latest
-            node-version: "20"
+            node-version: "22"
             edgedb-version: "nightly"
+          # Upcoming server
           - os: ubuntu-latest
-            node-version: "20"
+            node-version: "22"
             edgedb-version: "6"
+          # LTS server
           - os: ubuntu-latest
-            node-version: "20"
+            node-version: "22"
             edgedb-version: "4"
-          - os: macos-latest
-            node-version: "20"
-            edgedb-version: "stable"
+          # Upcoming Node on stable server
           - os: ubuntu-latest
             node-version: "23"
             edgedb-version: "stable"
+          # Maintenance Node on stable server
           - os: ubuntu-latest
             node-version: "18"
+            edgedb-version: "stable"
+          # macOS
+          - os: macos-latest
+            node-version: "22"
             edgedb-version: "stable"
     steps:
       - uses: actions/checkout@v4
