@@ -178,8 +178,10 @@ export class Options {
   /** @internal */
   readonly annotations: ReadonlyMap<string, string> = new Map<string, string>();
 
-  private cachedCodecContext: CodecContext | null = null;
-  private cachedCodecContextVer = -1;
+  /** @internal */
+  cachedCodecContext: CodecContext | null = null;
+  /** @internal */
+  cachedCodecContextVer = -1;
 
   get tag(): string | null {
     return this.annotations.get(TAG_ANNOTATION_KEY) ?? null;
@@ -269,7 +271,6 @@ export class Options {
       clone.moduleAliases = this.moduleAliases;
     }
 
-    let originalCodecsMap = false;
     if (mergeOptions.codecs != null) {
       clone.codecs = new Map([
         ...this.codecs,
@@ -277,7 +278,12 @@ export class Options {
       ]) as ReadonlyCodecMap;
     } else {
       clone.codecs = this.codecs;
-      originalCodecsMap = true;
+      // It  makes sense to just inherit the cached codec context
+      // as it's expensive to build. The only case when it can't be
+      // cached is when .withCodecs() was called, but caching will
+      // work great for all other .withSomething() methods we have.
+      clone.cachedCodecContext = this.cachedCodecContext;
+      clone.cachedCodecContextVer = this.cachedCodecContextVer;
     }
 
     if (mergeOptions._dropSQLRowCodec && clone.codecs.has("_private_sql_row")) {
@@ -285,7 +291,7 @@ export class Options {
       // and it's set to "object mode", the we want the codec mapping to be
       // empty instead. Why? Empty codec mapping short circuits a lot of
       // custom codec code, and object is the default behavior anyway.
-      if (originalCodecsMap) {
+      if (clone.codecs === this.codecs) {
         // "codecs" map isn't a full-blown read-only mapping, we're just
         // treating it as such and protecting from the user to mutate
         // directly. This allows for optimizing away pointless copies.
@@ -293,6 +299,8 @@ export class Options {
         // mapping from another options object, we have to clone it
         // before deleting any keys or mutating it in any way.
         clone.codecs = new Map(clone.codecs);
+        clone.cachedCodecContext = null;
+        clone.cachedCodecContextVer = -1;
       }
       (clone.codecs as MutableCodecMap).delete("_private_sql_row");
     }
