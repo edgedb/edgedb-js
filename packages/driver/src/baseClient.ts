@@ -48,7 +48,7 @@ import type { BaseRawConnection } from "./baseConn";
 import type { ConnectWithTimeout } from "./retry";
 import { retryingConnect } from "./retry";
 import { util } from "./reflection/util";
-import { Transaction } from "./transaction";
+import { Transaction, TransactionImpl } from "./transaction";
 import { sleep } from "./utils";
 
 export class ClientConnectionHolder {
@@ -131,12 +131,13 @@ export class ClientConnectionHolder {
   ): Promise<T> {
     let result: T | void;
     for (let iteration = 0; ; ++iteration) {
-      const transaction = await Transaction._startTransaction(this);
+      const transaction = await TransactionImpl._startTransaction(this);
+      const clientTx = new Transaction(transaction, this.options);
 
       let commitFailed = false;
       try {
         result = await Promise.race([
-          action(transaction),
+          action(clientTx),
           transaction._waitForConnAbort(),
         ]);
         try {
