@@ -26,6 +26,7 @@ import {
   Language,
   type SQLQueryArgs,
 } from "./ifaces";
+import type { Options } from "./options";
 
 export enum TransactionState {
   ACTIVE = 0,
@@ -34,7 +35,7 @@ export enum TransactionState {
   FAILED = 3,
 }
 
-export class Transaction implements Executor {
+export class TransactionImpl {
   protected _holder: ClientConnectionHolder;
   private _rawConn: BaseRawConnection;
 
@@ -55,7 +56,7 @@ export class Transaction implements Executor {
   /** @internal */
   static async _startTransaction(
     holder: ClientConnectionHolder,
-  ): Promise<Transaction> {
+  ): Promise<TransactionImpl> {
     const rawConn = await holder._getConnection();
 
     await rawConn.resetState();
@@ -72,7 +73,7 @@ export class Transaction implements Executor {
       true,
     );
 
-    return new Transaction(holder, rawConn);
+    return new TransactionImpl(holder, rawConn);
   }
 
   /** @internal */
@@ -90,7 +91,7 @@ export class Transaction implements Executor {
     }
   }
 
-  private async _runOp<T>(
+  async _runOp<T>(
     opname: string,
     op: () => Promise<T>,
     errMessage?: string,
@@ -121,7 +122,7 @@ export class Transaction implements Executor {
     }
   }
 
-  private async _runFetchOp(
+  async _runFetchOp(
     opName: string,
     ...args: Parameters<BaseRawConnection["fetch"]>
   ) {
@@ -171,39 +172,53 @@ export class Transaction implements Executor {
       "A query is still in progress after transaction block has returned.",
     );
   }
+}
+
+export class Transaction implements Executor {
+  private impl: TransactionImpl;
+  private options: Options;
+
+  constructor(impl: TransactionImpl, options: Options) {
+    this.impl = impl;
+    this.options = options;
+  }
+
+  withSQLRowMode(mode: "array" | "object"): Transaction {
+    return new Transaction(this.impl, this.options.withSQLRowMode(mode));
+  }
 
   async execute(query: string, args?: QueryArgs): Promise<void> {
-    await this._runFetchOp(
+    await this.impl._runFetchOp(
       "execute",
       query,
       args,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
-      this._holder.options,
+      this.options,
     );
   }
 
   async executeSQL(query: string, args?: SQLQueryArgs): Promise<void> {
-    await this._runFetchOp(
+    await this.impl._runFetchOp(
       "execute",
       query,
       args,
       OutputFormat.NONE,
       Cardinality.NO_RESULT,
-      this._holder.options,
+      this.options,
       false /* privilegedMode */,
       Language.SQL,
     );
   }
 
   async query<T = unknown>(query: string, args?: QueryArgs): Promise<T[]> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "query",
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      this._holder.options,
+      this.options,
     );
   }
 
@@ -211,26 +226,26 @@ export class Transaction implements Executor {
     query: string,
     args?: SQLQueryArgs,
   ): Promise<T[]> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "query",
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.MANY,
-      this._holder.options,
+      this.options,
       false /* privilegedMode */,
       Language.SQL,
     );
   }
 
   async queryJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "queryJSON",
       query,
       args,
       OutputFormat.JSON,
       Cardinality.MANY,
-      this._holder.options,
+      this.options,
     );
   }
 
@@ -238,24 +253,24 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<T | null> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "querySingle",
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.AT_MOST_ONE,
-      this._holder.options,
+      this.options,
     );
   }
 
   async querySingleJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "querySingleJSON",
       query,
       args,
       OutputFormat.JSON,
       Cardinality.AT_MOST_ONE,
-      this._holder.options,
+      this.options,
     );
   }
 
@@ -263,24 +278,24 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<[T, ...T[]]> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "queryRequired",
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.AT_LEAST_ONE,
-      this._holder.options,
+      this.options,
     );
   }
 
   async queryRequiredJSON(query: string, args?: QueryArgs): Promise<string> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "queryRequiredJSON",
       query,
       args,
       OutputFormat.JSON,
       Cardinality.AT_LEAST_ONE,
-      this._holder.options,
+      this.options,
     );
   }
 
@@ -288,13 +303,13 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<T> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "queryRequiredSingle",
       query,
       args,
       OutputFormat.BINARY,
       Cardinality.ONE,
-      this._holder.options,
+      this.options,
     );
   }
 
@@ -302,13 +317,13 @@ export class Transaction implements Executor {
     query: string,
     args?: QueryArgs,
   ): Promise<string> {
-    return this._runFetchOp(
+    return this.impl._runFetchOp(
       "queryRequiredSingleJSON",
       query,
       args,
       OutputFormat.JSON,
       Cardinality.ONE,
-      this._holder.options,
+      this.options,
     );
   }
 }

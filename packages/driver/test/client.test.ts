@@ -2602,6 +2602,30 @@ if (getEdgeDBVersion().major >= 6) {
     }
   });
 
+  test("withSQLRowMode in tx", async () => {
+    let client = getClient().withSQLRowMode("array");
+
+    try {
+      let res = await client.querySQL("select 1 as c");
+      expect(JSON.stringify(res)).toEqual("[[1]]");
+
+      await client.transaction(async (tx) => {
+        const tx2 = tx.withSQLRowMode("object");
+
+        let res = await tx.querySQL("select 1 AS foo, 2 AS bar");
+        expect(JSON.stringify(res)).toEqual("[[1,2]]");
+
+        res = await tx2.querySQL("select 1 AS foo, 2 AS bar");
+        expect(JSON.stringify(res)).toEqual('[{"foo":1,"bar":2}]');
+      });
+
+      res = await client.querySQL("select 1 + $1::int8", [41]);
+      expect(JSON.stringify(res)).toEqual("[[42]]");
+    } finally {
+      await client.close();
+    }
+  });
+
   test("querySQL codec", async () => {
     let client = getClient();
 
