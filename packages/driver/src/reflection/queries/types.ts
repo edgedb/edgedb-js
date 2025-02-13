@@ -197,7 +197,7 @@ export async function getTypes(
           is_computed := len(.computed_fields) != 0,
           is_readonly := .readonly
         } filter .name != '@source' and .name != '@target',
-      } FILTER @is_owned,
+      } FILTER any(@is_owned),
       exclusives := assert_distinct((
         [is schema::ObjectType].constraints
         union
