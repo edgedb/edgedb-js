@@ -30,10 +30,10 @@
     "vite": "^5.2.12"
   },
   "peerDependencies": {
-    "gel": "^2.0.0"
+    "gel": "^2.0.0-rc"
   },
   "dependencies": {
-    "@gel/auth-core": "^0.3.0"
+    "@gel/auth-core": "^0.3.0-rc"
   },
   "exports": {
     "./*": "./dist/*.js"

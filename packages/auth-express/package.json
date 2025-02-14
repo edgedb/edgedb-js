@@ -42,10 +42,10 @@
   },
   "peerDependencies": {
     "cookie-parser": "^1.4.6",
-    "gel": "^2.0.0",
+    "gel": "^2.0.0-rc",
     "express": "^4.18.2"
   },
   "dependencies": {
-    "@gel/auth-core": "^0.3.0"
+    "@gel/auth-core": "^0.3.0-rc"
   }
 }

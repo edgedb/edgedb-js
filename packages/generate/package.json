@@ -18,7 +18,7 @@
   ],
   "bin": "dist/cli.js",
   "peerDependencies": {
-    "gel": "^2.0.0"
+    "gel": "^2.0.0-rc"
   },
   "devDependencies": {
     "@repo/tsconfig": "*",

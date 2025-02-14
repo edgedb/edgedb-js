@@ -47,7 +47,7 @@
   },
   "peerDependencies": {
     "zod": "^3.0.0",
-    "gel": "^2.0.0"
+    "gel": "^2.0.0-rc"
   },
   "engines": {
     "node": ">=18"

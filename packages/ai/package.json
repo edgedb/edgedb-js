@@ -43,7 +43,7 @@
     "@repo/tsconfig": "*"
   },
   "peerDependencies": {
-    "gel": "^2.0.0"
+    "gel": "^2.0.0-rc"
   },
   "dependencies": {
     "eventsource-parser": "^1.1.2"
