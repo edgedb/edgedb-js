@@ -56,7 +56,15 @@ jobs:
           package: packages/gel/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_driver.outputs.version, '-') && 
+                (contains(steps.check_publish_driver.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_driver.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_driver.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_driver.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create 'gel' GitHub Release
         if: steps.check_publish_driver.outputs.type != ''
@@ -96,7 +104,15 @@ jobs:
           package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_generate.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_generate.outputs.version, '-') && 
+                (contains(steps.check_publish_generate.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_generate.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_generate.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_generate.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/generate' GitHub Release
         if: steps.check_publish_generate.outputs.type != ''
@@ -136,7 +152,15 @@ jobs:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_core.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_auth_core.outputs.version, '-') && 
+                (contains(steps.check_publish_auth_core.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_auth_core.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_auth_core.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_auth_core.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/auth-core' Release
         if: steps.check_publish_auth_core.outputs.type != ''
@@ -176,7 +200,15 @@ jobs:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_nextjs.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_auth_nextjs.outputs.version, '-') && 
+                (contains(steps.check_publish_auth_nextjs.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_auth_nextjs.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_auth_nextjs.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_auth_nextjs.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/auth-nextjs' Release
         if: steps.check_publish_auth_nextjs.outputs.type != ''
@@ -216,7 +248,15 @@ jobs:
           package: packages/auth-express/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_express.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_auth_express.outputs.version, '-') && 
+                (contains(steps.check_publish_auth_express.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_auth_express.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_auth_express.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_auth_express.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/auth-express' Release
         if: steps.check_publish_auth_express.outputs.type != ''
@@ -256,7 +296,15 @@ jobs:
           package: packages/auth-remix/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_remix.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_auth_remix.outputs.version, '-') && 
+                (contains(steps.check_publish_auth_remix.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_auth_remix.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_auth_remix.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_auth_remix.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/auth-remix' Release
         if: steps.check_publish_auth_remix.outputs.type != ''
@@ -296,7 +344,15 @@ jobs:
           package: packages/auth-sveltekit/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_sveltekit.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_auth_sveltekit.outputs.version, '-') && 
+                (contains(steps.check_publish_auth_sveltekit.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_auth_sveltekit.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_auth_sveltekit.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_auth_sveltekit.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/auth-sveltekit' Release
         if: steps.check_publish_auth_sveltekit.outputs.type != ''
@@ -336,7 +392,15 @@ jobs:
           package: packages/create/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_create.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_create.outputs.version, '-') && 
+                (contains(steps.check_publish_create.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_create.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_create.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_create.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/create' Release
         if: steps.check_publish_create.outputs.type != ''
@@ -376,7 +440,15 @@ jobs:
           package: packages/ai/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_ai.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_ai.outputs.version, '-') && 
+                (contains(steps.check_publish_ai.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_ai.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_ai.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_ai.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/ai' Release
         if: steps.check_publish_ai.outputs.type != ''
@@ -416,7 +488,15 @@ jobs:
           package: packages/vercel-ai-provider/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_ai.outputs.type == '' && 'canary' || 'latest' }}
+          tag: >-
+            ${{
+              contains(steps.check_publish_ai.outputs.version, '-') && 
+                (contains(steps.check_publish_ai.outputs.version, '-rc.') && 'rc' ||
+                 contains(steps.check_publish_ai.outputs.version, '-alpha.') && 'alpha' ||
+                 contains(steps.check_publish_ai.outputs.version, '-beta.') && 'beta' ||
+                 contains(steps.check_publish_ai.outputs.version, '-canary.') && 'canary') ||
+              'latest'
+            }}
 
       - name: Create '@gel/vercel-ai-provider' Release
         if: steps.check_publish_vercel-ai-provider.outputs.type != ''
