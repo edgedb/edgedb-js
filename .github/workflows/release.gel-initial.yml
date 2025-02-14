@@ -1,0 +1,70 @@
+# .github/workflows/release.gel-initial.yml
+# One-time workflow for initial gel package releases
+
+name: release gel initial
+on:
+  push:
+    branches:
+      - gel
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: yarn
+
+      # Set all packages to prerelease versions
+      - name: Set prerelease versions
+        run: |
+          # Main gel package
+          yarn workspace gel version --no-git-tag-version "2.0.0-canary.0"
+
+          # 0.3.0-canary.0 packages
+          for pkg in auth-core auth-express auth-remix auth-sveltekit create; do
+            yarn workspace @gel/$pkg version --no-git-tag-version "0.3.0-canary.0"
+          done
+
+          # Individual package versions
+          yarn workspace @gel/ai version --no-git-tag-version "0.1.0-canary.0"
+          yarn workspace @gel/vercel-ai-provider version --no-git-tag-version "0.1.0-canary.0"
+          yarn workspace @gel/auth-nextjs version --no-git-tag-version "0.4.0-canary.0"
+          yarn workspace @gel/generate version --no-git-tag-version "0.6.0-canary.0"
+
+      # gel
+      - name: Copy readme
+        run: cp README.md packages/gel/README.md
+
+      - name: Build gel
+        run: yarn workspace gel run build
+
+      - name: Publish 'gel'
+        uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
+        with:
+          package: packages/gel/package.json
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
+          tag: canary
+
+      # @gel/* packages
+      - name: Build and publish @gel packages
+        run: |
+          for pkg in ai generate auth-core auth-nextjs auth-express auth-remix auth-sveltekit create vercel-ai-provider; do
+            echo "Building @gel/$pkg..."
+            yarn workspace @gel/$pkg run build
+            
+            echo "Publishing @gel/$pkg..."
+            yarn npm publish ./packages/$pkg --access public --tag canary --token ${{ secrets.NPM_TOKEN }}
+          done
