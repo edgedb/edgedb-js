@@ -29,7 +29,7 @@
     "build:cjs": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "gel": "^2.0.0"
+    "gel": "^2.0.0-rc"
   },
   "devDependencies": {
     "typescript": "^5.5.2"

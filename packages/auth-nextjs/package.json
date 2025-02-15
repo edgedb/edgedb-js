@@ -28,7 +28,7 @@
     "@repo/tsconfig": "*",
     "@types/node": "^20.12.13",
     "@types/react": "npm:types-react@rc",
-    "gel": "*",
+    "gel": "^2.0.0-rc",
     "next": "15.0.3",
     "react": "19.0.0-rc-b01722d5-20241114",
     "typescript": "^5.5.2"
