@@ -21,7 +21,7 @@ import { type Client } from "../src/index.node";
 import { IsolationLevel, TransactionOptions } from "../src/options";
 import { sleep } from "../src/utils";
 import Event from "../src/primitives/event";
-import { getClient, getEdgeDBVersion } from "./testbase";
+import { getClient, getGelVersion } from "./testbase";
 
 const typename = "TransactionTest";
 
@@ -85,7 +85,7 @@ test("transaction: regular 01", async () => {
 const levels = [
   undefined,
   IsolationLevel.Serializable,
-  ...(getEdgeDBVersion().major >= 6 ? [IsolationLevel.RepeatableRead] : []),
+  ...(getGelVersion().major >= 6 ? [IsolationLevel.RepeatableRead] : []),
 ];
 
 function* all_options(): Generator<
