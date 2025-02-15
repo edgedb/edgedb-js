@@ -39,7 +39,7 @@
     "react": "^18.2.0 || ^19.0"
   },
   "dependencies": {
-    "@gel/auth-core": "0.3.0-rc"
+    "@gel/auth-core": "^0.3.0-rc"
   },
   "overrides": {
     "@types/react": "npm:types-react@rc"
