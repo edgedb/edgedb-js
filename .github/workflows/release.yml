@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - gel
 
 jobs:
   build_and_publish:
@@ -49,13 +50,35 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/gel/package.json').version")
           yarn workspace gel version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_gel
+        working-directory: packages/gel
+        run: |
+          # Get the version from package.json using npm-pkg CLI.
+          # This handles running npm-pkg inside monorepo.
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          # Check if there's a prerelease tag (a '-' in the version)
+          if echo "$VERSION" | grep -q '-'; then
+            # Extract prerelease identifier: any characters after the '-' up to the first '.'
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          # Set the tag output for use in later steps.
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish 'gel'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/gel/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_driver.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_gel.outputs.tag }}
 
       - name: Create 'gel' GitHub Release
         if: steps.check_publish_driver.outputs.type != ''
@@ -89,13 +112,35 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/generate/package.json').version")
           yarn workspace @gel/generate version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_generate
+        working-directory: packages/gel
+        run: |
+          # Get the version from package.json using npm-pkg CLI.
+          # This handles running npm-pkg inside monorepo.
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          # Check if there's a prerelease tag (a '-' in the version)
+          if echo "$VERSION" | grep -q '-'; then
+            # Extract prerelease identifier: any characters after the '-' up to the first '.'
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          # Set the tag output for use in later steps.
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/generate'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_generate.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_generate.outputs.tag }}
 
       - name: Create '@gel/generate' GitHub Release
         if: steps.check_publish_generate.outputs.type != ''
@@ -135,7 +180,7 @@ jobs:
           package: packages/auth-core/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_core.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_auth_core.outputs.tag }}
 
       - name: Create '@gel/auth-core' Release
         if: steps.check_publish_auth_core.outputs.type != ''
@@ -169,13 +214,35 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/auth-nextjs/package.json').version")
           yarn workspace @gel/auth-nextjs version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_auth_nextjs
+        working-directory: packages/auth-nextjs
+        run: |
+          # Get the version from package.json using npm-pkg CLI.
+          # This handles running npm-pkg inside monorepo.
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          # Check if there's a prerelease tag (a '-' in the version)
+          if echo "$VERSION" | grep -q '-'; then
+            # Extract prerelease identifier: any characters after the '-' up to the first '.'
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          # Set the tag output for use in later steps.
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/auth-nextjs'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-nextjs/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_nextjs.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_auth_nextjs.outputs.tag }}
 
       - name: Create '@gel/auth-nextjs' Release
         if: steps.check_publish_auth_nextjs.outputs.type != ''
@@ -209,13 +276,35 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/auth-express/package.json').version")
           yarn workspace @gel/auth-express version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_auth_express
+        working-directory: packages/auth-express
+        run: |
+          # Get the version from package.json using npm-pkg CLI.
+          # This handles running npm-pkg inside monorepo.
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          # Check if there's a prerelease tag (a '-' in the version)
+          if echo "$VERSION" | grep -q '-'; then
+            # Extract prerelease identifier: any characters after the '-' up to the first '.'
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          # Set the tag output for use in later steps.
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/auth-express'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-express/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_express.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_auth_express.outputs.tag }}
 
       - name: Create '@gel/auth-express' Release
         if: steps.check_publish_auth_express.outputs.type != ''
@@ -249,13 +338,30 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/auth-remix/package.json').version")
           yarn workspace @gel/auth-remix version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_auth_remix
+        working-directory: packages/auth-remix
+        run: |
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          if echo "$VERSION" | grep -q '-'; then
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/auth-remix'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-remix/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_remix.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_auth_remix.outputs.tag }}
 
       - name: Create '@gel/auth-remix' Release
         if: steps.check_publish_auth_remix.outputs.type != ''
@@ -289,13 +395,30 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/auth-sveltekit/package.json').version")
           yarn workspace @gel/auth-sveltekit version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_auth_sveltekit
+        working-directory: packages/auth-sveltekit
+        run: |
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          if echo "$VERSION" | grep -q '-'; then
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/auth-sveltekit'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/auth-sveltekit/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_auth_sveltekit.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_auth_sveltekit.outputs.tag }}
 
       - name: Create '@gel/auth-sveltekit' Release
         if: steps.check_publish_auth_sveltekit.outputs.type != ''
@@ -329,13 +452,30 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/create/package.json').version")
           yarn workspace @gel/create version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_create
+        working-directory: packages/create
+        run: |
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          if echo "$VERSION" | grep -q '-'; then
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/create'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/create/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_create.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_create.outputs.tag }}
 
       - name: Create '@gel/create' Release
         if: steps.check_publish_create.outputs.type != ''
@@ -369,13 +509,30 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/ai/package.json').version")
           yarn workspace @gel/ai version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_ai
+        working-directory: packages/ai
+        run: |
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          if echo "$VERSION" | grep -q '-'; then
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/ai'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/ai/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_ai.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_ai.outputs.tag }}
 
       - name: Create '@gel/ai' Release
         if: steps.check_publish_ai.outputs.type != ''
@@ -409,13 +566,30 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./packages/vercel-ai-provider/package.json').version")
           yarn workspace @gel/vercel-ai-provider version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
 
+      - name: Extract prerelease tag from version
+        id: get_tag_vercel_ai_provider
+        working-directory: packages/vercel-ai-provider
+        run: |
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          if echo "$VERSION" | grep -q '-'; then
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
       - name: Publish '@gel/vercel-ai-provider'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
           package: packages/vercel-ai-provider/package.json
           token: ${{ secrets.NPM_TOKEN }}
           access: public
-          tag: ${{ steps.check_publish_ai.outputs.type == '' && 'canary' || 'latest' }}
+          tag: ${{ steps.get_tag_vercel_ai_provider.outputs.tag }}
 
       - name: Create '@gel/vercel-ai-provider' Release
         if: steps.check_publish_vercel-ai-provider.outputs.type != ''
