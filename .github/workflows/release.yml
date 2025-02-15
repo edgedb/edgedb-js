@@ -34,7 +34,7 @@ jobs:
       - name: Build gel
         run: yarn workspace gel run build
 
-      - id: check_publish_driver
+      - id: check_publish_gel
         name: Dry-run publish 'gel' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
@@ -43,7 +43,7 @@ jobs:
           dry-run: true
 
       - name: If 'gel' version unchanged
-        if: steps.check_publish_driver.outputs.type == ''
+        if: steps.check_publish_gel.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
           yarn workspace gel version --no-git-tag-version --minor
@@ -81,13 +81,13 @@ jobs:
           tag: ${{ steps.get_tag_gel.outputs.tag }}
 
       - name: Create 'gel' GitHub Release
-        if: steps.check_publish_driver.outputs.type != ''
+        if: steps.check_publish_gel.outputs.type != ''
         uses: softprops/action-gh-release@v2.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.check_publish_driver.outputs.version }}
-          name: gel-js v${{ steps.check_publish_driver.outputs.version }}
+          tag_name: v${{ steps.check_publish_gel.outputs.version }}
+          name: gel-js v${{ steps.check_publish_gel.outputs.version }}
           draft: true
           prerelease: false
 
@@ -100,7 +100,7 @@ jobs:
         name: Dry-run publish '@gel/generate' to npm
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
         with:
-          package: packages/gel/package.json
+          package: packages/generate/package.json
           token: ${{ secrets.NPM_TOKEN }}
           dry-run: true
 
@@ -114,7 +114,7 @@ jobs:
 
       - name: Extract prerelease tag from version
         id: get_tag_generate
-        working-directory: packages/gel
+        working-directory: packages/generate
         run: |
           # Get the version from package.json using npm-pkg CLI.
           # This handles running npm-pkg inside monorepo.
@@ -173,6 +173,28 @@ jobs:
           yarn workspace @gel/auth-core version --no-git-tag-version --minor
           CURRENT_VERSION=$(node -p "require('./packages/auth-core/package.json').version")
           yarn workspace @gel/auth-core version --no-git-tag-version --new-version "${CURRENT_VERSION}-canary.$(date +'%Y%m%dT%H%M%S')"
+
+      - name: Extract prerelease tag from version
+        id: get_tag_auth_core
+        working-directory: packages/auth-core
+        run: |
+          # Get the version from package.json using npm-pkg CLI.
+          # This handles running npm-pkg inside monorepo.
+          VERSION=$(npm pkg get version --json | jq -r 'to_entries[0].value')
+          echo "Version is: $VERSION"
+
+          # Check if there's a prerelease tag (a '-' in the version)
+          if echo "$VERSION" | grep -q '-'; then
+            # Extract prerelease identifier: any characters after the '-' up to the first '.'
+            TAG=$(echo "$VERSION" | sed -E 's/.*-([^\.]+).*/\1/')
+            echo "Found prerelease tag: $TAG"
+          else
+            TAG="latest"
+            echo "No prerelease tag found; defaulting to '$TAG'"
+          fi
+
+          # Set the tag output for use in later steps.
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Publish '@gel/auth-core'
         uses: JS-DevTools/npm-publish@4b07b26a2f6e0a51846e1870223e545bae91c552
@@ -559,7 +581,7 @@ jobs:
           dry-run: true
 
       - name: If '@gel/vercel-ai-provider' version unchanged
-        if: steps.check_publish_ai.outputs.type == ''
+        if: steps.check_publish_vercel-ai-provider.outputs.type == ''
         run: |
           echo "Version in package.json has not changed. Creating canary release."
           yarn workspace @gel/vercel-ai-provider version  --no-git-tag-version --minor
